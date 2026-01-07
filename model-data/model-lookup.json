@@ -42,7 +42,7 @@
       "fast": "qwen3-vl:8b",
       "with_tools": "ministral-3:8b"
     },
-    "daily_driver": {
+    "generalist": {
       "primary": "gemma3:12b",
       "agentic": "ministral-3:14b",
       "quality": "gemma3:27b"
@@ -165,6 +165,10 @@
       "european": "ministral-3:14b",
       "requires_embedding": true,
       "embedding_model": "qwen3-embedding:large"
+    },
+    "model_assessor": {
+      "primary": "gpt-oss:20b",
+      "notes": "Bootstrap model for evaluating new Ollama models. Requires reasoning + structured output."
     }
   },
 
@@ -189,7 +193,7 @@
     "business": ["executive_summarizer", "proposal_writer", "strategy_analyst"],
     "education": ["tutor", "quiz_generator", "study_guide", "eli5_explainer"],
     "technical": ["autocomplete", "coding", "formatting", "vision", "visual_reasoning"],
-    "utility": ["embedding", "ocr"],
+    "utility": ["embedding", "ocr", "model_assessor"],
     "communication": ["translator"]
   },
 
@@ -297,6 +301,7 @@
   },
 
   "decision_tree": {
+    "need_model_assessment": "gpt-oss:20b (bootstrap model for this system)",
     "need_embedding": "embeddinggemma:latest (or qwen3-embedding if multilingual)",
     "need_ocr": "deepseek-ocr:3b",
     "need_speed": "granite4:350m → granite4:3b → gemma3:4b",

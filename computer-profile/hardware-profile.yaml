@@ -38,7 +38,7 @@ hardware_classes:
     description: "Fast utility models. Balance of capability and speed."
     vram_range: "8-12GB"
     tps_range: "45-50"
-    use_cases: ["daily_driver", "interactive"]
+    use_cases: ["generalist", "interactive"]
     
   daily_driver:
     description: "The sweet spot. Leaves 30GB+ for large Context Windows."

@@ -397,6 +397,7 @@ This section maps roles to their assigned models and explains how they interact 
 |------|-------|-------|----------------|
 | Embedding Engine | embeddinggemma:latest | Utility | Vector search. Converting queries/files to vectors. |
 | OCR Engine | deepseek-ocr:3b | Utility | Visual transcription. Converting pixels to text. |
+| Model Assessor | gpt-oss:20b | Daily Driver | Bootstrap model for evaluating new Ollama models. |
 
 ### Technical Roles
 
@@ -450,7 +451,7 @@ This section maps roles to their assigned models and explains how they interact 
 
 | Role | Model | Class | Notes |
 |------|-------|-------|-------|
-| Daily Driver | gemma3:12b | Middleweight | Default general assistant |
+| Generalist | gemma3:12b | Middleweight | Default general assistant |
 | Reasoning Engine | gpt-oss:20b | Daily Driver | Logic tasks with CoT |
 | Heavy Lifter | qwen3:72b | Heavy Lifter | Quality-critical, runs solo |
 

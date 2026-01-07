@@ -2,6 +2,7 @@ type: system_prompt
 fileName: Model_Assessment_Prompt_v4.yaml
 description: |
   A system prompt for evaluating AI models for local deployment via Ollama.
+  Run with: model_assessor role (see model-data/model-lookup.json) or a capable cloud LLM.
   Include computer-profile/hardware-profile.yaml in context when using this prompt.
 
 content: |
@@ -19,7 +20,7 @@ content: |
   **CANONICAL ROLES:**
   - `autocomplete`: Fast inline code/text completion
   - `coding`: Code generation and refactoring
-  - `daily_driver`: General purpose chat/assistant
+  - `generalist`: General purpose chat/assistant
   - `heavy_lifter`: Quality-critical generation
   - `reasoning`: Chain-of-thought logic tasks
   - `vision`: Image/screenshot understanding
