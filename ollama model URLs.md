@@ -4,8 +4,8 @@
 | File | Purpose |
 |------|---------|
 | `README.md` | **Start here.** System overview and usage guide |
-| `Assessed models.yaml` | Full model assessments with documentation |
-| `model-lookup.json` | Machine-readable lookup table for tool-calling LLMs |
+| `model-lookup.json` | **Source of truth** — machine-readable specs for LLMs |
+| `Assessed models.md` | Human-readable model documentation |
 | `model-selector-prompt.yaml` | System prompt for model selection agent |
 | `Model assessment prompt.yaml` | Prompt template for assessing new models |
 

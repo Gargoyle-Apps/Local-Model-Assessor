@@ -28,7 +28,7 @@ For the most accurate recommendations, give your LLM multiple files:
 
 1. **System prompt:** Copy contents of `model-selector-prompt.yaml`
 2. **Context:** Copy contents of `model-lookup.json`
-3. **Reference (optional):** Copy relevant sections from `Assessed models.yaml`
+3. **Reference (optional):** Copy relevant sections from `Assessed models.md`
 
 **Example prompt:**
 ```
@@ -47,9 +47,10 @@ When a new model appears on Ollama that you want to evaluate:
 1. Copy contents of `Model assessment prompt.yaml`
 2. Replace `[INSERT LIST OF URLS/MODELS HERE]` with the Ollama URL(s)
 3. Send to a capable LLM (Claude, GPT-4, or locally: qwen3-coder:30b)
-4. Review the YAML output
-5. Merge into `Assessed models.yaml`
-6. Update `model-lookup.json` and `ollama model URLs.md`
+4. Review the JSON output
+5. **First:** Merge into `model-lookup.json` (the machine-readable source of truth)
+6. **Then:** Update `Assessed models.md` (human-readable documentation)
+7. Update `ollama model URLs.md` tables and install commands
 
 ---
 
@@ -58,9 +59,9 @@ When a new model appears on Ollama that you want to evaluate:
 | File | What It's For | When to Use It |
 |------|---------------|----------------|
 | `README.md` | This guide | Start here |
-| `model-lookup.json` | Quick specs lookup | Give to LLM for model selection |
+| `model-lookup.json` | **Source of truth** (machine-readable) | Give to LLM for model selection |
 | `model-selector-prompt.yaml` | Makes LLM a model advisor | Use as system prompt |
-| `Assessed models.yaml` | Full documentation | Deep dive on specific models |
+| `Assessed models.md` | Human-readable documentation | Deep dive on specific models |
 | `Model assessment prompt.yaml` | Evaluate new models | When new models release |
 | `ollama model URLs.md` | Install commands + tables | Quick human reference |
 
@@ -104,8 +105,8 @@ You are in a **Model Assessment System** for a Mac Mini M4 Pro with 64GB RAM run
 | If the user wants to... | Load these files | Your role |
 |-------------------------|------------------|-----------|
 | Select a model for a task | `model-lookup.json` | Query by_role and by_constraint, return recommendation |
-| Get full details on a model | `Assessed models.yaml` | Find the model entry, summarize specs and caveats |
-| Assess a new model | `Model assessment prompt.yaml` | Follow the prompt format to generate YAML assessment |
+| Get full details on a model | `Assessed models.md` | Find the model entry, summarize specs and caveats |
+| Assess a new model | `Model assessment prompt.yaml` | Follow the prompt to generate JSON, then update docs |
 | Install models | `ollama model URLs.md` | Provide the `ollama pull` commands |
 
 ---
@@ -129,7 +130,7 @@ task_detection:
     - "specs for"
     - "what is"
     - "details on"
-  action: Load Assessed models.yaml, find matching entry
+  action: Load Assessed models.md, find matching entry
 
   keywords_new_assessment:
     - "assess this model"
@@ -208,14 +209,13 @@ models.{model:tag}         → Specs object {vram, ctx, class, tps, ...}
 decision_tree.{need}       → Fallback chain as string
 ```
 
-**When parsing `Assessed models.yaml`:**
+**When reading `Assessed models.md`:**
 ```
-[].name                    → Model identifier "name:tag"
-[].role                    → Array of canonical roles
-[].hardware_class          → "Utility" | "Speedster Class" | "Middleweight Class" | "Daily Driver Class" | "Heavy Lifter Class"
-[].specs                   → Technical specifications
-[].documentation           → Human-readable description, reasoning, caveats
-[].best_for                → Array of use cases
+Human-readable Markdown documentation. Use for:
+- Detailed model descriptions and reasoning
+- Caveats and best-for use cases
+- Role architecture explanations
+- Creative tier guidance
 ```
 
 ---
@@ -327,17 +327,17 @@ For writing and creative tasks, choose based on stage:
 
 ### Adding a New Model
 1. Use `Model assessment prompt.yaml` to generate assessment
-2. Add to `Assessed models.yaml` in the appropriate class section
-3. Add to `model-lookup.json`:
+2. **First:** Add to `model-lookup.json` (the source of truth):
    - `models` object (specs)
    - `by_role` (if it fills a role)
    - `by_constraint` (all applicable constraints)
+3. **Then:** Add to `Assessed models.md` in the appropriate class section
 4. Add to `ollama model URLs.md` class table
 5. Update install commands if it's a recommended model
 
 ### Files to Update Together
 When you change one file, check if others need updates:
-- `Assessed models.yaml` ↔ `model-lookup.json` (must stay in sync)
+- `model-lookup.json` (source of truth) → `Assessed models.md` (human docs)
 - `model-lookup.json` ↔ `model-selector-prompt.yaml` (decision logic)
 - Any model change → `ollama model URLs.md` tables
 
