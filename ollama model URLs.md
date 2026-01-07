@@ -55,7 +55,7 @@ https://ollama.com/library/nemotron-3-nano
 | [granite4](https://ollama.com/library/granite4) | `:1b` | 3.3GB | 128K | Small tasks (fp16) |
 | [gemma3](https://ollama.com/library/gemma3) | `:4b` | 3.3GB | 128K | Autocomplete + Vision |
 | [ministral-3](https://ollama.com/library/ministral-3) | `:3b` | 3GB | 256K | Edge Agentic |
-| [qwen3-vl](https://ollama.com/library/qwen3-vl) | `:8b` | 6.1GB | 256K | **Vision Engine** |
+| [qwen3-vl](https://ollama.com/library/qwen3-vl) | `:8b` | 6.1GB | 128K | **Vision Engine** |
 | [qwen3-vl](https://ollama.com/library/qwen3-vl) | `:8b-thinking` | 6.1GB | 128K | Vision + Reasoning |
 | [ministral-3](https://ollama.com/library/ministral-3) | `:8b` | 6GB | 256K | Vision + Tools |
 
@@ -166,9 +166,9 @@ ollama pull qwen3:72b
 ```bash
 # Total if ALL models loaded (not recommended):
 # Utility:     ~7.5GB
-# Speedster Class:      ~24GB
+# Speedster Class:      ~31GB
 # Middleweight Class:      ~27GB
-# Daily Driver Class:      ~62GB
+# Daily Driver Class:      ~86GB
 # Heavy Lifter Class:      ~38GB
 
 # Recommended concurrent loading:

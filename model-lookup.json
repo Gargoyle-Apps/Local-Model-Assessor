@@ -28,6 +28,11 @@
       "with_reasoning": "qwen3-vl:8b-thinking",
       "with_tools": "ministral-3:8b"
     },
+    "visual_reasoning": {
+      "primary": "qwen3-vl:8b-thinking",
+      "fast": "qwen3-vl:8b",
+      "with_tools": "ministral-3:8b"
+    },
     "daily_driver": {
       "primary": "gemma3:12b",
       "agentic": "ministral-3:14b",
@@ -158,7 +163,7 @@
     "under_1gb": ["granite4:350m"],
     "under_4gb": ["granite4:350m", "granite4:3b", "gemma3:4b", "ministral-3:3b"],
     "under_8gb": ["granite4:350m", "granite4:3b", "granite4:1b", "gemma3:4b", "ministral-3:3b", "qwen3-vl:8b", "qwen3-vl:8b-thinking", "ministral-3:8b"],
-    "has_vision": ["gemma3:4b", "qwen3-vl:8b", "qwen3-vl:8b-thinking", "ministral-3:8b", "gemma3:12b", "ministral-3:14b", "gemma3:27b"],
+    "has_vision": ["gemma3:4b", "ministral-3:3b", "qwen3-vl:8b", "qwen3-vl:8b-thinking", "ministral-3:8b", "gemma3:12b", "ministral-3:14b", "gemma3:27b"],
     "has_fim": ["granite4:350m", "granite4:3b", "granite4:1b"],
     "has_tools": ["granite4:3b", "ministral-3:3b", "ministral-3:8b", "ministral-3:14b", "gpt-oss:20b", "nemotron-3-nano:30b", "qwen3-coder:30b"],
     "has_reasoning": ["gpt-oss:20b", "nemotron-3-nano:30b", "deepseek-v3.1:16b", "qwen3-vl:8b-thinking"],
@@ -174,7 +179,7 @@
     "creative": ["storyteller", "worldbuilder", "character_developer", "dialogue_writer", "game_master"],
     "business": ["executive_summarizer", "proposal_writer", "strategy_analyst"],
     "education": ["tutor", "quiz_generator", "study_guide", "eli5_explainer"],
-    "technical": ["autocomplete", "coding", "formatting", "vision"],
+    "technical": ["autocomplete", "coding", "formatting", "vision", "visual_reasoning"],
     "utility": ["embedding", "ocr"],
     "communication": ["translator"]
   },

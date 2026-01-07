@@ -44,125 +44,131 @@ content: |
 
   4. For VISION TASKS:
      → qwen3-vl:8b (understanding)
+     → qwen3-vl:8b-thinking (reasoning about visuals)
      → deepseek-ocr:3b (pure extraction)
      → gemma3:12b (vision + chat)
 
-  5. For CODING:
+  5. For VISUAL REASONING (step-by-step visual analysis):
+     → qwen3-vl:8b-thinking (primary, shows reasoning)
+     → qwen3-vl:8b (faster, no reasoning trace)
+     → ministral-3:8b (with tool calling)
+
+  6. For CODING:
      → qwen3-coder:30b (primary)
      → gpt-oss:20b (debugging with reasoning)
      → granite4:3b (quick edits)
 
-  6. For STRUCTURED OUTPUT (JSON/SQL):
+  7. For STRUCTURED OUTPUT (JSON/SQL):
      → granite4:14b (primary)
      → granite4:3b (quick/simple)
 
   # WRITING & COMPOSITION
-  7. For CREATIVE WRITING (fiction, poetry):
+  8. For CREATIVE WRITING (fiction, poetry):
      → gemma3:12b (drafts, iteration)
      → gemma3:27b (quality drafts)
      → qwen3:72b (final polish)
 
-  8. For COPYWRITING (marketing, ads):
+  9. For COPYWRITING (marketing, ads):
      → gemma3:12b (variations)
      → gpt-oss:20b (audience reasoning)
      → gemma3:27b (hero copy)
 
-  9. For TECHNICAL WRITING (docs, manuals):
+  10. For TECHNICAL WRITING (docs, manuals):
      → granite4:14b (clarity, structure)
      → gpt-oss:20b (complex explanations)
 
   # ANALYSIS & ASSESSMENT
-  10. For DOCUMENT ANALYSIS:
+  11. For DOCUMENT ANALYSIS:
       → deepseek-v3.1:16b + embeddinggemma (RAG pipeline)
       → gpt-oss:20b (reasoning about content)
 
-  11. For WRITING CRITIQUE/FEEDBACK:
+  12. For WRITING CRITIQUE/FEEDBACK:
       → gemma3:12b (quick feedback)
       → gpt-oss:20b (detailed critique with reasoning)
       → qwen3:72b (nuanced literary assessment)
 
-  12. For CONTRACT/LEGAL REVIEW:
+  13. For CONTRACT/LEGAL REVIEW:
       → granite4:14b (precision)
       → gpt-oss:20b (complex reasoning)
 
-  13. For RESEARCH SYNTHESIS:
+  14. For RESEARCH SYNTHESIS:
       → deepseek-v3.1:16b + qwen3-embedding (multilingual RAG)
       → gpt-oss:20b (reasoning across sources)
 
-  14. For FACT CHECKING:
+  15. For FACT CHECKING:
       → gpt-oss:20b (visible reasoning chain)
 
   # CREATIVE & NARRATIVE
-  15. For STORYTELLING (novels, fiction):
+  16. For STORYTELLING (novels, fiction):
       → gemma3:12b (scene sketches)
       → gemma3:27b (chapters)
       → qwen3:72b (final prose)
 
-  16. For WORLDBUILDING:
+  17. For WORLDBUILDING:
       → gemma3:27b + embeddinggemma (consistency via RAG)
       → gpt-oss:20b (logical system design)
 
-  17. For CHARACTER DEVELOPMENT:
+  18. For CHARACTER DEVELOPMENT:
       → gemma3:12b (quick concepts)
       → gemma3:27b (full backstories)
       → qwen3:72b (complex psychology)
 
-  18. For DIALOGUE:
+  19. For DIALOGUE:
       → gemma3:12b (quick exchanges)
       → gemma3:27b (natural flow)
       → qwen3:72b (perfect voice)
 
-  19. For GAME MASTERING/RPG:
+  20. For GAME MASTERING/RPG:
       → gemma3:27b + embeddinggemma (narrative + lore)
       → gpt-oss:20b (rule adjudication)
       → ministral-3:14b (fast solo sessions)
 
   # BUSINESS & PROFESSIONAL
-  20. For EXECUTIVE SUMMARIES:
+  21. For EXECUTIVE SUMMARIES:
       → gemma3:12b (speed)
       → granite4:14b (structured bullets)
 
-  21. For PROPOSALS/PITCHES:
+  22. For PROPOSALS/PITCHES:
       → gemma3:12b (drafts)
       → gpt-oss:20b (argument structure)
       → gemma3:27b (polish)
 
-  22. For STRATEGY/BUSINESS ANALYSIS:
+  23. For STRATEGY/BUSINESS ANALYSIS:
       → gpt-oss:20b (reasoning chains)
       → deepseek-v3.1:16b (data synthesis)
 
   # EDUCATION
-  23. For TUTORING:
+  24. For TUTORING:
       → gemma3:12b (general)
       → gpt-oss:20b (math, step-by-step)
 
-  24. For QUIZ/ASSESSMENT GENERATION:
+  25. For QUIZ/ASSESSMENT GENERATION:
       → granite4:14b (structured output)
       → granite4:3b (quick quizzes)
 
-  25. For STUDY GUIDES:
+  26. For STUDY GUIDES:
       → deepseek-v3.1:16b + embeddinggemma (summarize materials)
 
-  26. For ELI5/SIMPLIFICATION:
+  27. For ELI5/SIMPLIFICATION:
       → gemma3:12b (accessible)
       → gemma3:27b (complex topics)
 
   # COMMUNICATION
-  27. For TRANSLATION/LOCALIZATION:
+  28. For TRANSLATION/LOCALIZATION:
       → gemma3:12b + qwen3-embedding (general)
       → gemma3:27b (literary)
       → ministral-3:14b (European languages)
 
   # GENERAL
-  28. For GENERAL CHAT:
+  29. For GENERAL CHAT:
       → gemma3:12b (default daily driver)
       → ministral-3:14b (if tools needed)
 
-  29. For REASONING/LOGIC:
+  30. For REASONING/LOGIC:
       → gpt-oss:20b (chain-of-thought visible)
       → deepseek-v3.1:16b (math/RAG)
 
-  30. For QUALITY-CRITICAL/BEST OUTPUT:
+  31. For QUALITY-CRITICAL/BEST OUTPUT:
       → qwen3:72b (slow but nuanced)
       → gemma3:27b (faster alternative)
 
