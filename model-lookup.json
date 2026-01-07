@@ -1,13 +1,33 @@
 {
   "_meta": {
-    "description": "Quick lookup table for model selection on Mac Mini M4 Pro (64GB)",
+    "description": "Source of truth for model selection on Mac Mini M4 Pro (64GB)",
     "hardware": "M4 Pro, 50GB safe VRAM budget",
-    "generated": "2024-12",
-    "creative_classes": {
-      "draft": "Fast iteration, brainstorming (Speedster/Middleweight Class models)",
-      "quality": "Substantive work, good drafts (Daily Driver Class models)",
-      "polish": "Publication-ready, maximum nuance (Heavy Lifter Class models)"
+    "generated": "2025-01",
+    "classes": {
+      "Utility": "Embedding/OCR, 1-4GB, always-on",
+      "Speedster": "<8GB, 80-120 t/s, autocomplete/vision",
+      "Middleweight": "8-12GB, 45-50 t/s, daily driver",
+      "Daily Driver": "12-24GB, 25-40 t/s, reasoning/coding",
+      "Heavy Lifter": "30-48GB, ~15 t/s, quality-critical"
+    },
+    "creative_tiers": {
+      "draft": "Fast iteration, brainstorming (Speedster/Middleweight)",
+      "quality": "Substantive work, good drafts (Daily Driver)",
+      "polish": "Publication-ready, maximum nuance (Heavy Lifter)"
     }
+  },
+
+  "recommended_fleet": {
+    "core": [
+      "embeddinggemma:latest",
+      "deepseek-ocr:3b",
+      "granite4:3b",
+      "qwen3-vl:8b",
+      "gemma3:12b",
+      "gpt-oss:20b",
+      "qwen3-coder:30b"
+    ],
+    "install_core": "ollama pull embeddinggemma:latest deepseek-ocr:3b granite4:3b qwen3-vl:8b gemma3:12b gpt-oss:20b qwen3-coder:30b"
   },
   
   "by_role": {
@@ -185,26 +205,106 @@
   },
 
   "models": {
-    "embeddinggemma:latest": {"vram": 1.5, "ctx": 8192, "class": "utility", "tps": 1000},
-    "qwen3-embedding:large": {"vram": 2, "ctx": 32768, "class": "utility", "tps": 800, "multilingual": true},
-    "deepseek-ocr:3b": {"vram": 4, "ctx": 4096, "class": "utility", "tps": 100},
-    "granite4:350m": {"vram": 0.7, "ctx": 32768, "class": "Speedster Class", "tps": 200, "fim": true},
-    "granite4:1b": {"vram": 3.3, "ctx": 128000, "class": "Speedster Class", "tps": 100, "fim": true},
-    "granite4:3b": {"vram": 2.1, "ctx": 128000, "class": "Speedster Class", "tps": 120, "fim": true, "tools": true},
-    "gemma3:4b": {"vram": 3.3, "ctx": 128000, "class": "Speedster Class", "tps": 100, "vision": true},
-    "ministral-3:3b": {"vram": 3.0, "ctx": 256000, "class": "Speedster Class", "tps": 120, "vision": true, "tools": true},
-    "qwen3-vl:8b": {"vram": 6.1, "ctx": 128000, "class": "Speedster Class", "tps": 80, "vision": true},
-    "qwen3-vl:8b-thinking": {"vram": 6.1, "ctx": 128000, "class": "Speedster Class", "tps": 70, "vision": true, "reasoning": true},
-    "ministral-3:8b": {"vram": 6.0, "ctx": 256000, "class": "Speedster Class", "tps": 80, "vision": true, "tools": true},
-    "gemma3:12b": {"vram": 8.1, "ctx": 128000, "class": "Middleweight Class", "tps": 50, "vision": true, "creative": "draft"},
-    "granite4:14b": {"vram": 10, "ctx": 32768, "class": "Middleweight Class", "tps": 45, "tools": true, "structured": true},
-    "ministral-3:14b": {"vram": 9.1, "ctx": 256000, "class": "Middleweight Class", "tps": 45, "vision": true, "tools": true},
-    "deepseek-v3.1:16b": {"vram": 12, "ctx": 32768, "class": "Daily Driver Class", "tps": 40, "reasoning": true, "rag": true},
-    "gpt-oss:20b": {"vram": 14, "ctx": 128000, "class": "Daily Driver Class", "tps": 35, "reasoning": true, "tools": true},
-    "nemotron-3-nano:30b": {"vram": 24, "ctx": 256000, "class": "Daily Driver Class", "tps": 30, "reasoning": true, "tools": true, "moe": true, "long_context": true},
-    "gemma3:27b": {"vram": 17, "ctx": 64000, "class": "Daily Driver Class", "tps": 25, "vision": true, "creative": "quality"},
-    "qwen3-coder:30b": {"vram": 19, "ctx": 64000, "class": "Daily Driver Class", "tps": 25, "tools": true, "moe": true},
-    "qwen3:72b": {"vram": 38, "ctx": 4096, "class": "Heavy Lifter Class", "tps": 15, "no_corun": true, "creative": "polish"}
+    "embeddinggemma:latest": {
+      "vram": 1.5, "ctx": 8192, "class": "Utility", "tps": 1000,
+      "url": "https://ollama.com/library/embeddinggemma",
+      "install": "ollama pull embeddinggemma:latest"
+    },
+    "qwen3-embedding:large": {
+      "vram": 2, "ctx": 32768, "class": "Utility", "tps": 800, "multilingual": true,
+      "url": "https://ollama.com/library/qwen3-embedding",
+      "install": "ollama pull qwen3-embedding:large"
+    },
+    "deepseek-ocr:3b": {
+      "vram": 4, "ctx": 4096, "class": "Utility", "tps": 100,
+      "url": "https://ollama.com/library/deepseek-ocr",
+      "install": "ollama pull deepseek-ocr:3b"
+    },
+    "granite4:350m": {
+      "vram": 0.7, "ctx": 32768, "class": "Speedster", "tps": 200, "fim": true,
+      "url": "https://ollama.com/library/granite4",
+      "install": "ollama pull granite4:350m"
+    },
+    "granite4:1b": {
+      "vram": 3.3, "ctx": 128000, "class": "Speedster", "tps": 100, "fim": true,
+      "url": "https://ollama.com/library/granite4",
+      "install": "ollama pull granite4:1b"
+    },
+    "granite4:3b": {
+      "vram": 2.1, "ctx": 128000, "class": "Speedster", "tps": 120, "fim": true, "tools": true,
+      "url": "https://ollama.com/library/granite4",
+      "install": "ollama pull granite4:3b"
+    },
+    "gemma3:4b": {
+      "vram": 3.3, "ctx": 128000, "class": "Speedster", "tps": 100, "vision": true,
+      "url": "https://ollama.com/library/gemma3",
+      "install": "ollama pull gemma3:4b"
+    },
+    "ministral-3:3b": {
+      "vram": 3.0, "ctx": 256000, "class": "Speedster", "tps": 120, "vision": true, "tools": true,
+      "url": "https://ollama.com/library/ministral-3",
+      "install": "ollama pull ministral-3:3b"
+    },
+    "qwen3-vl:8b": {
+      "vram": 6.1, "ctx": 128000, "class": "Speedster", "tps": 80, "vision": true,
+      "url": "https://ollama.com/library/qwen3-vl",
+      "install": "ollama pull qwen3-vl:8b"
+    },
+    "qwen3-vl:8b-thinking": {
+      "vram": 6.1, "ctx": 128000, "class": "Speedster", "tps": 70, "vision": true, "reasoning": true,
+      "url": "https://ollama.com/library/qwen3-vl",
+      "install": "ollama pull qwen3-vl:8b-thinking"
+    },
+    "ministral-3:8b": {
+      "vram": 6.0, "ctx": 256000, "class": "Speedster", "tps": 80, "vision": true, "tools": true,
+      "url": "https://ollama.com/library/ministral-3",
+      "install": "ollama pull ministral-3:8b"
+    },
+    "gemma3:12b": {
+      "vram": 8.1, "ctx": 128000, "class": "Middleweight", "tps": 50, "vision": true, "creative": "draft",
+      "url": "https://ollama.com/library/gemma3",
+      "install": "ollama pull gemma3:12b"
+    },
+    "granite4:14b": {
+      "vram": 10, "ctx": 32768, "class": "Middleweight", "tps": 45, "tools": true, "structured": true,
+      "url": "https://ollama.com/library/granite4",
+      "install": "ollama pull granite4:14b"
+    },
+    "ministral-3:14b": {
+      "vram": 9.1, "ctx": 256000, "class": "Middleweight", "tps": 45, "vision": true, "tools": true,
+      "url": "https://ollama.com/library/ministral-3",
+      "install": "ollama pull ministral-3:14b"
+    },
+    "deepseek-v3.1:16b": {
+      "vram": 12, "ctx": 32768, "class": "Daily Driver", "tps": 40, "reasoning": true, "rag": true,
+      "url": "https://ollama.com/library/deepseek-v3.1",
+      "install": "ollama pull deepseek-v3.1:16b"
+    },
+    "gpt-oss:20b": {
+      "vram": 14, "ctx": 128000, "class": "Daily Driver", "tps": 35, "reasoning": true, "tools": true,
+      "url": "https://ollama.com/library/gpt-oss",
+      "install": "ollama pull gpt-oss:20b"
+    },
+    "nemotron-3-nano:30b": {
+      "vram": 24, "ctx": 256000, "class": "Daily Driver", "tps": 30, "reasoning": true, "tools": true, "moe": true, "long_context": true,
+      "url": "https://ollama.com/library/nemotron-3-nano",
+      "install": "ollama pull nemotron-3-nano:30b"
+    },
+    "gemma3:27b": {
+      "vram": 17, "ctx": 64000, "class": "Daily Driver", "tps": 25, "vision": true, "creative": "quality",
+      "url": "https://ollama.com/library/gemma3",
+      "install": "ollama pull gemma3:27b"
+    },
+    "qwen3-coder:30b": {
+      "vram": 19, "ctx": 64000, "class": "Daily Driver", "tps": 25, "tools": true, "moe": true,
+      "url": "https://ollama.com/library/qwen3-coder",
+      "install": "ollama pull qwen3-coder:30b"
+    },
+    "qwen3:72b": {
+      "vram": 38, "ctx": 4096, "class": "Heavy Lifter", "tps": 15, "no_corun": true, "creative": "polish",
+      "url": "https://ollama.com/library/qwen3",
+      "install": "ollama pull qwen3:72b"
+    }
   },
 
   "decision_tree": {

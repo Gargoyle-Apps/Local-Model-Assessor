@@ -57,7 +57,8 @@ content: |
         "vision": true,
         "tools": true,
         "reasoning": true,
-        "moe": false
+        "url": "https://ollama.com/library/model-name",
+        "install": "ollama pull model-name:tag"
       }
     },
     "by_role": {
@@ -74,7 +75,8 @@ content: |
   }
   ```
 
-  Include ONLY the fields that apply. Capability booleans (vision, tools, reasoning, moe, fim) should only appear if true.
+  **Required fields:** vram, ctx, class, tps, url, install
+  **Optional fields:** vision, tools, reasoning, moe, fim (only include if true)
 
   ---
   ## OUTPUT 2: Markdown (Secondary - for Assessed models.md)
@@ -124,7 +126,9 @@ content: |
         "class": "Middleweight",
         "tps": 45,
         "vision": true,
-        "tools": true
+        "tools": true,
+        "url": "https://ollama.com/library/newmodel",
+        "install": "ollama pull newmodel:14b"
       }
     },
     "by_role": {

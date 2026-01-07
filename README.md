@@ -6,11 +6,19 @@ A structured system for evaluating, selecting, and deploying AI models on a **Ma
 
 ## For Humans: How to Use This System
 
-### Option 1: Quick Lookup (No LLM Needed)
-1. Open `ollama model URLs.md`
-2. Find the **Quick Reference** table
-3. Pick a model based on your role (coding, vision, etc.)
-4. Copy the install command from the **Installation Commands** section
+### Option 1: Quick Install (Core Fleet)
+```bash
+# Install the recommended core models
+ollama pull embeddinggemma:latest
+ollama pull deepseek-ocr:3b
+ollama pull granite4:3b
+ollama pull qwen3-vl:8b
+ollama pull gemma3:12b
+ollama pull gpt-oss:20b
+ollama pull qwen3-coder:30b
+```
+
+Or look up any model in `model-lookup.json` → find the `install` field.
 
 ### Option 2: Ask Your LLM to Help You Choose
 **Copy-paste this to your LLM:**
@@ -48,9 +56,8 @@ When a new model appears on Ollama that you want to evaluate:
 2. Replace `[INSERT LIST OF URLS/MODELS HERE]` with the Ollama URL(s)
 3. Send to a capable LLM (Claude, GPT-4, or locally: qwen3-coder:30b)
 4. Review the JSON output
-5. **First:** Merge into `model-lookup.json` (the machine-readable source of truth)
+5. **First:** Merge into `model-lookup.json` (source of truth — includes URL and install command)
 6. **Then:** Update `Assessed models.md` (human-readable documentation)
-7. Update `ollama model URLs.md` tables and install commands
 
 ---
 
@@ -59,11 +66,10 @@ When a new model appears on Ollama that you want to evaluate:
 | File | What It's For | When to Use It |
 |------|---------------|----------------|
 | `README.md` | This guide | Start here |
-| `model-lookup.json` | **Source of truth** (machine-readable) | Give to LLM for model selection |
+| `model-lookup.json` | **Source of truth** — specs, URLs, install commands | Give to LLM for model selection |
 | `model-selector-prompt.yaml` | Makes LLM a model advisor | Use as system prompt |
 | `Assessed models.md` | Human-readable documentation | Deep dive on specific models |
 | `Model assessment prompt.yaml` | Evaluate new models | When new models release |
-| `ollama model URLs.md` | Install commands + tables | Quick human reference |
 
 ---
 
@@ -107,7 +113,7 @@ You are in a **Model Assessment System** for a Mac Mini M4 Pro with 64GB RAM run
 | Select a model for a task | `model-lookup.json` | Query by_role and by_constraint, return recommendation |
 | Get full details on a model | `Assessed models.md` | Find the model entry, summarize specs and caveats |
 | Assess a new model | `Model assessment prompt.yaml` | Follow the prompt to generate JSON, then update docs |
-| Install models | `ollama model URLs.md` | Provide the `ollama pull` commands |
+| Install models | `model-lookup.json` | Look up model.install field for commands |
 
 ---
 
@@ -144,7 +150,7 @@ task_detection:
     - "pull"
     - "download"
     - "ollama pull"
-  action: Load ollama model URLs.md, provide commands
+  action: Load model-lookup.json, return model.install command
 
 response_format:
   model_selection:
@@ -328,18 +334,15 @@ For writing and creative tasks, choose based on stage:
 ### Adding a New Model
 1. Use `Model assessment prompt.yaml` to generate assessment
 2. **First:** Add to `model-lookup.json` (the source of truth):
-   - `models` object (specs)
+   - `models` object (specs, url, install command)
    - `by_role` (if it fills a role)
    - `by_constraint` (all applicable constraints)
 3. **Then:** Add to `Assessed models.md` in the appropriate class section
-4. Add to `ollama model URLs.md` class table
-5. Update install commands if it's a recommended model
 
 ### Files to Update Together
 When you change one file, check if others need updates:
 - `model-lookup.json` (source of truth) → `Assessed models.md` (human docs)
 - `model-lookup.json` ↔ `model-selector-prompt.yaml` (decision logic)
-- Any model change → `ollama model URLs.md` tables
 
 ---
 
