@@ -1,6 +1,8 @@
 # Model Assessment System
 
-A structured system for evaluating, selecting, and deploying AI models on a **Mac Mini M4 Pro (64GB Unified RAM)** via Ollama.
+A structured system for evaluating, selecting, and deploying AI models on local hardware via Ollama.
+
+> **Hardware:** Configure your system specs in `hardware-profile.yaml`
 
 ---
 
@@ -35,8 +37,9 @@ My constraints are: [VRAM limit, speed needs, etc.]
 For the most accurate recommendations, give your LLM multiple files:
 
 1. **System prompt:** Copy contents of `model-selector-prompt.yaml`
-2. **Context:** Copy contents of `model-data/model-lookup.json`
-3. **Reference (optional):** Copy relevant sections from `model-data/assessed-models.md`
+2. **Hardware:** Copy contents of `hardware-profile.yaml`
+3. **Context:** Copy contents of `model-data/model-lookup.json`
+4. **Reference (optional):** Copy relevant sections from `model-data/assessed-models.md`
 
 **Example prompt:**
 ```
@@ -52,7 +55,7 @@ What models should I use?
 ### Option 4: Assess a New Model
 When a new model appears on Ollama that you want to evaluate:
 
-1. Copy contents of `model-assessment-prompt.yaml`
+1. Copy contents of `model-assessment-prompt.yaml` and `hardware-profile.yaml`
 2. Replace `[INSERT LIST OF URLS/MODELS HERE]` with the Ollama URL(s)
 3. Send to a capable LLM (Claude, GPT-4, or locally: qwen3-coder:30b)
 4. Review the JSON output
@@ -66,14 +69,17 @@ When a new model appears on Ollama that you want to evaluate:
 | File | What It's For | When to Use It |
 |------|---------------|----------------|
 | `README.md` | This guide | Start here |
+| `hardware-profile.yaml` | **Your hardware specs** — VRAM, classes, constraints | Edit once for your system |
 | `model-data/model-lookup.json` | **Source of truth** — specs, URLs, install commands | Give to LLM for model selection |
 | `model-data/assessed-models.md` | Human-readable documentation | Deep dive on specific models |
-| `model-selector-prompt.yaml` | Makes LLM a model advisor | Use as system prompt |
-| `model-assessment-prompt.yaml` | Evaluate new models | When new models release |
+| `model-selector-prompt.yaml` | Makes LLM a model advisor | Use as system prompt (+ hardware profile) |
+| `model-assessment-prompt.yaml` | Evaluate new models | When new models release (+ hardware profile) |
 
 ---
 
 ## Hardware Quick Reference
+
+> **Source:** `hardware-profile.yaml` — edit that file to customize for your system.
 
 | Class | VRAM | Speed | Best For |
 |------|------|-------|----------|
@@ -104,15 +110,15 @@ When a new model appears on Ollama that you want to evaluate:
 
 ### @LLM: If you are reading this file
 
-You are in a **Model Assessment System** for a Mac Mini M4 Pro with 64GB RAM running Ollama.
+You are in a **Model Assessment System** for local Ollama deployment. Check `hardware-profile.yaml` for the user's specific hardware constraints.
 
 **Identify your task:**
 
 | If the user wants to... | Load these files | Your role |
 |-------------------------|------------------|-----------|
-| Select a model for a task | `model-data/model-lookup.json` | Query by_role and by_constraint, return recommendation |
+| Select a model for a task | `hardware-profile.yaml` + `model-data/model-lookup.json` | Query by_role and by_constraint, return recommendation |
 | Get full details on a model | `model-data/assessed-models.md` | Find the model entry, summarize specs and caveats |
-| Assess a new model | `model-assessment-prompt.yaml` | Follow the prompt to generate JSON, then update docs |
+| Assess a new model | `hardware-profile.yaml` + `model-assessment-prompt.yaml` | Follow the prompt to generate JSON, then update docs |
 | Install models | `model-data/model-lookup.json` | Look up model.install field for commands |
 
 ---
@@ -129,7 +135,7 @@ task_detection:
     - "recommend a model"
     - "select a model"
     - "best model for"
-  action: Load model-data/model-lookup.json, respond with structured recommendation
+  action: Load hardware-profile.yaml + model-data/model-lookup.json, respond with structured recommendation
 
   keywords_model_details:
     - "tell me about"
@@ -178,22 +184,14 @@ response_format:
 ### @LLM: Key Constraints to Enforce
 
 ```yaml
-hardware_constraints:
-  max_vram: 50  # GB safe for Ollama
-  system_headroom: 14  # GB reserved for macOS/IDE
-  unified_memory: 64  # GB total
+# Load hardware-profile.yaml for these values:
+# - vram_budget.total_available     → max VRAM for models
+# - vram_budget.concurrency_reserve → headroom for co-running
+# - hardware_classes                → VRAM ranges and t/s by class
+# - concurrency                     → co-running rules
 
-concurrency_rules:
-  - "Speedster models can always co-run with larger models"
-  - "Heavy Lifter models (qwen3:72b) run solo - no co-running"
-  - "Rule: If (model_vram + 8) < 50, can co-run with Speedster"
-
-class_definitions:
-  Utility: "Embedding/OCR, 1-4GB, always-on"
-  Speedster: "<8GB, 80-120 t/s, autocomplete/vision"
-  Middleweight: "8-12GB, 45-50 t/s, daily driver"
-  Daily_Driver: "12-24GB, 25-40 t/s, reasoning/coding"
-  Heavy_Lifter: "30-48GB, ~15 t/s, quality-critical"
+# Example constraint check:
+# If (model_vram + concurrency_reserve) < total_available, can co-run with Speedster
 
 special_capabilities:
   fim_support: ["granite4:350m", "granite4:1b", "granite4:3b"]
@@ -339,10 +337,16 @@ For writing and creative tasks, choose based on stage:
    - `by_constraint` (all applicable constraints)
 3. **Then:** Add to `model-data/assessed-models.md` in the appropriate class section
 
+### Customizing for Your Hardware
+Edit `hardware-profile.yaml` to match your system:
+- Change `system.name`, `cpu`, `gpu`, `unified_ram` to your specs
+- Adjust `vram_budget.total_available` based on your RAM
+- Tweak `hardware_classes` thresholds if needed
+
 ### Files to Update Together
 When you change one file, check if others need updates:
 - `model-data/model-lookup.json` (source of truth) → `model-data/assessed-models.md` (human docs)
-- `model-data/model-lookup.json` ↔ `model-selector-prompt.yaml` (decision logic)
+- `hardware-profile.yaml` → Referenced by both prompt files
 
 ---
 

@@ -1,10 +1,14 @@
-# Assessed Models — Mac Mini M4 Pro (64GB)
+# Assessed Models
 
 A human-readable reference for all evaluated Ollama models. For machine-readable data, see [`model-lookup.json`](./model-lookup.json).
+
+> **Hardware:** See [`hardware-profile.yaml`](../hardware-profile.yaml) for system specifications, VRAM budgets, and hardware class definitions.
 
 ---
 
 ## Hardware Classes
+
+> **Source:** `hardware-profile.yaml` — hardware class definitions and VRAM ranges are defined there.
 
 | Class | VRAM | Speed | Co-run? | Use Case |
 |-------|------|-------|---------|----------|
@@ -14,7 +18,7 @@ A human-readable reference for all evaluated Ollama models. For machine-readable
 | **Daily Driver** | 12-24GB | 25-40 t/s | Yes | Reasoning, coding |
 | **Heavy Lifter** | 30-48GB | ~15 t/s | **No** | Quality-critical |
 
-**Concurrency Rule:** 1 Utility + 1 Speedster + 1 larger model can run simultaneously. Heavy Lifters run solo.
+**Concurrency Rule:** See `hardware-profile.yaml` for concurrency rules. Generally: 1 Utility + 1 Speedster + 1 larger model can run simultaneously. Heavy Lifters run solo.
 
 ---
 

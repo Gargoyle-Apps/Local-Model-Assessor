@@ -1,0 +1,65 @@
+# Hardware Profile for Local Model Assessment
+# Edit this file to match your system's specifications
+
+system:
+  name: "Mac Mini M4 Pro"
+  cpu: "14-Core CPU"
+  gpu: "20-Core GPU"
+  unified_ram: "64GB"
+
+vram_budget:
+  total_available: 50        # GB - Total VRAM available for Ollama
+  concurrency_reserve: 8     # GB - Headroom for running Speedster alongside larger models
+  kv_cache_estimate: 1       # GB per 4k context @ fp16 (less for quantized KV)
+
+quantization:
+  default: ["q4_k_m", "q5_k_m"]
+  small_models: ["q8", "fp16"]  # For models <8B or embeddings
+  small_model_threshold: 8      # Billion parameters
+
+concurrency:
+  description: "Can run 1 Utility + 1 Speedster + 1 larger model concurrently"
+  heavy_lifter_exclusive: true  # Heavy Lifters cannot co-run with other large models
+
+# Hardware classes define model tiers based on VRAM and expected performance
+hardware_classes:
+  utility:
+    description: "Specialized models (Embedding, OCR). Always-on, do not chat with these."
+    vram_range: "1-4GB"
+    use_cases: ["embedding", "ocr"]
+    
+  speedster:
+    description: "For Autocomplete/High-velocity tasks."
+    vram_range: "<8GB"
+    tps_range: "80-120"
+    use_cases: ["autocomplete", "quick_tasks"]
+    
+  middleweight:
+    description: "Fast utility models. Balance of capability and speed."
+    vram_range: "8-12GB"
+    tps_range: "45-50"
+    use_cases: ["daily_driver", "interactive"]
+    
+  daily_driver:
+    description: "The sweet spot. Leaves 30GB+ for large Context Windows."
+    vram_range: "12-24GB"
+    tps_range: "25-40"
+    use_cases: ["general_purpose", "workhorses"]
+    
+  heavy_lifter:
+    description: "Logic heavy. Squeezes the context window."
+    vram_range: "30-48GB"
+    tps_range: "~15"
+    use_cases: ["quality_critical", "complex_reasoning"]
+
+context_strategy:
+  small_models:
+    classes: ["speedster", "middleweight"]
+    context_range: "64k-128k"
+    rationale: "MAX context for RAG/Polling"
+  large_models:
+    classes: ["heavy_lifter"]
+    context_range: "4k-8k"
+    rationale: "MIN context to prevent OOM"
+  moe_models:
+    note: "Can often handle larger context due to sparse activation"

@@ -1,20 +1,9 @@
 {
   "_meta": {
-    "description": "Source of truth for model selection on Mac Mini M4 Pro (64GB)",
-    "hardware": "M4 Pro, 50GB safe VRAM budget",
+    "description": "Source of truth for model selection and assessment",
+    "hardware_reference": "See hardware-profile.yaml for system specifications and hardware class definitions",
     "generated": "2025-01",
-    "classes": {
-      "Utility": "Embedding/OCR, 1-4GB, always-on",
-      "Speedster": "<8GB, 80-120 t/s, autocomplete/vision",
-      "Middleweight": "8-12GB, 45-50 t/s, daily driver",
-      "Daily Driver": "12-24GB, 25-40 t/s, reasoning/coding",
-      "Heavy Lifter": "30-48GB, ~15 t/s, quality-critical"
-    },
-    "creative_tiers": {
-      "draft": "Fast iteration, brainstorming (Speedster/Middleweight)",
-      "quality": "Substantive work, good drafts (Daily Driver)",
-      "polish": "Publication-ready, maximum nuance (Heavy Lifter)"
-    }
+    "note": "Hardware classes and VRAM constraints are defined in hardware-profile.yaml. This file contains model-specific data only."
   },
 
   "recommended_fleet": {
