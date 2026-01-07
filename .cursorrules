@@ -1,4 +1,0 @@
-# Project-specific Cursor rules for Local-Model-Assessor
-
-## Git Operations
-When running git commands (push, pull, commit, fetch, merge, checkout, branch operations), use `required_permissions: ["all"]` to avoid sandbox restrictions on .git/config writes.
