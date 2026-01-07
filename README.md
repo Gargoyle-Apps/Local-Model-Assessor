@@ -2,7 +2,7 @@
 
 A structured system for evaluating, selecting, and deploying AI models on local hardware via Ollama.
 
-> **Hardware:** Configure your system specs in `hardware-profile.yaml`
+> **Hardware:** Configure your system specs in `computer-profile/hardware-profile.yaml`
 
 ---
 
@@ -37,9 +37,10 @@ My constraints are: [VRAM limit, speed needs, etc.]
 For the most accurate recommendations, give your LLM multiple files:
 
 1. **System prompt:** Copy contents of `model-selector-prompt.yaml`
-2. **Hardware:** Copy contents of `hardware-profile.yaml`
-3. **Context:** Copy contents of `model-data/model-lookup.json`
-4. **Reference (optional):** Copy relevant sections from `model-data/assessed-models.md`
+2. **Hardware:** Copy contents of `computer-profile/hardware-profile.yaml`
+3. **Software (optional):** Copy contents of `computer-profile/software-profile.yaml` for IDE/agent context
+4. **Context:** Copy contents of `model-data/model-lookup.json`
+5. **Reference (optional):** Copy relevant sections from `model-data/assessed-models.md`
 
 **Example prompt:**
 ```
@@ -55,7 +56,7 @@ What models should I use?
 ### Option 4: Assess a New Model
 When a new model appears on Ollama that you want to evaluate:
 
-1. Copy contents of `model-assessment-prompt.yaml` and `hardware-profile.yaml`
+1. Copy contents of `model-assessment-prompt.yaml` and `computer-profile/hardware-profile.yaml`
 2. Replace `[INSERT LIST OF URLS/MODELS HERE]` with the Ollama URL(s)
 3. Send to a capable LLM (Claude, GPT-4, or locally: qwen3-coder:30b)
 4. Review the JSON output
@@ -69,7 +70,8 @@ When a new model appears on Ollama that you want to evaluate:
 | File | What It's For | When to Use It |
 |------|---------------|----------------|
 | `README.md` | This guide | Start here |
-| `hardware-profile.yaml` | **Your hardware specs** — VRAM, classes, constraints | Edit once for your system |
+| `computer-profile/hardware-profile.yaml` | **Your hardware specs** — VRAM, classes, constraints | Edit once for your system |
+| `computer-profile/software-profile.yaml` | **Your software setup** — IDE, agents, runtime | Edit once for your environment |
 | `model-data/model-lookup.json` | **Source of truth** — specs, URLs, install commands | Give to LLM for model selection |
 | `model-data/assessed-models.md` | Human-readable documentation | Deep dive on specific models |
 | `model-selector-prompt.yaml` | Makes LLM a model advisor | Use as system prompt (+ hardware profile) |
@@ -79,7 +81,7 @@ When a new model appears on Ollama that you want to evaluate:
 
 ## Hardware Quick Reference
 
-> **Source:** `hardware-profile.yaml` — edit that file to customize for your system.
+> **Source:** `computer-profile/hardware-profile.yaml` — edit that file to customize for your system.
 
 | Class | VRAM | Speed | Best For |
 |------|------|-------|----------|
@@ -110,15 +112,15 @@ When a new model appears on Ollama that you want to evaluate:
 
 ### @LLM: If you are reading this file
 
-You are in a **Model Assessment System** for local Ollama deployment. Check `hardware-profile.yaml` for the user's specific hardware constraints.
+You are in a **Model Assessment System** for local Ollama deployment. Check `computer-profile/hardware-profile.yaml` for the user's specific hardware constraints.
 
 **Identify your task:**
 
 | If the user wants to... | Load these files | Your role |
 |-------------------------|------------------|-----------|
-| Select a model for a task | `hardware-profile.yaml` + `model-data/model-lookup.json` | Query by_role and by_constraint, return recommendation |
+| Select a model for a task | `computer-profile/hardware-profile.yaml` + `model-data/model-lookup.json` | Query by_role and by_constraint, return recommendation |
 | Get full details on a model | `model-data/assessed-models.md` | Find the model entry, summarize specs and caveats |
-| Assess a new model | `hardware-profile.yaml` + `model-assessment-prompt.yaml` | Follow the prompt to generate JSON, then update docs |
+| Assess a new model | `computer-profile/hardware-profile.yaml` + `model-assessment-prompt.yaml` | Follow the prompt to generate JSON, then update docs |
 | Install models | `model-data/model-lookup.json` | Look up model.install field for commands |
 
 ---
@@ -135,7 +137,7 @@ task_detection:
     - "recommend a model"
     - "select a model"
     - "best model for"
-  action: Load hardware-profile.yaml + model-data/model-lookup.json, respond with structured recommendation
+  action: Load computer-profile/hardware-profile.yaml + model-data/model-lookup.json, respond with structured recommendation
 
   keywords_model_details:
     - "tell me about"
@@ -149,7 +151,7 @@ task_detection:
     - "evaluate"
     - "new model"
     - "add to assessment"
-  action: Load model-assessment-prompt.yaml, follow its format
+  action: Load computer-profile/hardware-profile.yaml + model-assessment-prompt.yaml, follow its format
 
   keywords_installation:
     - "install"
@@ -184,7 +186,7 @@ response_format:
 ### @LLM: Key Constraints to Enforce
 
 ```yaml
-# Load hardware-profile.yaml for these values:
+# Load computer-profile/hardware-profile.yaml for these values:
 # - vram_budget.total_available     → max VRAM for models
 # - vram_budget.concurrency_reserve → headroom for co-running
 # - hardware_classes                → VRAM ranges and t/s by class
@@ -337,16 +339,24 @@ For writing and creative tasks, choose based on stage:
    - `by_constraint` (all applicable constraints)
 3. **Then:** Add to `model-data/assessed-models.md` in the appropriate class section
 
-### Customizing for Your Hardware
-Edit `hardware-profile.yaml` to match your system:
+### Customizing for Your System
+Edit the profile files in `computer-profile/` to match your setup:
+
+**Hardware Profile (`hardware-profile.yaml`):**
 - Change `system.name`, `cpu`, `gpu`, `unified_ram` to your specs
 - Adjust `vram_budget.total_available` based on your RAM
 - Tweak `hardware_classes` thresholds if needed
 
+**Software Profile (`software-profile.yaml`):**
+- Update `ide` section with your IDE (VS Code, Cursor, etc.)
+- Configure `primary_agent` (Cline, etc.) and any `optional_agents`
+- Update settings file paths if different from defaults
+
 ### Files to Update Together
 When you change one file, check if others need updates:
 - `model-data/model-lookup.json` (source of truth) → `model-data/assessed-models.md` (human docs)
-- `hardware-profile.yaml` → Referenced by both prompt files
+- `computer-profile/hardware-profile.yaml` → Referenced by both prompt files
+- `computer-profile/software-profile.yaml` → Documents IDE and agent setup
 
 ---
 

@@ -1,0 +1,41 @@
+# Software Profile for Local Model Assessment
+# Edit this file to match your development environment setup
+
+# IDE (mandatory) - The integrated development environment running the model selector
+ide:
+  name: "Visual Studio Code"
+  url: "https://code.visualstudio.com/docs"
+  settings_file: ".vscode/settings.json"
+  description: "Primary IDE for development and model selection"
+
+# Embedded Coding Assistant (optional) - Comes with the IDE if available
+embedded_assistant:
+  name: "GitHub Copilot Chat"
+  url: "https://code.visualstudio.com/docs/copilot/chat/copilot-chat"
+  settings_file: ".vscode/settings.json"
+  description: "Built-in chat assistant that comes with VS Code when Copilot is enabled"
+  optional: true
+  derived_from_ide: true
+
+# Primary Coding Assistant Agent (mandatory) - Main agent for executing tasks
+primary_agent:
+  name: "Cline"
+  url: "https://docs.cline.bot/introduction/welcome"
+  settings_file: ".cline"
+  description: "Primary AI coding agent for complex multi-step tasks and codebase understanding"
+  mandatory: true
+
+# Additional Coding Assistant Agents (optional) - Can be used alongside primary agent
+optional_agents:
+  - name: "Roo"
+    url: "https://docs.roocode.com/"
+    settings_file: ".roo"
+    description: "Optional secondary coding assistant agent"
+    optional: true
+
+# Model Runtime (mandatory) - Required for running local models
+model_runtime:
+  name: "Ollama"
+  url: "https://ollama.com"
+  description: "Local model runtime - required for all model operations"
+  mandatory: true

@@ -2,13 +2,13 @@
 
 A human-readable reference for all evaluated Ollama models. For machine-readable data, see [`model-lookup.json`](./model-lookup.json).
 
-> **Hardware:** See [`hardware-profile.yaml`](../hardware-profile.yaml) for system specifications, VRAM budgets, and hardware class definitions.
+> **Hardware:** See [`hardware-profile.yaml`](../computer-profile/hardware-profile.yaml) for system specifications, VRAM budgets, and hardware class definitions.
 
 ---
 
 ## Hardware Classes
 
-> **Source:** `hardware-profile.yaml` — hardware class definitions and VRAM ranges are defined there.
+> **Source:** `computer-profile/hardware-profile.yaml` — hardware class definitions and VRAM ranges are defined there.
 
 | Class | VRAM | Speed | Co-run? | Use Case |
 |-------|------|-------|---------|----------|
@@ -18,7 +18,7 @@ A human-readable reference for all evaluated Ollama models. For machine-readable
 | **Daily Driver** | 12-24GB | 25-40 t/s | Yes | Reasoning, coding |
 | **Heavy Lifter** | 30-48GB | ~15 t/s | **No** | Quality-critical |
 
-**Concurrency Rule:** See `hardware-profile.yaml` for concurrency rules. Generally: 1 Utility + 1 Speedster + 1 larger model can run simultaneously. Heavy Lifters run solo.
+**Concurrency Rule:** See `computer-profile/hardware-profile.yaml` for concurrency rules. Generally: 1 Utility + 1 Speedster + 1 larger model can run simultaneously. Heavy Lifters run solo.
 
 ---
 
@@ -343,7 +343,7 @@ NVIDIA's hybrid MoE architecture with 3.5B active parameters. 38.8% on SWE-Bench
 | Special | Vision |
 | Creative | Quality tier |
 
-Google's flagship Gemma 3. "Most capable model that runs on a single GPU." Vision-enabled with 128K native context.
+Google's flagship Gemma 3. "Most capable model that runs on a single GPU." Vision-enabled with 64K context (capped for stability).
 
 **Best for:** High-quality general assistant, complex document analysis with images, creative writing
 

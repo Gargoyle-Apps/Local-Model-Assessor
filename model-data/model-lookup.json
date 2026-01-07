@@ -1,9 +1,9 @@
 {
   "_meta": {
     "description": "Source of truth for model selection and assessment",
-    "hardware_reference": "See hardware-profile.yaml for system specifications and hardware class definitions",
+    "hardware_reference": "See computer-profile/hardware-profile.yaml for system specifications and hardware class definitions",
     "generated": "2025-01",
-    "note": "Hardware classes and VRAM constraints are defined in hardware-profile.yaml. This file contains model-specific data only."
+    "note": "Hardware classes and VRAM constraints are defined in computer-profile/hardware-profile.yaml. This file contains model-specific data only."
   },
 
   "recommended_fleet": {
