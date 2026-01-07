@@ -18,14 +18,14 @@ ollama pull gpt-oss:20b
 ollama pull qwen3-coder:30b
 ```
 
-Or look up any model in `model-lookup.json` → find the `install` field.
+Or look up any model in `model-data/model-lookup.json` → find the `install` field.
 
 ### Option 2: Ask Your LLM to Help You Choose
 **Copy-paste this to your LLM:**
 ```
 I need help selecting a local Ollama model. Here is my model assessment system:
 
-[Paste the contents of model-lookup.json here]
+[Paste the contents of model-data/model-lookup.json here]
 
 My task is: [describe your task]
 My constraints are: [VRAM limit, speed needs, etc.]
@@ -35,15 +35,15 @@ My constraints are: [VRAM limit, speed needs, etc.]
 For the most accurate recommendations, give your LLM multiple files:
 
 1. **System prompt:** Copy contents of `model-selector-prompt.yaml`
-2. **Context:** Copy contents of `model-lookup.json`
-3. **Reference (optional):** Copy relevant sections from `Assessed models.md`
+2. **Context:** Copy contents of `model-data/model-lookup.json`
+3. **Reference (optional):** Copy relevant sections from `model-data/assessed-models.md`
 
 **Example prompt:**
 ```
 [System: Use the model-selector-prompt.yaml content]
 
 Here is my model database:
-[Paste model-lookup.json]
+[Paste model-data/model-lookup.json]
 
 I need to: analyze screenshots of code and then refactor the code I see.
 What models should I use?
@@ -52,12 +52,12 @@ What models should I use?
 ### Option 4: Assess a New Model
 When a new model appears on Ollama that you want to evaluate:
 
-1. Copy contents of `Model assessment prompt.yaml`
+1. Copy contents of `model-assessment-prompt.yaml`
 2. Replace `[INSERT LIST OF URLS/MODELS HERE]` with the Ollama URL(s)
 3. Send to a capable LLM (Claude, GPT-4, or locally: qwen3-coder:30b)
 4. Review the JSON output
-5. **First:** Merge into `model-lookup.json` (source of truth — includes URL and install command)
-6. **Then:** Update `Assessed models.md` (human-readable documentation)
+5. **First:** Merge into `model-data/model-lookup.json` (source of truth — includes URL and install command)
+6. **Then:** Update `model-data/assessed-models.md` (human-readable documentation)
 
 ---
 
@@ -66,10 +66,10 @@ When a new model appears on Ollama that you want to evaluate:
 | File | What It's For | When to Use It |
 |------|---------------|----------------|
 | `README.md` | This guide | Start here |
-| `model-lookup.json` | **Source of truth** — specs, URLs, install commands | Give to LLM for model selection |
+| `model-data/model-lookup.json` | **Source of truth** — specs, URLs, install commands | Give to LLM for model selection |
+| `model-data/assessed-models.md` | Human-readable documentation | Deep dive on specific models |
 | `model-selector-prompt.yaml` | Makes LLM a model advisor | Use as system prompt |
-| `Assessed models.md` | Human-readable documentation | Deep dive on specific models |
-| `Model assessment prompt.yaml` | Evaluate new models | When new models release |
+| `model-assessment-prompt.yaml` | Evaluate new models | When new models release |
 
 ---
 
@@ -78,12 +78,12 @@ When a new model appears on Ollama that you want to evaluate:
 | Class | VRAM | Speed | Best For |
 |------|------|-------|----------|
 | Utility | 1-4GB | 100-1000 t/s | Embedding, OCR |
-| Speedster Class | <8GB | 80-120 t/s | Autocomplete, Vision |
-| Middleweight Class | 8-12GB | 40-80 t/s | Daily Driver |
-| Daily Driver Class | 12-24GB | 20-40 t/s | Reasoning, Coding |
-| Heavy Lifter Class | 30-48GB | 10-20 t/s | Quality-Critical |
+| Speedster | <8GB | 80-120 t/s | Autocomplete, Vision |
+| Middleweight | 8-12GB | 45-50 t/s | Daily Driver |
+| Daily Driver | 12-24GB | 25-40 t/s | Reasoning, Coding |
+| Heavy Lifter | 30-48GB | ~15 t/s | Quality-Critical |
 
-**Concurrency Rule:** You can run 1 Utility + 1 Speedster Class + 1 Middleweight/Daily Driver Class model simultaneously. Heavy Lifter Class runs solo.
+**Concurrency Rule:** You can run 1 Utility + 1 Speedster + 1 Middleweight/Daily Driver model simultaneously. Heavy Lifters run solo.
 
 ---
 
@@ -110,10 +110,10 @@ You are in a **Model Assessment System** for a Mac Mini M4 Pro with 64GB RAM run
 
 | If the user wants to... | Load these files | Your role |
 |-------------------------|------------------|-----------|
-| Select a model for a task | `model-lookup.json` | Query by_role and by_constraint, return recommendation |
-| Get full details on a model | `Assessed models.md` | Find the model entry, summarize specs and caveats |
-| Assess a new model | `Model assessment prompt.yaml` | Follow the prompt to generate JSON, then update docs |
-| Install models | `model-lookup.json` | Look up model.install field for commands |
+| Select a model for a task | `model-data/model-lookup.json` | Query by_role and by_constraint, return recommendation |
+| Get full details on a model | `model-data/assessed-models.md` | Find the model entry, summarize specs and caveats |
+| Assess a new model | `model-assessment-prompt.yaml` | Follow the prompt to generate JSON, then update docs |
+| Install models | `model-data/model-lookup.json` | Look up model.install field for commands |
 
 ---
 
@@ -129,28 +129,28 @@ task_detection:
     - "recommend a model"
     - "select a model"
     - "best model for"
-  action: Load model-lookup.json, respond with structured recommendation
+  action: Load model-data/model-lookup.json, respond with structured recommendation
 
   keywords_model_details:
     - "tell me about"
     - "specs for"
     - "what is"
     - "details on"
-  action: Load Assessed models.md, find matching entry
+  action: Load model-data/assessed-models.md, find matching entry
 
   keywords_new_assessment:
     - "assess this model"
     - "evaluate"
     - "new model"
     - "add to assessment"
-  action: Load Model assessment prompt.yaml, follow its format
+  action: Load model-assessment-prompt.yaml, follow its format
 
   keywords_installation:
     - "install"
     - "pull"
     - "download"
     - "ollama pull"
-  action: Load model-lookup.json, return model.install command
+  action: Load model-data/model-lookup.json, return model.install command
 
 response_format:
   model_selection:
@@ -184,16 +184,16 @@ hardware_constraints:
   unified_memory: 64  # GB total
 
 concurrency_rules:
-  - "Speedster Class models can always co-run with larger models"
-  - "Heavy Lifter Class models (qwen3:72b) run solo - no co-running"
-  - "Rule: If (model_vram + 8) < 50, can co-run with Speedster Class"
+  - "Speedster models can always co-run with larger models"
+  - "Heavy Lifter models (qwen3:72b) run solo - no co-running"
+  - "Rule: If (model_vram + 8) < 50, can co-run with Speedster"
 
 class_definitions:
   Utility: "Embedding/OCR, 1-4GB, always-on"
-  Speedster_Class: "<8GB, 80-120 t/s, autocomplete/vision"
-  Middleweight_Class: "8-12GB, 40-80 t/s, daily driver"
-  Daily_Driver_Class: "12-24GB, 20-40 t/s, reasoning/coding"
-  Heavy_Lifter_Class: "30-48GB, 10-20 t/s, quality-critical"
+  Speedster: "<8GB, 80-120 t/s, autocomplete/vision"
+  Middleweight: "8-12GB, 45-50 t/s, daily driver"
+  Daily_Driver: "12-24GB, 25-40 t/s, reasoning/coding"
+  Heavy_Lifter: "30-48GB, ~15 t/s, quality-critical"
 
 special_capabilities:
   fim_support: ["granite4:350m", "granite4:1b", "granite4:3b"]
@@ -206,7 +206,7 @@ special_capabilities:
 
 ### @LLM: File Schemas
 
-**When parsing `model-lookup.json`:**
+**When parsing `model-data/model-lookup.json`:**
 ```
 by_role.{role}.primary     → Recommended model for this role
 by_role.{role}.{variant}   → Alternative (e.g., "quick", "multilingual")
@@ -215,7 +215,7 @@ models.{model:tag}         → Specs object {vram, ctx, class, tps, ...}
 decision_tree.{need}       → Fallback chain as string
 ```
 
-**When reading `Assessed models.md`:**
+**When reading `model-data/assessed-models.md`:**
 ```
 Human-readable Markdown documentation. Use for:
 - Detailed model descriptions and reasoning
@@ -244,7 +244,7 @@ Human-readable Markdown documentation. Use for:
    - Extracts text from PDF pages
 
 2. **Q&A Stage:** `gpt-oss:20b`
-   - Class: Daily Driver Class | VRAM: 14GB | Speed: ~35 t/s
+   - Class: Daily Driver | VRAM: 14GB | Speed: ~35 t/s
    - Answers questions with chain-of-thought reasoning
 
 **Total VRAM:** 18GB (can run both simultaneously)
@@ -332,17 +332,17 @@ For writing and creative tasks, choose based on stage:
 ## Maintenance Notes
 
 ### Adding a New Model
-1. Use `Model assessment prompt.yaml` to generate assessment
-2. **First:** Add to `model-lookup.json` (the source of truth):
+1. Use `model-assessment-prompt.yaml` to generate assessment
+2. **First:** Add to `model-data/model-lookup.json` (the source of truth):
    - `models` object (specs, url, install command)
    - `by_role` (if it fills a role)
    - `by_constraint` (all applicable constraints)
-3. **Then:** Add to `Assessed models.md` in the appropriate class section
+3. **Then:** Add to `model-data/assessed-models.md` in the appropriate class section
 
 ### Files to Update Together
 When you change one file, check if others need updates:
-- `model-lookup.json` (source of truth) → `Assessed models.md` (human docs)
-- `model-lookup.json` ↔ `model-selector-prompt.yaml` (decision logic)
+- `model-data/model-lookup.json` (source of truth) → `model-data/assessed-models.md` (human docs)
+- `model-data/model-lookup.json` ↔ `model-selector-prompt.yaml` (decision logic)
 
 ---
 

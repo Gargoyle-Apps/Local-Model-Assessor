@@ -42,9 +42,9 @@ content: |
   Generate TWO outputs in order:
 
   ---
-  ## OUTPUT 1: JSON (Primary - for model-lookup.json)
+  ## OUTPUT 1: JSON (Primary - for model-data/model-lookup.json)
   
-  Add entries to the existing model-lookup.json structure:
+  Add entries to the existing model-data/model-lookup.json structure:
 
   ```json
   {
@@ -79,7 +79,7 @@ content: |
   **Optional fields:** vision, tools, reasoning, moe, fim (only include if true)
 
   ---
-  ## OUTPUT 2: Markdown (Secondary - for Assessed models.md)
+  ## OUTPUT 2: Markdown (Secondary - for model-data/assessed-models.md)
 
   For each model, provide human-readable documentation:
 

@@ -1,6 +1,6 @@
 # Assessed Models — Mac Mini M4 Pro (64GB)
 
-A human-readable reference for all evaluated Ollama models. For machine-readable data, see [`model-lookup.json`](model-lookup.json).
+A human-readable reference for all evaluated Ollama models. For machine-readable data, see [`model-lookup.json`](./model-lookup.json).
 
 ---
 

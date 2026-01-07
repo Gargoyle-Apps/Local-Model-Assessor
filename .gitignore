@@ -1,2 +1,43 @@
 # Cursor IDE
 .cursorrules
+.cursorignore
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editors/IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# If Python scripts are added
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+
+# If Node tooling is added
+node_modules/
+package-lock.json
+
+# Logs and temp files
+*.log
+*.tmp
+*.bak
+
+# Local testing/scratch files
+scratch/
+test/
+local/
