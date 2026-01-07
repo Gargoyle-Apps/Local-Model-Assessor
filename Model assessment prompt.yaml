@@ -8,25 +8,25 @@ content: |
   - **Max Safe VRAM:** ~50GB (Total available for Ollama).
   - **Context Overhead:** You must reserve VRAM for the KV Cache (approx 1GB per 4k context @ fp16, less for quantized KV).
   - **Quantization Preference:** Default to `q4_k_m` or `q5_k_m` for efficiency. Only suggest `q8` or `fp16` for small models (<8B) or embeddings.
-  - **Concurrency Budget:** Reserve ~8GB headroom for running a Tier S model alongside any Tier D/H model.
+  - **Concurrency Budget:** Reserve ~8GB headroom for running a Speedster Class model alongside any Daily Driver/Heavy Lifter Class model.
 
   **ASSESSMENT RUBRIC:**
   0. **Utility:** Specialized models (Embedding, OCR). Always-on, do not chat with these.
-  1. **Tier S (Speedster):** < 8GB VRAM. Fits in high-speed cache. For Autocomplete/High-velocity tasks.
-  2. **Tier M (Middleweight):** 8GB - 12GB VRAM. Fast utility models. Balance of capability and speed.
-  3. **Tier D (Daily Driver):** 12GB - 24GB VRAM. The sweet spot. Leaves 30GB+ for large Context Windows.
-  4. **Tier H (Heavy Lifter):** 30GB - 48GB VRAM. Logic heavy. Squeezes the context window.
+  1. **Speedster Class:** < 8GB VRAM. Fits in high-speed cache. For Autocomplete/High-velocity tasks.
+  2. **Middleweight Class:** 8GB - 12GB VRAM. Fast utility models. Balance of capability and speed.
+  3. **Daily Driver Class:** 12GB - 24GB VRAM. The sweet spot. Leaves 30GB+ for large Context Windows.
+  4. **Heavy Lifter Class:** 30GB - 48GB VRAM. Logic heavy. Squeezes the context window.
   
   **CONTEXT STRATEGY:**
-  - Small models (Tier S/M) get MAX context (64k-128k) for RAG/Polling.
-  - Large models (Tier H) get MIN context (4k-8k) to prevent OOM.
+  - Small models (Speedster/Middleweight Class) get MAX context (64k-128k) for RAG/Polling.
+  - Large models (Heavy Lifter Class) get MIN context (4k-8k) to prevent OOM.
   - MoE models can often handle larger context due to sparse activation.
   
   **SPEED ESTIMATION (M4 Pro baseline):**
-  - Tier S: 80-120 t/s (ideal for autocomplete)
-  - Tier M: 40-80 t/s (interactive chat)
-  - Tier D: 20-40 t/s (generation tasks)
-  - Tier H: 10-20 t/s (quality-critical tasks)
+  - Speedster Class: 80-120 t/s (ideal for autocomplete)
+  - Middleweight Class: 40-80 t/s (interactive chat)
+  - Daily Driver Class: 20-40 t/s (generation tasks)
+  - Heavy Lifter Class: 10-20 t/s (quality-critical tasks)
 
   **CANONICAL ROLES:**
   - `autocomplete`: Fast inline code/text completion
@@ -36,9 +36,9 @@ content: |
   - `heavy_lifter`: Quality-critical generation
   - `rag_synthesizer`: Long-context document processing
   - `vision_utility`: Image/screenshot understanding
-  - `text_embedding`: Vector generation for search (Utility tier)
-  - `multilingual_embedding`: Non-English vector generation (Utility tier)
-  - `ocr_utility`: Visual text extraction (Utility tier)
+  - `text_embedding`: Vector generation for search (Utility class)
+  - `multilingual_embedding`: Non-English vector generation (Utility class)
+  - `ocr_utility`: Visual text extraction (Utility class)
   - `reasoning_engine`: Chain-of-thought logic tasks
   - `enterprise_formatter`: JSON/SQL/structured output
   - `agentic_utility`: Lightweight function calling and tool use
@@ -48,10 +48,10 @@ content: |
   [INSERT LIST OF URLS/MODELS HERE]
 
   **OUTPUT INSTRUCTIONS:**
-  1. **Classify:** Determine the Hardware Tier and Primary Role for each model.
+  1. **Classify:** Determine the Hardware Class and Primary Role for each model.
   2. **Calculate:** Estimate VRAM usage and determine the optimal `num_ctx` (context window) that fits within the 50GB limit.
   3. **Estimate Speed:** Provide rough tokens/sec estimate based on quantization and parameter count.
-  4. **Concurrency Notes:** Can this model share VRAM with a Tier S model? Note if it can co-run.
+  4. **Concurrency Notes:** Can this model share VRAM with a Speedster Class model? Note if it can co-run.
   5. **Describe:** Write human-readable notes on *why* this model fits this role and what its limitations are.
   6. **Synthesize:** Create a "Role Description Table" at the bottom of the file that explains how these specific models interact in an agentic workflow.
   7. **Format:** Output ONLY the single YAML block below containing both the model list and the role table.
@@ -61,13 +61,13 @@ content: |
   # Section 1: Model Definitions
   - name: "model-name:tag"
     role: ["primary_role", "secondary_role"] # Use canonical roles from list above
-    hardware_tier: "Tier X" # Utility, S, M, D, or H
+    hardware_class: "Class Name" # Utility, Speedster Class, Middleweight Class, Daily Driver Class, or Heavy Lifter Class
     specs:
       quantization: "qX_X_X"
       est_vram_gb: XX
       rec_context_window: XXXXX
       est_speed_tps: XX  # Estimated tokens per second
-      can_corun_with_tier_s: true/false
+      can_corun_with_speedster_class: true/false
     documentation:
       description: |
         A concise, human-readable summary of what this model is.

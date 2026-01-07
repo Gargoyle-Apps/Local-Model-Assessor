@@ -68,15 +68,15 @@ When a new model appears on Ollama that you want to evaluate:
 
 ## Hardware Quick Reference
 
-| Tier | VRAM | Speed | Best For |
+| Class | VRAM | Speed | Best For |
 |------|------|-------|----------|
 | Utility | 1-4GB | 100-1000 t/s | Embedding, OCR |
-| Tier S | <8GB | 80-120 t/s | Autocomplete, Vision |
-| Tier M | 8-12GB | 40-80 t/s | Daily Driver |
-| Tier D | 12-24GB | 20-40 t/s | Reasoning, Coding |
-| Tier H | 30-48GB | 10-20 t/s | Quality-Critical |
+| Speedster Class | <8GB | 80-120 t/s | Autocomplete, Vision |
+| Middleweight Class | 8-12GB | 40-80 t/s | Daily Driver |
+| Daily Driver Class | 12-24GB | 20-40 t/s | Reasoning, Coding |
+| Heavy Lifter Class | 30-48GB | 10-20 t/s | Quality-Critical |
 
-**Concurrency Rule:** You can run 1 Utility + 1 Tier S + 1 Tier M/D model simultaneously. Tier H runs solo.
+**Concurrency Rule:** You can run 1 Utility + 1 Speedster Class + 1 Middleweight/Daily Driver Class model simultaneously. Heavy Lifter Class runs solo.
 
 ---
 
@@ -149,7 +149,7 @@ response_format:
   model_selection:
     template: |
       **Recommended:** `{model:tag}`
-      **Tier:** {tier}
+      **Class:** {class}
       **VRAM:** {vram}GB
       **Speed:** ~{tps} t/s
       **Why:** {reasoning}
@@ -158,7 +158,7 @@ response_format:
   model_details:
     template: |
       ## {model:tag}
-      **Tier:** {tier} | **VRAM:** {vram}GB | **Context:** {ctx} | **Speed:** ~{tps} t/s
+      **Class:** {class} | **VRAM:** {vram}GB | **Context:** {ctx} | **Speed:** ~{tps} t/s
       
       {description}
       
@@ -177,16 +177,16 @@ hardware_constraints:
   unified_memory: 64  # GB total
 
 concurrency_rules:
-  - "Tier S models can always co-run with larger models"
-  - "Tier H models (qwen3:72b) run solo - no co-running"
-  - "Rule: If (model_vram + 8) < 50, can co-run with Tier S"
+  - "Speedster Class models can always co-run with larger models"
+  - "Heavy Lifter Class models (qwen3:72b) run solo - no co-running"
+  - "Rule: If (model_vram + 8) < 50, can co-run with Speedster Class"
 
-tier_definitions:
+class_definitions:
   Utility: "Embedding/OCR, 1-4GB, always-on"
-  Tier_S: "<8GB, 80-120 t/s, autocomplete/vision"
-  Tier_M: "8-12GB, 40-80 t/s, daily driver"
-  Tier_D: "12-24GB, 20-40 t/s, reasoning/coding"
-  Tier_H: "30-48GB, 10-20 t/s, quality-critical"
+  Speedster_Class: "<8GB, 80-120 t/s, autocomplete/vision"
+  Middleweight_Class: "8-12GB, 40-80 t/s, daily driver"
+  Daily_Driver_Class: "12-24GB, 20-40 t/s, reasoning/coding"
+  Heavy_Lifter_Class: "30-48GB, 10-20 t/s, quality-critical"
 
 special_capabilities:
   fim_support: ["granite4:350m", "granite4:1b", "granite4:3b"]
@@ -204,7 +204,7 @@ special_capabilities:
 by_role.{role}.primary     → Recommended model for this role
 by_role.{role}.{variant}   → Alternative (e.g., "quick", "multilingual")
 by_constraint.{constraint} → Array of models meeting this constraint
-models.{model:tag}         → Specs object {vram, ctx, tier, tps, ...}
+models.{model:tag}         → Specs object {vram, ctx, class, tps, ...}
 decision_tree.{need}       → Fallback chain as string
 ```
 
@@ -212,7 +212,7 @@ decision_tree.{need}       → Fallback chain as string
 ```
 [].name                    → Model identifier "name:tag"
 [].role                    → Array of canonical roles
-[].hardware_tier           → "Utility" | "Tier S" | "Tier M" | "Tier D" | "Tier H"
+[].hardware_class          → "Utility" | "Speedster Class" | "Middleweight Class" | "Daily Driver Class" | "Heavy Lifter Class"
 [].specs                   → Technical specifications
 [].documentation           → Human-readable description, reasoning, caveats
 [].best_for                → Array of use cases
@@ -234,11 +234,11 @@ decision_tree.{need}       → Fallback chain as string
 **Pipeline Recommendation:**
 
 1. **OCR Stage:** `deepseek-ocr:3b`
-   - Tier: Utility | VRAM: 4GB | Speed: ~100 t/s
+   - Class: Utility | VRAM: 4GB | Speed: ~100 t/s
    - Extracts text from PDF pages
 
 2. **Q&A Stage:** `gpt-oss:20b`
-   - Tier: D | VRAM: 14GB | Speed: ~35 t/s
+   - Class: Daily Driver Class | VRAM: 14GB | Speed: ~35 t/s
    - Answers questions with chain-of-thought reasoning
 
 **Total VRAM:** 18GB (can run both simultaneously)
@@ -311,7 +311,7 @@ decision_tree.{need}       → Fallback chain as string
 
 ---
 
-## Creative Quality Tiers
+## Creative Quality Classes
 
 For writing and creative tasks, choose based on stage:
 
@@ -327,12 +327,12 @@ For writing and creative tasks, choose based on stage:
 
 ### Adding a New Model
 1. Use `Model assessment prompt.yaml` to generate assessment
-2. Add to `Assessed models.yaml` in the appropriate tier section
+2. Add to `Assessed models.yaml` in the appropriate class section
 3. Add to `model-lookup.json`:
    - `models` object (specs)
    - `by_role` (if it fills a role)
    - `by_constraint` (all applicable constraints)
-4. Add to `ollama model URLs.md` tier table
+4. Add to `ollama model URLs.md` class table
 5. Update install commands if it's a recommended model
 
 ### Files to Update Together

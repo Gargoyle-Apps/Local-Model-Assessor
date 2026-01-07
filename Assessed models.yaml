@@ -19,7 +19,7 @@
     est_vram_gb: 1.5
     rec_context_window: 8192
     est_speed_tps: 1000  # Embedding models measure differently
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       A distilled embedding model derived from the Gemma architecture. 
@@ -45,7 +45,7 @@
     est_vram_gb: 2
     rec_context_window: 32768
     est_speed_tps: 800
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       A massive multilingual embedding model supporting 100+ languages. 
@@ -74,7 +74,7 @@
     est_vram_gb: 4
     rec_context_window: 4096
     est_speed_tps: 100
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       A specialized vision-only model designed purely for OCR (Optical Character 
@@ -93,21 +93,21 @@
 
 
 # ============================================================================
-# GENERATION MODELS (By Tier)
+# GENERATION MODELS (By Class)
 # ============================================================================
 
-# --- TIER S: SPEEDSTERS (<8GB) ---
+# --- SPEEDSTER CLASS: SPEEDSTERS (<8GB) ---
 # Fast models for autocomplete, quick responses, and always-on tasks.
 
 - name: "granite4:350m"
   role: ["autocomplete", "fim_completion"]
-  hardware_tier: "Tier S"
+  hardware_class: "Speedster Class"
   specs:
     quantization: "q8_0"
     est_vram_gb: 0.7
     rec_context_window: 32768
     est_speed_tps: 200
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       IBM's tiniest Granite 4 model. 350M parameters with native Fill-In-the-Middle 
@@ -125,13 +125,13 @@
 
 - name: "granite4:3b"
   role: ["autocomplete", "enterprise_formatter"]
-  hardware_tier: "Tier S"
+  hardware_class: "Speedster Class"
   specs:
     quantization: "q4_k_m"
     est_vram_gb: 2.1
     rec_context_window: 128000
     est_speed_tps: 120
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       IBM Granite 4 "Micro" model. 3B parameters with native FIM support,
@@ -149,13 +149,13 @@
 
 - name: "granite4:1b"
   role: ["autocomplete", "small_tasks"]
-  hardware_tier: "Tier S"
+  hardware_class: "Speedster Class"
   specs:
     quantization: "fp16"  # Higher precision at this size
     est_vram_gb: 3.3
     rec_context_window: 128000
     est_speed_tps: 100
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       IBM Granite 4 at 1B parameters. Larger file size than 3B due to fp16 
@@ -173,13 +173,13 @@
 
 - name: "gemma3:4b"
   role: ["autocomplete", "vision_utility"]
-  hardware_tier: "Tier S"
+  hardware_class: "Speedster Class"
   specs:
     quantization: "q4_k_m"
     est_vram_gb: 3.3
     rec_context_window: 128000
     est_speed_tps: 100
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       Google's latest Gemma 3 in its compact 4B form. Supports both text and 
@@ -196,13 +196,13 @@
 
 - name: "ministral-3:3b"
   role: ["autocomplete", "agentic_utility"]
-  hardware_tier: "Tier S"
+  hardware_class: "Speedster Class"
   specs:
     quantization: "q4_k_m"
     est_vram_gb: 3.0
     rec_context_window: 256000
     est_speed_tps: 120
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       Mistral's edge-optimized 3B model with vision and native function calling.
@@ -219,20 +219,20 @@
 
 - name: "qwen3-vl:8b"
   role: ["vision_utility", "screenshot_analysis"]
-  hardware_tier: "Tier S"
+  hardware_class: "Speedster Class"
   specs:
     quantization: "q4_k_m"
     est_vram_gb: 6.1
     rec_context_window: 128000
     est_speed_tps: 80
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       The most powerful vision-language model in the Qwen family at a runnable size.
       Supports image analysis, GUI understanding, visual coding, and 256K native context.
     reasoning: |
-      This is your primary vision workhorse. At 6.1GB it fits comfortably in Tier S
-      while offering Tier D-level visual understanding. Can analyze screenshots, 
+      This is your primary vision workhorse. At 6.1GB it fits comfortably in Speedster Class
+      while offering Daily Driver Class-level visual understanding. Can analyze screenshots, 
       generate code from mockups, and understand spatial relationships.
     caveats: |
       Heavier than deepseek-ocr for pure text extraction. Use OCR for simple transcription,
@@ -243,15 +243,51 @@
     - "Visual debugging"
     - "Document understanding with images"
 
+- name: "qwen3-vl:8b-thinking"
+  role: ["vision_utility", "reasoning_engine", "screenshot_analysis"]
+  hardware_class: "Speedster Class"
+  specs:
+    quantization: "q4_k_m"  # Standard quantization for Qwen3-VL
+    est_vram_gb: 6.1
+    rec_context_window: 128000  # Standard for Qwen3-VL family
+    est_speed_tps: 70  # Vision models are slower than text-only, but thinking adds overhead
+    can_corun_with_speedster_class: true  # 6.1GB fits comfortably in Speedster Class
+  documentation:
+    description: |
+      Qwen3-VL 8B with thinking/reasoning capabilities. An enhanced version of the Qwen3-VL 
+      vision-language model that adds explicit reasoning traces for visual understanding tasks. 
+      Supports improved OCR across 32 languages, better visual perception and recognition, 
+      spatial relationship understanding, and dynamic video analysis. Maintains all standard 
+      Qwen3-VL capabilities while adding step-by-step reasoning for complex visual tasks.
+    reasoning: |
+      This is the first vision model in your assessment with native reasoning capabilities. 
+      At 6.1GB, it fits perfectly in Speedster Class while offering Daily Driver Class-level visual reasoning. 
+      The thinking capability makes it ideal for complex visual tasks that require step-by-step 
+      analysis (e.g., debugging UI issues, understanding complex diagrams, multi-step visual 
+      problem solving). The improved OCR (32 languages vs 10) and better recognition make it 
+      a significant upgrade over the base qwen3-vl:8b for tasks requiring visual reasoning. 
+      Can co-run with other models, making it perfect for vision-enhanced agentic workflows.
+    caveats: |
+      Thinking/reasoning traces add latency compared to non-thinking vision models. Use the 
+      standard qwen3-vl:8b when speed matters more than reasoning visibility. The reasoning 
+      overhead may reduce throughput for batch processing. Requires Ollama 0.12.7+. Vision 
+      processing is inherently slower than text-only models.
+  best_for:
+    - "Visual reasoning tasks requiring step-by-step analysis"
+    - "Complex screenshot debugging with reasoning traces"
+    - "Multi-step visual problem solving"
+    - "Visual code generation with explanation"
+    - "Multilingual OCR with reasoning (32 languages)"
+
 - name: "ministral-3:8b"
   role: ["vision_utility", "agentic_utility"]
-  hardware_tier: "Tier S"
+  hardware_class: "Speedster Class"
   specs:
     quantization: "q4_k_m"
     est_vram_gb: 6.0
     rec_context_window: 256000
     est_speed_tps: 80
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       Mistral's 8B edge model with vision, native function calling, and 256K context.
@@ -267,18 +303,18 @@
     - "Multilingual vision tasks"
 
 
-# --- TIER M: MIDDLEWEIGHTS (8-12GB) ---
+# --- MIDDLEWEIGHT CLASS: MIDDLEWEIGHTS (8-12GB) ---
 # Daily use models. Fast enough for interactive chat, capable enough for most tasks.
 
 - name: "gemma3:12b"
   role: ["daily_driver", "vision_utility"]
-  hardware_tier: "Tier M"
+  hardware_class: "Middleweight Class"
   specs:
     quantization: "q4_k_m"
     est_vram_gb: 8.1
     rec_context_window: 128000
     est_speed_tps: 50
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       Google's Gemma 3 at 12B parameters. The sweet spot of the Gemma family—
@@ -287,7 +323,7 @@
       Excellent Daily Driver candidate. Fast enough for interactive use (50 t/s),
       capable enough for most tasks, and vision-enabled. The "Goldilocks" model.
     caveats: |
-      May struggle with highly complex reasoning. Step up to Tier D/H for those cases.
+      May struggle with highly complex reasoning. Step up to Daily Driver/Heavy Lifter Class for those cases.
   best_for:
     - "General purpose assistant"
     - "Code review with screenshots"
@@ -295,13 +331,13 @@
 
 - name: "granite4:14b"
   role: ["enterprise_formatter", "compliance_check"]
-  hardware_tier: "Tier M"
+  hardware_class: "Middleweight Class"
   specs:
     quantization: "q5_k_m"
     est_vram_gb: 10
     rec_context_window: 32768
     est_speed_tps: 45
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       IBM's 4th generation "Granite" model at 14B. Focused on enterprise reliability, 
@@ -321,19 +357,19 @@
 
 - name: "ministral-3:14b"
   role: ["daily_driver", "agentic_utility"]
-  hardware_tier: "Tier M"
+  hardware_class: "Middleweight Class"
   specs:
     quantization: "q4_k_m"
     est_vram_gb: 9.1
     rec_context_window: 256000
     est_speed_tps: 45
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       Mistral's largest Ministral 3 variant. Vision-enabled with 256K context,
       native function calling, and strong multilingual support.
     reasoning: |
-      The best Tier M model for agentic tasks. Superior tool use and system prompt
+      The best Middleweight Class model for agentic tasks. Superior tool use and system prompt
       adherence. Consider this your "reliable assistant" for automation.
     caveats: |
       Requires Ollama 0.13.1+. Not the strongest at creative writing.
@@ -343,18 +379,18 @@
     - "Long-context agent tasks"
 
 
-# --- TIER D: DAILY DRIVERS (12-24GB) ---
+# --- DAILY DRIVER CLASS: DAILY DRIVERS (12-24GB) ---
 # Workhorses. Strong capability, leaves headroom for context.
 
 - name: "gpt-oss:20b"
   role: ["reasoning_engine", "daily_driver"]
-  hardware_tier: "Tier D"
+  hardware_class: "Daily Driver Class"
   specs:
     quantization: "mxfp4"  # Native OpenAI quantization
     est_vram_gb: 14
     rec_context_window: 128000
     est_speed_tps: 35
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       OpenAI's open-weight reasoning model. 20B parameters with MoE architecture.
@@ -375,13 +411,13 @@
 
 - name: "deepseek-v3.1:16b"
   role: ["rag_synthesizer", "math_solver"]
-  hardware_tier: "Tier D"
+  hardware_class: "Daily Driver Class"
   specs:
     quantization: "q4_k_m"
     est_vram_gb: 12
     rec_context_window: 32768
     est_speed_tps: 40
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       An updated "Lite" version of DeepSeek V3. Uses refined Mixture-of-Experts 
@@ -399,13 +435,13 @@
 
 - name: "qwen3-coder:30b"
   role: ["coding_editor", "agentic_utility"]
-  hardware_tier: "Tier D"
+  hardware_class: "Daily Driver Class"
   specs:
     quantization: "q4_k_m"
     est_vram_gb: 19
     rec_context_window: 64000
     est_speed_tps: 25
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       Alibaba's flagship coding model. 30B total parameters with only 3.3B activated 
@@ -424,15 +460,52 @@
     - "Agentic coding tasks (SWE-Bench style)"
     - "Multi-file code generation"
 
+- name: "nemotron-3-nano:30b"
+  role: ["reasoning_engine", "agentic_utility", "coding_editor"]
+  hardware_class: "Daily Driver Class"
+  specs:
+    quantization: "q4_k_m"  # Estimated based on 24GB size
+    est_vram_gb: 24
+    rec_context_window: 256000  # MoE architecture allows larger context, but cap conservatively
+    est_speed_tps: 30  # MoE architecture (3.5B active) should be faster than dense 30B
+    can_corun_with_speedster_class: true  # 24GB + 8GB = 32GB < 50GB ✓
+  documentation:
+    description: |
+      NVIDIA's Nemotron 3 Nano 30B is a hybrid MoE architecture model combining 23 Mamba-2 
+      and MoE layers with 6 Attention layers. Features 3.5B active parameters out of 30B total, 
+      with configurable reasoning traces. Designed as a unified model for both reasoning and 
+      non-reasoning tasks. Supports 1M context window natively. Multilingual support for 
+      English, German, Spanish, French, Italian, and Japanese.
+    reasoning: |
+      This model excels at agentic tasks (38.8% on SWE-Bench, highest in comparison) and 
+      reasoning benchmarks. The MoE architecture means only 3.5B parameters activate per token, 
+      making it more efficient than a dense 30B model while maintaining quality. At 24GB VRAM, 
+      it fits comfortably in Daily Driver Class and leaves 26GB for context. The 1M context window capability 
+      is exceptional, though conservative use (256k) is recommended to maintain speed. Strong 
+      performance on long-context tasks (RULER scores: 92.9@256k, 91.3@512k, 86.3@1M) makes it 
+      ideal for repository-scale code understanding and RAG synthesis.
+    caveats: |
+      Reasoning traces add latency—can be disabled for faster responses but reduces accuracy 
+      on complex tasks. At 24GB, it's at the upper bound of Daily Driver Class. While it can co-run with 
+      Speedster Class models, be cautious with context allocation. The hybrid Mamba-2/MoE architecture 
+      may behave differently than pure transformer models in some edge cases. Requires NVIDIA 
+      Open Model License Agreement.
+  best_for:
+    - "Agentic coding tasks (SWE-Bench style)"
+    - "Long-context document synthesis (up to 1M tokens)"
+    - "Multi-step reasoning with visible thought process"
+    - "Repository-scale code understanding and refactoring"
+    - "Multilingual agentic workflows"
+
 - name: "gemma3:27b"
   role: ["daily_driver", "heavy_lifter"]
-  hardware_tier: "Tier D"
+  hardware_class: "Daily Driver Class"
   specs:
     quantization: "q4_k_m"
     est_vram_gb: 17
     rec_context_window: 64000
     est_speed_tps: 25
-    can_corun_with_tier_s: true
+    can_corun_with_speedster_class: true
   documentation:
     description: |
       Google's flagship Gemma 3 model. The "most capable model that runs on a 
@@ -441,7 +514,7 @@
       Strong alternative to qwen3:72b with better speed/quality tradeoff.
       At 17GB it leaves comfortable headroom while approaching Heavy Lifter quality.
     caveats: |
-      Not quite Tier H quality for the most nuanced tasks. Step up to qwen3:72b 
+      Not quite Heavy Lifter Class quality for the most nuanced tasks. Step up to qwen3:72b 
       when quality is paramount.
   best_for:
     - "High-quality general assistant"
@@ -449,24 +522,24 @@
     - "Creative writing"
 
 
-# --- TIER H: HEAVY LIFTERS (30-48GB) ---
+# --- HEAVY LIFTER CLASS: HEAVY LIFTERS (30-48GB) ---
 # Quality-critical. Slow but nuanced. Use sparingly.
 
 - name: "qwen3:72b"
   role: ["heavy_lifter", "creative_writing"]
-  hardware_tier: "Tier H"
+  hardware_class: "Heavy Lifter Class"
   specs:
     quantization: "q3_k_m"  # Aggressive quantization required to fit
     est_vram_gb: 38
     rec_context_window: 4096
     est_speed_tps: 15
-    can_corun_with_tier_s: false  # No headroom for co-running
+    can_corun_with_speedster_class: false  # No headroom for co-running
   documentation:
     description: |
       The flagship dense model of the Qwen3 family. At 72B parameters, it rivals 
       proprietary frontier models in world knowledge and nuance.
     reasoning: |
-      This is your "Tier H" (Heavy Lifter). By using `q3_k_m`, we squeeze this 
+      This is your "Heavy Lifter Class" model. By using `q3_k_m`, we squeeze this 
       massive model into ~38GB VRAM. This leaves ~12GB system overhead. 
       It is the model you call when smaller models fail to capture the nuance 
       of a creative prompt.
@@ -485,11 +558,11 @@
 # Section 2: Role Architecture
 # ============================================================================
 #
-# CREATIVE QUALITY TIERS:
+# CREATIVE QUALITY CLASSES:
 # Many non-coding roles benefit from a quality/speed tradeoff:
-#   🎨 Creative S  — Quick brainstorming, first drafts, iteration (Tier S/M models)
-#   🎨 Creative D  — Substantive drafts, good quality (Tier D models)  
-#   🎨 Creative H  — Publication-ready, maximum nuance (Tier H models)
+#   🎨 Creative Speedster  — Quick brainstorming, first drafts, iteration (Speedster/Middleweight Class models)
+#   🎨 Creative Daily Driver  — Substantive drafts, good quality (Daily Driver Class models)  
+#   🎨 Creative Heavy Lifter  — Publication-ready, maximum nuance (Heavy Lifter Class models)
 #
 # For roles with creative_tier options, choose based on:
 #   - Speed needed vs. quality required
@@ -507,7 +580,7 @@ role_description_table:
   - role: "Embedding Engine"
     assigned_model: "embeddinggemma:latest"
     alternates: ["qwen3-embedding:large"]
-    tier: "Utility"
+    class: "Utility"
     est_speed_tps: 1000
     primary_responsibility: |
       Vector search. Converting user queries and files into numbers 
@@ -518,7 +591,7 @@ role_description_table:
 
   - role: "OCR Engine"
     assigned_model: "deepseek-ocr:3b"
-    tier: "Utility"
+    class: "Utility"
     est_speed_tps: 100
     primary_responsibility: |
       Visual transcription. Converting pixels to raw text.
@@ -533,7 +606,7 @@ role_description_table:
   - role: "Autocomplete Engine"
     assigned_model: "granite4:3b"
     alternates: ["granite4:350m", "gemma3:4b", "ministral-3:3b"]
-    tier: "Tier S"
+    class: "Speedster Class"
     est_speed_tps: 120
     primary_responsibility: |
       Fast inline code and text completion. Sub-100ms response time target.
@@ -546,7 +619,7 @@ role_description_table:
   - role: "Vision Engine"
     assigned_model: "qwen3-vl:8b"
     alternates: ["ministral-3:8b", "gemma3:12b"]
-    tier: "Tier S"
+    class: "Speedster Class"
     est_speed_tps: 80
     primary_responsibility: |
       Screenshot analysis, UI understanding, visual debugging.
@@ -554,21 +627,39 @@ role_description_table:
       Called when images are present in the workflow. Feeds visual context 
       to coding models. Use deepseek-ocr:3b for pure text extraction.
 
+  - role: "Visual Reasoning Engine"
+    assigned_model: "qwen3-vl:8b-thinking"
+    alternates: ["qwen3-vl:8b", "ministral-3:8b", "gemma3:12b"]
+    class: "Speedster Class"
+    est_speed_tps: 70
+    primary_responsibility: |
+      Vision-language tasks requiring explicit reasoning. Analyzes images, screenshots, and 
+      visual content with step-by-step thought processes. Improved OCR (32 languages) and 
+      recognition capabilities over base vision models.
+    interaction_notes: |
+      Use when visual tasks require reasoning visibility (debugging, complex analysis). 
+      Can feed visual understanding to coding models (nemotron-3-nano:30b, qwen3-coder:30b) 
+      for visual-to-code workflows. Pairs well with OCR utility (deepseek-ocr:3b) for 
+      hybrid extraction + understanding pipelines. Falls back to standard qwen3-vl:8b when 
+      speed is prioritized over reasoning traces.
+
   - role: "Coding Engine"
     assigned_model: "qwen3-coder:30b"
-    alternates: ["gpt-oss:20b"]
-    tier: "Tier D"
+    alternates: ["nemotron-3-nano:30b", "gpt-oss:20b"]
+    class: "Daily Driver Class"
     est_speed_tps: 25
     primary_responsibility: |
       Repository-scale code generation and refactoring.
     interaction_notes: |
       Primary model for agentic coding tasks. Can understand entire repos 
-      at 64k context. Falls back to gpt-oss for reasoning-heavy debugging.
+      at 64k context. nemotron-3-nano:30b offers superior SWE-Bench performance 
+      (38.8%) and 1M context for massive codebases. Falls back to gpt-oss for 
+      reasoning-heavy debugging.
 
   - role: "Formatter"
     assigned_model: "granite4:14b"
     alternates: ["granite4:3b"]
-    tier: "Tier M"
+    class: "Middleweight Class"
     est_speed_tps: 45
     primary_responsibility: |
       Structured output. Ensuring data is strictly formatted (JSON, SQL) 
@@ -584,7 +675,7 @@ role_description_table:
   - role: "Creative Writer"
     assigned_model: "gemma3:27b"
     alternates: ["qwen3:72b", "gemma3:12b"]
-    tier: "Tier D"
+    class: "Daily Driver Class"
     creative_tier:
       draft: "gemma3:12b"      # Creative S - Fast iteration
       quality: "gemma3:27b"    # Creative D - Good drafts
@@ -599,7 +690,7 @@ role_description_table:
   - role: "Copywriter"
     assigned_model: "gemma3:12b"
     alternates: ["gpt-oss:20b", "gemma3:27b"]
-    tier: "Tier M"
+    class: "Middleweight Class"
     creative_tier:
       draft: "gemma3:12b"
       quality: "gpt-oss:20b"
@@ -615,7 +706,7 @@ role_description_table:
   - role: "Technical Writer"
     assigned_model: "granite4:14b"
     alternates: ["gpt-oss:20b", "gemma3:12b"]
-    tier: "Tier M"
+    class: "Middleweight Class"
     est_speed_tps: 45
     primary_responsibility: |
       Documentation, manuals, how-to guides, and instructional content.
@@ -631,7 +722,7 @@ role_description_table:
   - role: "Document Analyst"
     assigned_model: "deepseek-v3.1:16b"
     alternates: ["gpt-oss:20b", "gemma3:27b"]
-    tier: "Tier D"
+    class: "Daily Driver Class"
     requires_embedding: true
     embedding_model: "embeddinggemma:latest"
     est_speed_tps: 40
@@ -645,7 +736,7 @@ role_description_table:
   - role: "Writing Critic"
     assigned_model: "gpt-oss:20b"
     alternates: ["gemma3:27b", "qwen3:72b"]
-    tier: "Tier D"
+    class: "Daily Driver Class"
     creative_tier:
       quick: "gemma3:12b"      # Fast feedback
       thorough: "gpt-oss:20b"  # Reasoned critique
@@ -661,7 +752,7 @@ role_description_table:
   - role: "Contract Reviewer"
     assigned_model: "granite4:14b"
     alternates: ["gpt-oss:20b"]
-    tier: "Tier M"
+    class: "Middleweight Class"
     est_speed_tps: 45
     primary_responsibility: |
       Legal and compliance document review. Identify clauses, flag risks,
@@ -673,7 +764,7 @@ role_description_table:
   - role: "Research Synthesizer"
     assigned_model: "deepseek-v3.1:16b"
     alternates: ["gpt-oss:20b"]
-    tier: "Tier D"
+    class: "Daily Driver Class"
     requires_embedding: true
     embedding_model: "qwen3-embedding:large"
     est_speed_tps: 40
@@ -688,7 +779,7 @@ role_description_table:
   - role: "Fact Checker"
     assigned_model: "gpt-oss:20b"
     alternates: ["deepseek-v3.1:16b"]
-    tier: "Tier D"
+    class: "Daily Driver Class"
     est_speed_tps: 35
     primary_responsibility: |
       Verify claims, identify inconsistencies, cross-reference statements.
@@ -704,7 +795,7 @@ role_description_table:
   - role: "Storyteller"
     assigned_model: "qwen3:72b"
     alternates: ["gemma3:27b", "gemma3:12b"]
-    tier: "Tier H"
+    class: "Heavy Lifter Class"
     creative_tier:
       draft: "gemma3:12b"      # Quick scene sketches
       quality: "gemma3:27b"    # Full chapters
@@ -720,7 +811,7 @@ role_description_table:
   - role: "Worldbuilder"
     assigned_model: "gemma3:27b"
     alternates: ["gpt-oss:20b", "qwen3:72b"]
-    tier: "Tier D"
+    class: "Daily Driver Class"
     requires_embedding: true
     embedding_model: "embeddinggemma:latest"
     est_speed_tps: 25
@@ -735,7 +826,7 @@ role_description_table:
   - role: "Character Developer"
     assigned_model: "gemma3:27b"
     alternates: ["qwen3:72b", "gemma3:12b"]
-    tier: "Tier D"
+    class: "Daily Driver Class"
     creative_tier:
       sketch: "gemma3:12b"     # Quick character concepts
       develop: "gemma3:27b"    # Full backstories
@@ -751,7 +842,7 @@ role_description_table:
   - role: "Dialogue Writer"
     assigned_model: "gemma3:12b"
     alternates: ["gemma3:27b", "qwen3:72b"]
-    tier: "Tier M"
+    class: "Middleweight Class"
     creative_tier:
       draft: "gemma3:12b"      # Quick exchanges
       quality: "gemma3:27b"    # Natural flow
@@ -767,7 +858,7 @@ role_description_table:
   - role: "Game Master"
     assigned_model: "gemma3:27b"
     alternates: ["gpt-oss:20b", "ministral-3:14b"]
-    tier: "Tier D"
+    class: "Daily Driver Class"
     requires_embedding: true
     embedding_model: "embeddinggemma:latest"
     est_speed_tps: 25
@@ -786,7 +877,7 @@ role_description_table:
   - role: "Executive Summarizer"
     assigned_model: "gemma3:12b"
     alternates: ["granite4:14b", "deepseek-v3.1:16b"]
-    tier: "Tier M"
+    class: "Middleweight Class"
     est_speed_tps: 50
     primary_responsibility: |
       TL;DR for leadership. Distill long documents into executive briefs.
@@ -798,7 +889,7 @@ role_description_table:
   - role: "Proposal Writer"
     assigned_model: "gpt-oss:20b"
     alternates: ["gemma3:27b", "granite4:14b"]
-    tier: "Tier D"
+    class: "Daily Driver Class"
     creative_tier:
       draft: "gemma3:12b"
       quality: "gpt-oss:20b"
@@ -814,7 +905,7 @@ role_description_table:
   - role: "Strategy Analyst"
     assigned_model: "gpt-oss:20b"
     alternates: ["deepseek-v3.1:16b", "gemma3:27b"]
-    tier: "Tier D"
+    class: "Daily Driver Class"
     est_speed_tps: 35
     primary_responsibility: |
       Business analysis, SWOT, market research synthesis, strategic 
@@ -830,7 +921,7 @@ role_description_table:
   - role: "Tutor"
     assigned_model: "gemma3:12b"
     alternates: ["gpt-oss:20b", "gemma3:27b"]
-    tier: "Tier M"
+    class: "Middleweight Class"
     est_speed_tps: 50
     primary_responsibility: |
       Explain concepts, answer questions, guide learning. Patient,
@@ -842,7 +933,7 @@ role_description_table:
   - role: "Quiz Generator"
     assigned_model: "granite4:14b"
     alternates: ["gemma3:12b", "granite4:3b"]
-    tier: "Tier M"
+    class: "Middleweight Class"
     est_speed_tps: 45
     primary_responsibility: |
       Create assessments, quizzes, test questions, and answer keys.
@@ -854,7 +945,7 @@ role_description_table:
   - role: "Study Guide Creator"
     assigned_model: "deepseek-v3.1:16b"
     alternates: ["gemma3:12b", "gpt-oss:20b"]
-    tier: "Tier D"
+    class: "Daily Driver Class"
     requires_embedding: true
     embedding_model: "embeddinggemma:latest"
     est_speed_tps: 40
@@ -868,7 +959,7 @@ role_description_table:
   - role: "ELI5 Explainer"
     assigned_model: "gemma3:12b"
     alternates: ["gemma3:27b"]
-    tier: "Tier M"
+    class: "Middleweight Class"
     est_speed_tps: 50
     primary_responsibility: |
       Simplify complex topics for non-experts. Analogies, plain language,
@@ -884,7 +975,7 @@ role_description_table:
   - role: "Translator & Localizer"
     assigned_model: "gemma3:12b"
     alternates: ["gemma3:27b", "ministral-3:14b"]
-    tier: "Tier M"
+    class: "Middleweight Class"
     requires_embedding: true
     embedding_model: "qwen3-embedding:large"
     est_speed_tps: 50
@@ -903,7 +994,7 @@ role_description_table:
   - role: "Daily Driver"
     assigned_model: "gemma3:12b"
     alternates: ["ministral-3:14b", "gemma3:27b"]
-    tier: "Tier M"
+    class: "Middleweight Class"
     est_speed_tps: 50
     primary_responsibility: |
       General purpose assistant for chat, quick questions, and simple tasks.
@@ -913,19 +1004,21 @@ role_description_table:
 
   - role: "Reasoning Engine"
     assigned_model: "gpt-oss:20b"
-    alternates: ["deepseek-v3.1:16b"]
-    tier: "Tier D"
+    alternates: ["nemotron-3-nano:30b", "deepseek-v3.1:16b"]
+    class: "Daily Driver Class"
     est_speed_tps: 35
     primary_responsibility: |
       Complex problem solving with full chain-of-thought visibility.
     interaction_notes: |
       The "brain" for multi-step tasks. Configurable reasoning effort 
-      (low/medium/high) based on task complexity.
+      (low/medium/high) based on task complexity. nemotron-3-nano:30b offers 
+      superior long-context reasoning (1M tokens) and MoE efficiency, ideal for 
+      massive document synthesis and repository-scale understanding.
 
   - role: "Heavy Lifter"
     assigned_model: "qwen3:72b"
     alternates: ["gemma3:27b"]
-    tier: "Tier H"
+    class: "Heavy Lifter Class"
     est_speed_tps: 15
     primary_responsibility: |
       High-nuance generation. The "Literature Professor." Used when 

@@ -10,15 +10,15 @@ content: |
 
   **HARDWARE CONSTRAINTS:**
   - Max safe VRAM: 50GB
-  - You can run 1 Utility model + 1 Tier S model + 1 larger model concurrently
-  - Tier H models (qwen3:72b) cannot co-run with other models
+  - You can run 1 Utility model + 1 Speedster Class model + 1 larger model concurrently
+  - Heavy Lifter Class models (qwen3:72b) cannot co-run with other models
 
-  **TIER SYSTEM:**
+  **CLASS SYSTEM:**
   - Utility: Embedding/OCR models (always available, ~1-4GB)
-  - Tier S: <8GB, 80-200 t/s (autocomplete, quick tasks)
-  - Tier M: 8-12GB, 45-50 t/s (daily driver, interactive)
-  - Tier D: 12-24GB, 25-40 t/s (workhorses)
-  - Tier H: 30-48GB, ~15 t/s (quality-critical, use sparingly)
+  - Speedster Class: <8GB, 80-200 t/s (autocomplete, quick tasks)
+  - Middleweight Class: 8-12GB, 45-50 t/s (daily driver, interactive)
+  - Daily Driver Class: 12-24GB, 25-40 t/s (workhorses)
+  - Heavy Lifter Class: 30-48GB, ~15 t/s (quality-critical, use sparingly)
 
   **CREATIVE QUALITY TIERS:**
   For writing and creative tasks, consider the draft stage:
@@ -171,7 +171,7 @@ content: |
   ```
   **Task Category:** [Writing/Analysis/Creative/Business/Education/Technical]
   **Recommended:** `model:tag`
-  **Tier:** Tier X
+  **Class:** Class Name
   **VRAM:** XGB
   **Speed:** ~X t/s
   **Creative Stage:** [Draft/Quality/Polish] (if applicable)

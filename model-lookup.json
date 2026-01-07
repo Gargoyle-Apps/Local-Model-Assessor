@@ -3,10 +3,10 @@
     "description": "Quick lookup table for model selection on Mac Mini M4 Pro (64GB)",
     "hardware": "M4 Pro, 50GB safe VRAM budget",
     "generated": "2024-12",
-    "creative_tiers": {
-      "draft": "Fast iteration, brainstorming (Tier S/M models)",
-      "quality": "Substantive work, good drafts (Tier D models)",
-      "polish": "Publication-ready, maximum nuance (Tier H models)"
+    "creative_classes": {
+      "draft": "Fast iteration, brainstorming (Speedster/Middleweight Class models)",
+      "quality": "Substantive work, good drafts (Daily Driver Class models)",
+      "polish": "Publication-ready, maximum nuance (Heavy Lifter Class models)"
     }
   },
   
@@ -25,6 +25,7 @@
     },
     "vision": {
       "primary": "qwen3-vl:8b",
+      "with_reasoning": "qwen3-vl:8b-thinking",
       "with_tools": "ministral-3:8b"
     },
     "daily_driver": {
@@ -34,10 +35,12 @@
     },
     "reasoning": {
       "primary": "gpt-oss:20b",
+      "long_context": "nemotron-3-nano:30b",
       "math": "deepseek-v3.1:16b"
     },
     "coding": {
       "primary": "qwen3-coder:30b",
+      "agentic": "nemotron-3-nano:30b",
       "quick": "granite4:3b"
     },
     "formatting": {
@@ -154,12 +157,12 @@
   "by_constraint": {
     "under_1gb": ["granite4:350m"],
     "under_4gb": ["granite4:350m", "granite4:3b", "gemma3:4b", "ministral-3:3b"],
-    "under_8gb": ["granite4:350m", "granite4:3b", "granite4:1b", "gemma3:4b", "ministral-3:3b", "qwen3-vl:8b", "ministral-3:8b"],
-    "has_vision": ["gemma3:4b", "qwen3-vl:8b", "ministral-3:8b", "gemma3:12b", "ministral-3:14b", "gemma3:27b"],
+    "under_8gb": ["granite4:350m", "granite4:3b", "granite4:1b", "gemma3:4b", "ministral-3:3b", "qwen3-vl:8b", "qwen3-vl:8b-thinking", "ministral-3:8b"],
+    "has_vision": ["gemma3:4b", "qwen3-vl:8b", "qwen3-vl:8b-thinking", "ministral-3:8b", "gemma3:12b", "ministral-3:14b", "gemma3:27b"],
     "has_fim": ["granite4:350m", "granite4:3b", "granite4:1b"],
-    "has_tools": ["granite4:3b", "ministral-3:3b", "ministral-3:8b", "ministral-3:14b", "gpt-oss:20b", "qwen3-coder:30b"],
-    "has_reasoning": ["gpt-oss:20b", "deepseek-v3.1:16b"],
-    "long_context": ["ministral-3:3b", "ministral-3:8b", "ministral-3:14b", "gemma3:4b", "gemma3:12b"],
+    "has_tools": ["granite4:3b", "ministral-3:3b", "ministral-3:8b", "ministral-3:14b", "gpt-oss:20b", "nemotron-3-nano:30b", "qwen3-coder:30b"],
+    "has_reasoning": ["gpt-oss:20b", "nemotron-3-nano:30b", "deepseek-v3.1:16b", "qwen3-vl:8b-thinking"],
+    "long_context": ["nemotron-3-nano:30b", "ministral-3:3b", "ministral-3:8b", "ministral-3:14b", "gemma3:4b", "gemma3:12b"],
     "multilingual": ["qwen3-embedding:large", "ministral-3:14b", "gemma3:12b", "gemma3:27b"],
     "creative_quality": ["gemma3:27b", "qwen3:72b"],
     "structured_output": ["granite4:350m", "granite4:3b", "granite4:14b"]
@@ -177,33 +180,35 @@
   },
 
   "models": {
-    "embeddinggemma:latest": {"vram": 1.5, "ctx": 8192, "tier": "utility", "tps": 1000},
-    "qwen3-embedding:large": {"vram": 2, "ctx": 32768, "tier": "utility", "tps": 800, "multilingual": true},
-    "deepseek-ocr:3b": {"vram": 4, "ctx": 4096, "tier": "utility", "tps": 100},
-    "granite4:350m": {"vram": 0.7, "ctx": 32768, "tier": "S", "tps": 200, "fim": true},
-    "granite4:1b": {"vram": 3.3, "ctx": 128000, "tier": "S", "tps": 100, "fim": true},
-    "granite4:3b": {"vram": 2.1, "ctx": 128000, "tier": "S", "tps": 120, "fim": true, "tools": true},
-    "gemma3:4b": {"vram": 3.3, "ctx": 128000, "tier": "S", "tps": 100, "vision": true},
-    "ministral-3:3b": {"vram": 3.0, "ctx": 256000, "tier": "S", "tps": 120, "vision": true, "tools": true},
-    "qwen3-vl:8b": {"vram": 6.1, "ctx": 128000, "tier": "S", "tps": 80, "vision": true},
-    "ministral-3:8b": {"vram": 6.0, "ctx": 256000, "tier": "S", "tps": 80, "vision": true, "tools": true},
-    "gemma3:12b": {"vram": 8.1, "ctx": 128000, "tier": "M", "tps": 50, "vision": true, "creative": "draft"},
-    "granite4:14b": {"vram": 10, "ctx": 32768, "tier": "M", "tps": 45, "tools": true, "structured": true},
-    "ministral-3:14b": {"vram": 9.1, "ctx": 256000, "tier": "M", "tps": 45, "vision": true, "tools": true},
-    "deepseek-v3.1:16b": {"vram": 12, "ctx": 32768, "tier": "D", "tps": 40, "reasoning": true, "rag": true},
-    "gpt-oss:20b": {"vram": 14, "ctx": 128000, "tier": "D", "tps": 35, "reasoning": true, "tools": true},
-    "gemma3:27b": {"vram": 17, "ctx": 64000, "tier": "D", "tps": 25, "vision": true, "creative": "quality"},
-    "qwen3-coder:30b": {"vram": 19, "ctx": 64000, "tier": "D", "tps": 25, "tools": true, "moe": true},
-    "qwen3:72b": {"vram": 38, "ctx": 4096, "tier": "H", "tps": 15, "no_corun": true, "creative": "polish"}
+    "embeddinggemma:latest": {"vram": 1.5, "ctx": 8192, "class": "utility", "tps": 1000},
+    "qwen3-embedding:large": {"vram": 2, "ctx": 32768, "class": "utility", "tps": 800, "multilingual": true},
+    "deepseek-ocr:3b": {"vram": 4, "ctx": 4096, "class": "utility", "tps": 100},
+    "granite4:350m": {"vram": 0.7, "ctx": 32768, "class": "Speedster Class", "tps": 200, "fim": true},
+    "granite4:1b": {"vram": 3.3, "ctx": 128000, "class": "Speedster Class", "tps": 100, "fim": true},
+    "granite4:3b": {"vram": 2.1, "ctx": 128000, "class": "Speedster Class", "tps": 120, "fim": true, "tools": true},
+    "gemma3:4b": {"vram": 3.3, "ctx": 128000, "class": "Speedster Class", "tps": 100, "vision": true},
+    "ministral-3:3b": {"vram": 3.0, "ctx": 256000, "class": "Speedster Class", "tps": 120, "vision": true, "tools": true},
+    "qwen3-vl:8b": {"vram": 6.1, "ctx": 128000, "class": "Speedster Class", "tps": 80, "vision": true},
+    "qwen3-vl:8b-thinking": {"vram": 6.1, "ctx": 128000, "class": "Speedster Class", "tps": 70, "vision": true, "reasoning": true},
+    "ministral-3:8b": {"vram": 6.0, "ctx": 256000, "class": "Speedster Class", "tps": 80, "vision": true, "tools": true},
+    "gemma3:12b": {"vram": 8.1, "ctx": 128000, "class": "Middleweight Class", "tps": 50, "vision": true, "creative": "draft"},
+    "granite4:14b": {"vram": 10, "ctx": 32768, "class": "Middleweight Class", "tps": 45, "tools": true, "structured": true},
+    "ministral-3:14b": {"vram": 9.1, "ctx": 256000, "class": "Middleweight Class", "tps": 45, "vision": true, "tools": true},
+    "deepseek-v3.1:16b": {"vram": 12, "ctx": 32768, "class": "Daily Driver Class", "tps": 40, "reasoning": true, "rag": true},
+    "gpt-oss:20b": {"vram": 14, "ctx": 128000, "class": "Daily Driver Class", "tps": 35, "reasoning": true, "tools": true},
+    "nemotron-3-nano:30b": {"vram": 24, "ctx": 256000, "class": "Daily Driver Class", "tps": 30, "reasoning": true, "tools": true, "moe": true, "long_context": true},
+    "gemma3:27b": {"vram": 17, "ctx": 64000, "class": "Daily Driver Class", "tps": 25, "vision": true, "creative": "quality"},
+    "qwen3-coder:30b": {"vram": 19, "ctx": 64000, "class": "Daily Driver Class", "tps": 25, "tools": true, "moe": true},
+    "qwen3:72b": {"vram": 38, "ctx": 4096, "class": "Heavy Lifter Class", "tps": 15, "no_corun": true, "creative": "polish"}
   },
 
   "decision_tree": {
     "need_embedding": "embeddinggemma:latest (or qwen3-embedding if multilingual)",
     "need_ocr": "deepseek-ocr:3b",
     "need_speed": "granite4:350m → granite4:3b → gemma3:4b",
-    "need_vision": "qwen3-vl:8b → gemma3:12b → gemma3:27b",
-    "need_reasoning": "gpt-oss:20b → deepseek-v3.1:16b",
-    "need_coding": "qwen3-coder:30b → gpt-oss:20b → granite4:3b",
+    "need_vision": "qwen3-vl:8b → qwen3-vl:8b-thinking → gemma3:12b → gemma3:27b",
+    "need_reasoning": "gpt-oss:20b → nemotron-3-nano:30b → deepseek-v3.1:16b",
+    "need_coding": "qwen3-coder:30b → nemotron-3-nano:30b → gpt-oss:20b → granite4:3b",
     "need_quality": "qwen3:72b → gemma3:27b → gpt-oss:20b",
     "need_tools": "ministral-3:14b → gpt-oss:20b → granite4:3b",
     "need_creative_draft": "gemma3:12b",

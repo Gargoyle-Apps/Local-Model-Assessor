@@ -25,6 +25,7 @@ https://ollama.com/library/qwen3-coder
 https://ollama.com/library/qwen3
 https://ollama.com/library/gpt-oss
 https://ollama.com/library/deepseek-v3.1
+https://ollama.com/library/nemotron-3-nano
 ```
 
 ---
@@ -44,9 +45,9 @@ https://ollama.com/library/deepseek-v3.1
 
 ---
 
-## Generation Models (By Tier)
+## Generation Models (By Class)
 
-### Tier S: Speedsters (<8GB)
+### Speedster Class: Speedsters (<8GB)
 | Model | Tag | VRAM | Context | Role |
 |-------|-----|------|---------|------|
 | [granite4](https://ollama.com/library/granite4) | `:350m` | 0.7GB | 32K | **Autocomplete** (FIM native) |
@@ -55,24 +56,26 @@ https://ollama.com/library/deepseek-v3.1
 | [gemma3](https://ollama.com/library/gemma3) | `:4b` | 3.3GB | 128K | Autocomplete + Vision |
 | [ministral-3](https://ollama.com/library/ministral-3) | `:3b` | 3GB | 256K | Edge Agentic |
 | [qwen3-vl](https://ollama.com/library/qwen3-vl) | `:8b` | 6.1GB | 256K | **Vision Engine** |
+| [qwen3-vl](https://ollama.com/library/qwen3-vl) | `:8b-thinking` | 6.1GB | 128K | Vision + Reasoning |
 | [ministral-3](https://ollama.com/library/ministral-3) | `:8b` | 6GB | 256K | Vision + Tools |
 
-### Tier M: Middleweights (8-12GB)
+### Middleweight Class: Middleweights (8-12GB)
 | Model | Tag | VRAM | Context | Role |
 |-------|-----|------|---------|------|
 | [gemma3](https://ollama.com/library/gemma3) | `:12b` | 8.1GB | 128K | **Daily Driver** |
 | [ministral-3](https://ollama.com/library/ministral-3) | `:14b` | 9.1GB | 256K | Agentic Daily Driver |
 | [granite4](https://ollama.com/library/granite4) | `:14b` | 10GB | 32K | Enterprise Formatter |
 
-### Tier D: Daily Drivers (12-24GB)
+### Daily Driver Class: Daily Drivers (12-24GB)
 | Model | Tag | VRAM | Context | Role |
 |-------|-----|------|---------|------|
 | [deepseek-v3.1](https://ollama.com/library/deepseek-v3.1) | `:16b` | 12GB | 32K | RAG Synthesizer |
 | [gpt-oss](https://ollama.com/library/gpt-oss) | `:20b` | 14GB | 128K | **Reasoning Engine** |
+| [nemotron-3-nano](https://ollama.com/library/nemotron-3-nano) | `:30b` | 24GB | 256K | MoE Reasoning + Agentic |
 | [gemma3](https://ollama.com/library/gemma3) | `:27b` | 17GB | 64K | Quality Daily Driver |
 | [qwen3-coder](https://ollama.com/library/qwen3-coder) | `:30b` | 19GB | 64K | **Coding Engine** |
 
-### Tier H: Heavy Lifters (30-48GB)
+### Heavy Lifter Class: Heavy Lifters (30-48GB)
 | Model | Tag | VRAM | Context | Role |
 |-------|-----|------|---------|------|
 | [qwen3](https://ollama.com/library/qwen3) | `:72b` (q3_k_m) | 38GB | 4K | **Heavy Lifter** |
@@ -88,15 +91,17 @@ https://ollama.com/library/deepseek-v3.1
 
 ## Quick Reference: Primary Roles
 
-| Role | Model | Tier | Speed |
+| Role | Model | Class | Speed |
 |------|-------|------|-------|
 | Embedding | `embeddinggemma:latest` | Utility | ~1000 t/s |
 | OCR | `deepseek-ocr:3b` | Utility | ~100 t/s |
 | Autocomplete | `granite4:3b` | S | ~120 t/s |
 | Vision | `qwen3-vl:8b` | S | ~80 t/s |
+| Vision + Reasoning | `qwen3-vl:8b-thinking` | S | ~70 t/s |
 | Daily Driver | `gemma3:12b` | M | ~50 t/s |
 | Formatter | `granite4:14b` | M | ~45 t/s |
 | Reasoning | `gpt-oss:20b` | D | ~35 t/s |
+| Reasoning (Long Context) | `nemotron-3-nano:30b` | D | ~30 t/s |
 | Coding | `qwen3-coder:30b` | D | ~25 t/s |
 | Heavy Lifter | `qwen3:72b` | H | ~15 t/s |
 
@@ -110,14 +115,14 @@ https://ollama.com/library/deepseek-v3.1
 ollama pull embeddinggemma:latest
 ollama pull deepseek-ocr:3b
 
-# Tier S - Autocomplete & Vision
+# Speedster Class - Autocomplete & Vision
 ollama pull granite4:3b
 ollama pull qwen3-vl:8b
 
-# Tier M - Daily Driver
+# Middleweight Class - Daily Driver
 ollama pull gemma3:12b
 
-# Tier D - Workhorses
+# Daily Driver Class - Workhorses
 ollama pull gpt-oss:20b
 ollama pull qwen3-coder:30b
 ```
@@ -131,7 +136,7 @@ ollama pull qwen3-embedding:large
 # Utility: OCR
 ollama pull deepseek-ocr:3b
 
-# Tier S
+# Speedster Class
 ollama pull granite4:350m
 ollama pull granite4:1b
 ollama pull granite4:3b
@@ -139,19 +144,21 @@ ollama pull gemma3:4b
 ollama pull ministral-3:3b
 ollama pull ministral-3:8b
 ollama pull qwen3-vl:8b
+ollama pull qwen3-vl:8b-thinking
 
-# Tier M
+# Middleweight Class
 ollama pull gemma3:12b
 ollama pull ministral-3:14b
 ollama pull granite4:14b
 
-# Tier D
+# Daily Driver Class
 ollama pull deepseek-v3.1:16b
 ollama pull gpt-oss:20b
+ollama pull nemotron-3-nano:30b
 ollama pull gemma3:27b
 ollama pull qwen3-coder:30b
 
-# Tier H (use sparingly - 38GB)
+# Heavy Lifter Class (use sparingly - 38GB)
 ollama pull qwen3:72b
 ```
 
@@ -159,14 +166,14 @@ ollama pull qwen3:72b
 ```bash
 # Total if ALL models loaded (not recommended):
 # Utility:     ~7.5GB
-# Tier S:      ~24GB
-# Tier M:      ~27GB
-# Tier D:      ~62GB
-# Tier H:      ~38GB
+# Speedster Class:      ~24GB
+# Middleweight Class:      ~27GB
+# Daily Driver Class:      ~62GB
+# Heavy Lifter Class:      ~38GB
 
 # Recommended concurrent loading:
 # - 1 Utility model (embedding OR ocr)
-# - 1 Tier S model (autocomplete)
-# - 1 Tier M/D model (active task)
+# - 1 Speedster Class model (autocomplete)
+# - 1 Middleweight/Daily Driver Class model (active task)
 # Example: embeddinggemma (1.5) + granite4:3b (2.1) + gpt-oss:20b (14) = 17.6GB
 ```
