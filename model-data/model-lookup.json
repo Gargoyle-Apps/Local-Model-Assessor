@@ -174,13 +174,13 @@
 
   "by_constraint": {
     "under_1gb": ["granite4:350m"],
-    "under_4gb": ["granite4:350m", "granite4:3b", "gemma3:4b", "ministral-3:3b"],
-    "under_8gb": ["granite4:350m", "granite4:3b", "granite4:1b", "gemma3:4b", "ministral-3:3b", "qwen3-vl:8b", "qwen3-vl:8b-thinking", "ministral-3:8b"],
+    "under_4gb": ["granite4:350m", "granite4:1b", "granite4:3b", "gemma3:4b", "ministral-3:3b"],
+    "under_8gb": ["granite4:350m", "granite4:1b", "granite4:3b", "granite4:7b-a1b-h", "gemma3:4b", "ministral-3:3b", "qwen3-vl:8b", "qwen3-vl:8b-thinking", "ministral-3:8b"],
     "has_vision": ["gemma3:4b", "ministral-3:3b", "qwen3-vl:8b", "qwen3-vl:8b-thinking", "ministral-3:8b", "gemma3:12b", "ministral-3:14b", "gemma3:27b"],
-    "has_fim": ["granite4:350m", "granite4:3b", "granite4:1b"],
-    "has_tools": ["granite4:3b", "ministral-3:3b", "ministral-3:8b", "ministral-3:14b", "gpt-oss:20b", "nemotron-3-nano:30b", "qwen3-coder:30b"],
+    "has_fim": ["granite4:350m", "granite4:1b", "granite4:3b", "granite4:7b-a1b-h"],
+    "has_tools": ["granite4:3b", "granite4:7b-a1b-h", "ministral-3:3b", "ministral-3:8b", "ministral-3:14b", "gpt-oss:20b", "nemotron-3-nano:30b", "qwen3-coder:30b"],
     "has_reasoning": ["gpt-oss:20b", "nemotron-3-nano:30b", "deepseek-v3.1:16b", "qwen3-vl:8b-thinking"],
-    "long_context": ["nemotron-3-nano:30b", "ministral-3:3b", "ministral-3:8b", "ministral-3:14b", "gemma3:4b", "gemma3:12b"],
+    "long_context": ["granite4:7b-a1b-h", "nemotron-3-nano:30b", "ministral-3:3b", "ministral-3:8b", "ministral-3:14b", "gemma3:4b", "gemma3:12b"],
     "multilingual": ["qwen3-embedding:large", "ministral-3:14b", "gemma3:12b", "gemma3:27b"],
     "creative_quality": ["gemma3:27b", "qwen3:72b"],
     "structured_output": ["granite4:350m", "granite4:3b", "granite4:14b"]
@@ -209,7 +209,7 @@
       "install": "ollama pull qwen3-embedding:large"
     },
     "deepseek-ocr:3b": {
-      "vram": 4, "ctx": 4096, "class": "Utility", "tps": 100,
+      "vram": 4, "ctx": 4096, "class": "Utility", "tps": 136, "latency": "~2s",
       "url": "https://ollama.com/library/deepseek-ocr",
       "install": "ollama pull deepseek-ocr:3b"
     },
@@ -224,9 +224,14 @@
       "install": "ollama pull granite4:1b"
     },
     "granite4:3b": {
-      "vram": 2.1, "ctx": 128000, "class": "Speedster", "tps": 120, "fim": true, "tools": true,
+      "vram": 2.1, "ctx": 128000, "class": "Speedster", "tps": 83, "fim": true, "tools": true,
       "url": "https://ollama.com/library/granite4",
       "install": "ollama pull granite4:3b"
+    },
+    "granite4:7b-a1b-h": {
+      "vram": 4.2, "ctx": 128000, "class": "Middleweight", "tps": 58, "fim": true, "tools": true, "moe": true,
+      "url": "https://ollama.com/library/granite4",
+      "install": "ollama pull granite4:7b-a1b-h"
     },
     "gemma3:4b": {
       "vram": 3.3, "ctx": 128000, "class": "Speedster", "tps": 100, "vision": true,
@@ -239,12 +244,12 @@
       "install": "ollama pull ministral-3:3b"
     },
     "qwen3-vl:8b": {
-      "vram": 6.1, "ctx": 128000, "class": "Speedster", "tps": 80, "vision": true,
+      "vram": 6.1, "ctx": 128000, "class": "Middleweight", "tps": 43, "vision": true,
       "url": "https://ollama.com/library/qwen3-vl",
       "install": "ollama pull qwen3-vl:8b"
     },
     "qwen3-vl:8b-thinking": {
-      "vram": 6.1, "ctx": 128000, "class": "Speedster", "tps": 70, "vision": true, "reasoning": true,
+      "vram": 6.1, "ctx": 128000, "class": "Middleweight", "tps": 35, "vision": true, "reasoning": true,
       "url": "https://ollama.com/library/qwen3-vl",
       "install": "ollama pull qwen3-vl:8b-thinking"
     },
@@ -274,7 +279,7 @@
       "install": "ollama pull deepseek-v3.1:16b"
     },
     "gpt-oss:20b": {
-      "vram": 14, "ctx": 128000, "class": "Daily Driver", "tps": 35, "reasoning": true, "tools": true,
+      "vram": 13, "ctx": 128000, "class": "Middleweight", "tps": 49, "reasoning": true, "tools": true,
       "url": "https://ollama.com/library/gpt-oss",
       "install": "ollama pull gpt-oss:20b"
     },
@@ -289,7 +294,7 @@
       "install": "ollama pull gemma3:27b"
     },
     "qwen3-coder:30b": {
-      "vram": 19, "ctx": 64000, "class": "Daily Driver", "tps": 25, "tools": true, "moe": true,
+      "vram": 18, "ctx": 64000, "class": "Middleweight", "tps": 58, "tools": true, "moe": true,
       "url": "https://ollama.com/library/qwen3-coder",
       "install": "ollama pull qwen3-coder:30b"
     },

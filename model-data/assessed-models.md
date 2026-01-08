@@ -75,16 +75,17 @@ Massive multilingual embedding model supporting 100+ languages. Matches the Qwen
 #### deepseek-ocr:3b
 | Spec | Value |
 |------|-------|
-| VRAM | 4GB |
+| VRAM | 4GB (6.7GB for :latest) |
 | Context | 4K |
-| Speed | ~100 t/s |
+| Speed | ~136 t/s |
+| Latency | ~2s |
 | Quantization | q8_0 |
 
 A specialized vision-only model for OCR and converting screenshots to HTML/Markdown. Pure transcription, no reasoning.
 
 **Best for:** Reading screenshots, digitizing handwritten notes, PDF extraction, image-to-HTML
 
-**Caveats:** Cannot reason about images—only transcribes. Use qwen3-vl for understanding.
+**Caveats:** Cannot reason about images—only transcribes. Use qwen3-vl for understanding. Minor accuracy issues with unusual fonts (e.g., "MUESLI" → "MESLI").
 
 ---
 
@@ -112,7 +113,7 @@ IBM's tiniest Granite 4. 350M parameters with native Fill-In-the-Middle support 
 |------|-------|
 | VRAM | 2.1GB |
 | Context | 128K |
-| Speed | ~120 t/s |
+| Speed | ~83 t/s |
 | Quantization | q4_k_m |
 | Special | FIM, Tools |
 
@@ -175,40 +176,6 @@ Mistral's edge-optimized 3B model with vision and native function calling. 256K 
 
 ---
 
-### qwen3-vl:8b
-| Spec | Value |
-|------|-------|
-| VRAM | 6.1GB |
-| Context | 128K |
-| Speed | ~80 t/s |
-| Quantization | q4_k_m |
-| Special | Vision |
-
-The most powerful vision-language model at a runnable size. Supports image analysis, GUI understanding, and visual coding.
-
-**Best for:** Screenshot-to-code, UI/UX analysis, visual debugging, document understanding
-
-**Caveats:** Heavier than deepseek-ocr for pure extraction. Use OCR for transcription, this for understanding.
-
----
-
-### qwen3-vl:8b-thinking
-| Spec | Value |
-|------|-------|
-| VRAM | 6.1GB |
-| Context | 128K |
-| Speed | ~70 t/s |
-| Quantization | q4_k_m |
-| Special | Vision, Reasoning |
-
-Qwen3-VL with thinking/reasoning capabilities. Adds step-by-step reasoning traces for complex visual tasks. Improved OCR across 32 languages.
-
-**Best for:** Visual reasoning with step-by-step analysis, complex screenshot debugging, multilingual OCR (32 languages)
-
-**Caveats:** Reasoning traces add latency. Use standard qwen3-vl:8b when speed matters more. Requires Ollama 0.12.7+.
-
----
-
 ### ministral-3:8b
 | Spec | Value |
 |------|-------|
@@ -246,6 +213,58 @@ Google's Gemma 3 at 12B. The "Goldilocks" model—fast enough for interactive us
 
 ---
 
+### granite4:7b-a1b-h
+| Spec | Value |
+|------|-------|
+| VRAM | 4.2GB |
+| Context | 128K |
+| Speed | ~58 t/s |
+| Quantization | q4_k_m |
+| Architecture | Hybrid Mamba-2 (7B→1B active) |
+| Special | FIM, Tools, MoE |
+
+IBM's Granite 4.0 hybrid model using Mamba-2 sparse architecture. Only ~1B parameters active at inference, giving Middleweight speed in a Speedster-sized package. Multilingual (12 languages).
+
+**Best for:** Autocomplete/FIM, RAG pipelines, multilingual tasks, tool-calling agents, code completion
+
+**Caveats:** Mamba-2 hybrid arch may have different behavior than transformer models. Best for structured tasks over creative writing. Small VRAM but Middleweight TPS.
+
+---
+
+### qwen3-vl:8b
+| Spec | Value |
+|------|-------|
+| VRAM | 6.1GB |
+| Context | 128K |
+| Speed | ~43 t/s |
+| Quantization | q4_k_m |
+| Special | Vision |
+
+The most powerful vision-language model at a runnable size. Supports image analysis, GUI understanding, and visual coding.
+
+**Best for:** Screenshot-to-code, UI/UX analysis, visual debugging, document understanding
+
+**Caveats:** Heavier than deepseek-ocr for pure extraction. Use OCR for transcription, this for understanding. Small VRAM but Middleweight TPS.
+
+---
+
+### qwen3-vl:8b-thinking
+| Spec | Value |
+|------|-------|
+| VRAM | 6.1GB |
+| Context | 128K |
+| Speed | ~35 t/s |
+| Quantization | q4_k_m |
+| Special | Vision, Reasoning |
+
+Qwen3-VL with thinking/reasoning capabilities. Adds step-by-step reasoning traces for complex visual tasks. Improved OCR across 32 languages.
+
+**Best for:** Visual reasoning with step-by-step analysis, complex screenshot debugging, multilingual OCR (32 languages)
+
+**Caveats:** Reasoning traces add latency. Use standard qwen3-vl:8b when speed matters more. Requires Ollama 0.12.7+. Small VRAM but Middleweight TPS.
+
+---
+
 ### granite4:14b
 | Spec | Value |
 |------|-------|
@@ -280,6 +299,40 @@ Mistral's largest Ministral 3 variant. Vision-enabled with 256K context and nati
 
 ---
 
+### gpt-oss:20b
+| Spec | Value |
+|------|-------|
+| VRAM | 13GB |
+| Context | 128K |
+| Speed | ~49 t/s |
+| Quantization | mxfp4 |
+| Special | Reasoning, Tools |
+
+OpenAI's open-weight reasoning model. 20B MoE with native chain-of-thought and configurable reasoning effort. Apache 2.0.
+
+**Best for:** Complex problem solving, code debugging with explanation, multi-step reasoning, agentic tool orchestration
+
+**Caveats:** No vision. Pair with qwen3-vl for visual tasks. Reasoning effort increases latency.
+
+---
+
+### qwen3-coder:30b
+| Spec | Value |
+|------|-------|
+| VRAM | 18GB |
+| Context | 64K |
+| Speed | ~58 t/s |
+| Quantization | q4_k_m |
+| Special | Tools, MoE |
+
+Alibaba's flagship coding model. 30B total with 3.3B activated (MoE). Trained via RL on SWE-Bench. Native 256K context.
+
+**Best for:** Repository-scale code understanding, complex refactoring, agentic coding, multi-file generation
+
+**Caveats:** Cap at 64K for stability. For simple edits, use granite4:3b for speed.
+
+---
+
 ## Daily Driver Class Models (12-24GB)
 
 ### deepseek-v3.1:16b
@@ -296,23 +349,6 @@ Updated "Lite" version of DeepSeek V3. MoE architecture tailored for dense infor
 **Best for:** Summarizing 10+ documents, math and step-by-step logic, RAG synthesis
 
 **Caveats:** Can be dry/robotic in tone. Context limited to 32K to maintain stability.
-
----
-
-### gpt-oss:20b
-| Spec | Value |
-|------|-------|
-| VRAM | 14GB |
-| Context | 128K |
-| Speed | ~35 t/s |
-| Quantization | mxfp4 |
-| Special | Reasoning, Tools |
-
-OpenAI's open-weight reasoning model. 20B MoE with native chain-of-thought and configurable reasoning effort. Apache 2.0.
-
-**Best for:** Complex problem solving, code debugging with explanation, multi-step reasoning, agentic tool orchestration
-
-**Caveats:** No vision. Pair with qwen3-vl for visual tasks. Reasoning effort increases latency.
 
 ---
 
@@ -348,23 +384,6 @@ Google's flagship Gemma 3. "Most capable model that runs on a single GPU." Visio
 **Best for:** High-quality general assistant, complex document analysis with images, creative writing
 
 **Caveats:** Not quite Heavy Lifter quality for the most nuanced tasks.
-
----
-
-### qwen3-coder:30b
-| Spec | Value |
-|------|-------|
-| VRAM | 19GB |
-| Context | 64K |
-| Speed | ~25 t/s |
-| Quantization | q4_k_m |
-| Special | Tools, MoE |
-
-Alibaba's flagship coding model. 30B total with 3.3B activated (MoE). Trained via RL on SWE-Bench. Native 256K context.
-
-**Best for:** Repository-scale code understanding, complex refactoring, agentic coding, multi-file generation
-
-**Caveats:** Cap at 64K for stability. For simple edits, use granite4:3b for speed.
 
 ---
 
