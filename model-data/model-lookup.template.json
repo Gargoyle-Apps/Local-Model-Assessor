@@ -1,0 +1,107 @@
+{
+  "_meta": {
+    "description": "Source of truth for model selection and assessment",
+    "hardware_reference": "See computer-profile/hardware-profile.yaml for system specifications and hardware class definitions",
+    "generated": "",
+    "note": "Hardware classes and VRAM constraints are defined in computer-profile/hardware-profile.yaml. This file contains model-specific data only. Copy this to model-lookup.json and populate with your assessed models."
+  },
+
+  "recommended_fleet": {
+    "core": [],
+    "install_core": "ollama pull <model1> <model2> ..."
+  },
+  
+  "by_role": {
+    "embedding": {
+      "primary": ""
+    },
+    "ocr": {
+      "primary": ""
+    },
+    "autocomplete": {
+      "fastest": "",
+      "balanced": ""
+    },
+    "vision": {
+      "primary": ""
+    },
+    "generalist": {
+      "primary": ""
+    },
+    "reasoning": {
+      "primary": ""
+    },
+    "coding": {
+      "primary": "",
+      "quick": ""
+    },
+    "formatting": {
+      "primary": ""
+    },
+    "heavy_lifter": {
+      "primary": ""
+    },
+    "model_assessor": {
+      "primary": "",
+      "notes": "Bootstrap model for evaluating new Ollama models. Requires reasoning + structured output."
+    }
+  },
+
+  "by_constraint": {
+    "under_1gb": [],
+    "under_4gb": [],
+    "under_8gb": [],
+    "has_vision": [],
+    "has_fim": [],
+    "has_tools": [],
+    "has_reasoning": [],
+    "long_context": [],
+    "multilingual": [],
+    "structured_output": []
+  },
+
+  "by_task_category": {
+    "writing": [],
+    "analysis": [],
+    "creative": [],
+    "business": [],
+    "education": [],
+    "technical": ["autocomplete", "coding", "formatting", "vision"],
+    "utility": ["embedding", "ocr", "model_assessor"],
+    "communication": []
+  },
+
+  "models": {
+    "_example:7b": {
+      "vram": 5,
+      "ctx": 32768,
+      "class": "Speedster",
+      "tps": 80,
+      "vision": true,
+      "url": "https://ollama.com/library/example",
+      "install": "ollama pull _example:7b",
+      "_note": "DELETE this example entry and replace with your assessed models"
+    }
+  },
+
+  "decision_tree": {
+    "need_model_assessment": "Use model_assessor role or a cloud LLM with model-assessment-prompt.yaml",
+    "need_embedding": "",
+    "need_ocr": "",
+    "need_speed": "",
+    "need_vision": "",
+    "need_reasoning": "",
+    "need_coding": "",
+    "need_quality": "",
+    "need_tools": "",
+    "need_structured": ""
+  },
+
+  "rag_pipelines": {
+    "document_analysis": {
+      "embedding": "",
+      "synthesis": "",
+      "notes": "Index docs, retrieve chunks, synthesize answers"
+    }
+  }
+}

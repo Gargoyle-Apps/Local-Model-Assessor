@@ -1,16 +1,17 @@
 # Hardware Profile for Local Model Assessment
-# Edit this file to match your system's specifications
+# Copy this file to hardware-profile.yaml and edit to match your system
+#   cp hardware-profile.template.yaml hardware-profile.yaml
 
 system:
-  name: "Mac Mini M4 Pro"
-  cpu: "14-Core CPU"
-  gpu: "20-Core GPU"
-  unified_ram: "64GB"
+  name: "Your Machine Name"
+  cpu: "CPU Description"
+  gpu: "GPU Description"
+  unified_ram: "XXGB"
 
 vram_budget:
-  total_available: 50        # GB - Total VRAM available for Ollama
-  concurrency_reserve: 8     # GB - Headroom for running Speedster alongside larger models
-  kv_cache_estimate: 1       # GB per 4k context @ fp16 (less for quantized KV)
+  total_available: 0          # GB - Total VRAM available for Ollama
+  concurrency_reserve: 0      # GB - Headroom for running Speedster alongside larger models
+  kv_cache_estimate: 1        # GB per 4k context @ fp16 (less for quantized KV)
 
 quantization:
   default: ["q4_k_m", "q5_k_m"]
@@ -18,10 +19,11 @@ quantization:
   small_model_threshold: 8      # Billion parameters
 
 concurrency:
-  description: "Can run 1 Utility + 1 Speedster + 1 larger model concurrently"
+  description: "Describe your concurrency strategy here"
   heavy_lifter_exclusive: true  # Heavy Lifters cannot co-run with other large models
 
 # Hardware classes define model tiers based on VRAM and expected performance
+# Adjust vram_range and tps_range to match your hardware benchmarks
 hardware_classes:
   utility:
     description: "Specialized models (Embedding, OCR). Always-on, do not chat with these."
@@ -41,7 +43,7 @@ hardware_classes:
     use_cases: ["generalist", "interactive"]
     
   daily_driver:
-    description: "The sweet spot. Leaves 30GB+ for large Context Windows."
+    description: "The sweet spot. Leaves room for large Context Windows."
     vram_range: "12-24GB"
     tps_range: "25-40"
     use_cases: ["general_purpose", "workhorses"]

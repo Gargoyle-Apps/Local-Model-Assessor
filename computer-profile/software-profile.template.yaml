@@ -1,35 +1,36 @@
 # Software Profile for Local Model Assessment
-# Edit this file to match your development environment setup
+# Copy this file to software-profile.yaml and edit to match your environment
+#   cp software-profile.template.yaml software-profile.yaml
 
 # IDE (mandatory) - The integrated development environment running the model selector
 ide:
-  name: "Visual Studio Code"
-  url: "https://code.visualstudio.com/docs"
-  settings_file: ".vscode/settings.json"
+  name: "Your IDE"
+  url: "https://example.com/docs"
+  settings_file: ".your-ide/settings.json"
   description: "Primary IDE for development and model selection"
 
 # Embedded Coding Assistant (optional) - Comes with the IDE if available
 embedded_assistant:
-  name: "GitHub Copilot Chat"
-  url: "https://code.visualstudio.com/docs/copilot/chat/copilot-chat"
-  settings_file: ".vscode/settings.json"
-  description: "Built-in chat assistant that comes with VS Code when Copilot is enabled"
+  name: "Built-in Assistant"
+  url: "https://example.com/docs"
+  settings_file: ".your-ide/settings.json"
+  description: "Built-in chat assistant if available"
   optional: true
   derived_from_ide: true
 
 # Primary Coding Assistant Agent (mandatory) - Main agent for executing tasks
 primary_agent:
-  name: "Cline"
-  url: "https://docs.cline.bot/introduction/welcome"
-  settings_file: ".cline"
-  description: "Primary AI coding agent for complex multi-step tasks and codebase understanding"
+  name: "Your Primary Agent"
+  url: "https://example.com/docs"
+  settings_file: ".agent-config"
+  description: "Primary AI coding agent for complex multi-step tasks"
   mandatory: true
 
 # Additional Coding Assistant Agents (optional) - Can be used alongside primary agent
 optional_agents:
-  - name: "Roo"
-    url: "https://docs.roocode.com/"
-    settings_file: ".roo"
+  - name: "Secondary Agent"
+    url: "https://example.com/docs"
+    settings_file: ".agent-config"
     description: "Optional secondary coding assistant agent"
     optional: true
 

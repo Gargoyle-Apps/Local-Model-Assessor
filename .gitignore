@@ -41,3 +41,11 @@ package-lock.json
 scratch/
 test/
 local/
+
+ref/
+
+# Local-only generated files (use *.template.* for the committed versions)
+computer-profile/hardware-profile.yaml
+computer-profile/software-profile.yaml
+model-data/model-lookup.json
+model-data/assessed-models.md
