@@ -1,0 +1,7 @@
+# Project-specific Cursor rules for Local-Model-Assessor
+
+## Local vs Tracked Files
+When this repo is cloned locally, prefer editing the **gitignored local files** in `computer-profile/` and `model-data/` (hardware-profile.yaml, software-profile.yaml, model-lookup.json, assessed-models.md). If you need to change tracked files (templates, prompts, README, etc.), ask the user to create a branch first. To create local files from templates, use the setup block in model-assessment-prompt.yaml — do not create those files manually.
+
+## Git Operations
+When running git commands (push, pull, commit, fetch, merge, checkout, branch operations), use `required_permissions: ["all"]` to avoid sandbox restrictions on .git/config writes.
