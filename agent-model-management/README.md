@@ -1,9 +1,11 @@
 # Agent Model Management
 
-This folder holds **reference configs and instructions** for keeping agent/IDE tools in sync with the models defined in this repo. When you add, remove, or reclassify models in [`model-data/model-lookup.json`](../model-data/model-lookup.json), update the corresponding agent configs using the instructions below.
+This folder holds **reference configs and instructions** for keeping agent/IDE tools in sync with the models in your **local** model data. When you add, remove, or reclassify models in your local `model-data/model-lookup.json`, update the corresponding agent configs using the instructions below.
 
-**Source of truth:** [`model-data/model-lookup.json`](../model-data/model-lookup.json) and [`model-data/assessed-models.md`](../model-data/assessed-models.md).  
-**Hardware context:** [`computer-profile/hardware-profile.yaml`](../computer-profile/hardware-profile.yaml).
+**Prerequisite:** You've copied the templates and created your local files (`model-lookup.json`, `assessed-models.md`, `hardware-profile.yaml`). These are gitignored and live only on your machine.
+
+**Source of truth (local):** `model-data/model-lookup.json` and `model-data/assessed-models.md` — created from templates, not in the repo.  
+**Hardware context (local):** `computer-profile/hardware-profile.yaml` — also local-only.
 
 ---
 
@@ -100,6 +102,6 @@ When you add support for another agent/IDE (e.g. Cursor, Windsurf, another tool)
    - Config file name and path (where the app loads it).
    - Step-by-step “How to update …” using `model-lookup.json` and `by_role`.
    - Any app-specific quirks (e.g. role names, capability flags).
-3. Put a reference config file in that subfolder (e.g. `config.yaml` or `settings.json`) so the repo keeps a copy that matches our fleet.
+3. Put a reference config file in that subfolder (e.g. `config.yaml` or `settings.json`) so the repo keeps a copy that matches your local fleet.
 
 This keeps all “how to update agent configs” in one place and sectioned by app.
