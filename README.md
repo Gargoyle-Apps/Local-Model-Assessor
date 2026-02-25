@@ -217,6 +217,7 @@ For writing tasks, models are tiered by quality/speed tradeoff:
 | `model-selector-prompt.yaml` | ✓ | System prompt for model selection |
 | `model-assessment-prompt.yaml` | ✓ | System prompt for assessing new models |
 | `agent-model-management/` | ✓ | Agent config references and instructions |
+| `ref/` | ✗ local | Optional scratch folder for local config copies (gitignored) |
 
 ---
 

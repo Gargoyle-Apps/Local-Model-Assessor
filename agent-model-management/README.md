@@ -4,6 +4,8 @@ This folder holds **reference configs and instructions** for keeping agent/IDE t
 
 **Prerequisite:** You've copied the templates and created your local files (`model-lookup.json`, `assessed-models.md`, `hardware-profile.yaml`). These are gitignored and live only on your machine.
 
+**Optional:** The `ref/` folder (gitignored) is for local copies of agent configs—e.g. project-specific Continue configs—before copying into `.continue/config.yaml`. Use it if you want a staging area separate from your projects.
+
 **Source of truth (local):** `model-data/model-lookup.json` and `model-data/assessed-models.md` — created from templates, not in the repo.  
 **Hardware context (local):** `computer-profile/hardware-profile.yaml` — also local-only.
 

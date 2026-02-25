@@ -104,3 +104,4 @@ content: |
   - qwen3:72b uses q3_k_m, limited to 4k context (`no_corun: true`)
   - For RAG tasks, check `requires_embedding` and use appropriate pipeline
   - Creative tasks benefit from iteration: start with draft tier, polish at end
+  - **TranslateGemma:** Use structured prompt: `You are a professional {SOURCE_LANG} ({SOURCE_CODE}) to {TARGET_LANG} ({TARGET_CODE}) translator...` — include two blank lines before the text to translate; output only the translation
