@@ -1,28 +1,33 @@
 # Local Model Assessor
 
-A system for selecting and configuring local Ollama models for AI coding agents.
+A system for selecting, assessing, and configuring local Ollama models — designed for **tool-calling AI agents** (Cursor, Cline, Continue, etc.) running inside IDEs.
+
+> **Important:** This system assumes your LLM has **shell/tool access** (e.g. a coding agent in VS Code or Cursor). The agent queries the SQLite database and runs scripts directly — no copy-pasting JSON into chat windows. If you're using a plain chat LLM without tool access, this isn't the right tool.
 
 **Prerequisites:**
 - [Ollama](https://ollama.com) installed and running
+- An IDE with a tool-calling AI agent (Cursor, VS Code + Cline/Continue, etc.)
+- Python 3 + PyYAML (`pip install pyyaml` or `pip install -r requirements.txt`)
 - For model assessment: `ollama pull gpt-oss:20b` (14GB VRAM)
 
 ---
 
-## Repo vs Local: Shell + Templates
+## Repo vs Local: Shell + SQLite DB
 
 **What's in Git (the shell):**
-- Templates (`.template.yaml`, `.template.json`, `.template.md`) — empty structures to copy
-- Prompts (`model-selector-prompt.yaml`, `model-assessment-prompt.yaml`)
+- SQL schema and scripts (`scripts/`) — init DB, import, export, query
+- Templates (`.template.yaml`) — starting points for hardware/software profiles
+- Prompts (`model-selector-prompt.yaml`, `model-assessment-prompt.yaml`) — system prompts for agents
 - Agent config references (`agent-model-management/`)
 - `.gitkeep` files so `computer-profile/` and `model-data/` exist when cloned
 
 **What's local-only (gitignored):**
 - `computer-profile/hardware-profile.yaml`
 - `computer-profile/software-profile.yaml`
-- `model-data/model-lookup.json`
-- `model-data/assessed-models.md`
+- `model-data/model-assessor.db` — **SQLite source of truth** for models, roles, constraints, profiles
+- `model-data/assessed-models.md` — human-readable docs (regenerated from DB)
 
-Clone → copy templates → fill in your hardware → run assessments locally. Your model data and assessments never leave your machine.
+Clone → run `./scripts/init-db.sh` → fill in hardware → run assessments. Your agent queries the DB directly. All data stays local.
 
 ---
 
@@ -46,30 +51,34 @@ your-project/
 │   │   ├── software-profile.template.yaml
 │   │   └── .gitkeep
 │   ├── model-data/
-│   │   ├── model-lookup.template.json
-│   │   ├── assessed-models.template.md
+│   │   ├── model-assessor.db     # local SQLite DB (gitignored)
 │   │   └── .gitkeep
+│   ├── scripts/
+│   │   ├── schema.sql
+│   │   ├── init-db.sh
+│   │   ├── add-model-from-yaml.py
+│   │   ├── export-assessed-models.py
+│   │   ├── import-profiles.py
+│   │   └── query-db.sh
 │   ├── agent-model-management/
 │   └── *.yaml
 ├── src/
 └── ...
 ```
 
-### 2. Create Local Files from Templates
-
-Copy templates to create your local (gitignored) files:
+### 2. Initialize the Database and Profiles
 
 ```bash
 cd .model-assessor
 
-# One-time setup
+# Create empty DB and profile files
+./scripts/init-db.sh
 cp computer-profile/hardware-profile.template.yaml computer-profile/hardware-profile.yaml
 cp computer-profile/software-profile.template.yaml computer-profile/software-profile.yaml
-cp model-data/model-lookup.template.json model-data/model-lookup.json
-cp model-data/assessed-models.template.md model-data/assessed-models.md
-```
 
-Or run the setup block from `model-assessment-prompt.yaml` — it copies templates if the target files don't exist.
+# Import profiles into DB (after editing them)
+python3 scripts/import-profiles.py
+```
 
 ### 3. Define Your Environment
 
@@ -94,19 +103,23 @@ primary_agent:
 
 ### 4. Run Initial Model Assessments
 
-Use `model-assessment-prompt.yaml` + your hardware profile + Ollama model URLs. Send to `gpt-oss:20b` (or a capable cloud LLM). The prompt instructs copying templates if needed, then populates your local `model-lookup.json` and `assessed-models.md`.
+Use `model-assessment-prompt.yaml` + your hardware profile + Ollama model URLs. Send to `gpt-oss:20b` (or a capable cloud LLM). The prompt outputs YAML — save it and run:
+```bash
+python3 scripts/add-model-from-yaml.py new-models.yaml
+python3 scripts/export-assessed-models.py   # regenerate assessed-models.md
+```
 
 ### 5. Model Selection: Configure Your Agents
 
-Give your coding agent the model selector prompt + your hardware profile + your local model database:
+Your coding agent reads the selector prompt and queries the DB directly:
 
 ```text
 [System: contents of .model-assessor/model-selector-prompt.yaml]
-[Hardware: contents of .model-assessor/computer-profile/hardware-profile.yaml]
-[Models: contents of .model-assessor/model-data/model-lookup.json]
 
 I'm setting up Cline for coding tasks. What models should I configure?
 ```
+
+The agent will run `./scripts/query-db.sh` or `sqlite3` to look up models, roles, and constraints from `model-assessor.db`. No manual data pasting required.
 
 ### 6. Install & Configure
 
@@ -129,21 +142,23 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 ## Model Hydration
 
-### Template Shell → Local Assessments
+### Template Shell → SQLite DB → Local Assessments
 
-The repo ships **templates**, not pre-assessed models. Your local `model-lookup.json` and `assessed-models.md` start empty (or with example placeholders) and are filled by running assessments on your machine.
+The repo ships **scripts and schema**, not pre-assessed models. Your local `model-assessor.db` starts empty and is populated by:
+- **Assessment:** Your agent runs `model-assessment-prompt.yaml`, outputs YAML, and runs `add-model-from-yaml.py` to insert directly
+- **Export:** `export-assessed-models.py` regenerates `assessed-models.md` from the DB
 
 ### Adding New Models
 
-When a new model appears on Ollama that might outperform existing options:
+When a new model appears on Ollama:
 
 1. Use `model-assessment-prompt.yaml` + your local `hardware-profile.yaml`
 2. Provide the Ollama URL(s) for the new model(s)
 3. Send to `gpt-oss:20b` (default local assessor) or a capable cloud LLM
-4. Merge the JSON output into your local `model-data/model-lookup.json`
-5. Add documentation to your local `model-data/assessed-models.md`
+4. Save the YAML output and run: `python3 scripts/add-model-from-yaml.py new-models.yaml`
+5. Regenerate docs: `python3 scripts/export-assessed-models.py`
 
-Your local model database evolves with your needs—add models that work for your hardware and workflows. All assessments stay local.
+Your local DB evolves with your needs. All assessments stay local.
 
 ---
 
@@ -153,7 +168,7 @@ The `agent-model-management/` folder holds reference configs and instructions fo
 
 See [agent-model-management/README.md](agent-model-management/README.md) for:
 - How to update Continue's `config.yaml` when models change
-- Role mapping from `model-lookup.json` to agent configs
+- Role mapping from model-assessor.db to agent configs
 - Adding support for other apps (Cursor, Windsurf, etc.)
 
 ---
@@ -186,7 +201,7 @@ Models are categorized by VRAM footprint and performance:
 | `embedding` | embeddinggemma:latest | RAG pipelines |
 | `model_assessor` | gpt-oss:20b | Bootstrap for this system |
 
-See your local `model-data/model-lookup.json` for complete role mappings and `assessed-models.md` for detailed descriptions.
+Query `model-assessor.db` or see `assessed-models.md` for detailed descriptions.
 
 ---
 
@@ -206,18 +221,21 @@ For writing tasks, models are tiered by quality/speed tradeoff:
 
 | File | In Git? | Purpose |
 |------|---------|---------|
+| `scripts/schema.sql` | ✓ | SQLite schema for models, roles, profiles |
+| `scripts/init-db.sh` | ✓ | Create empty DB |
+| `scripts/add-model-from-yaml.py` | ✓ | Insert models from assessment YAML → DB |
+| `scripts/export-assessed-models.py` | ✓ | Regenerate assessed-models.md from DB |
+| `scripts/import-profiles.py` | ✓ | Import hardware/software YAML → DB |
+| `scripts/query-db.sh` | ✓ | Run ad-hoc SQL queries against DB |
 | `computer-profile/hardware-profile.template.yaml` | ✓ | Template for hardware specs |
 | `computer-profile/software-profile.template.yaml` | ✓ | Template for IDE/agent setup |
 | `computer-profile/hardware-profile.yaml` | ✗ local | Your hardware specs (gitignored) |
 | `computer-profile/software-profile.yaml` | ✗ local | Your IDE/agent config (gitignored) |
-| `model-data/model-lookup.template.json` | ✓ | Template for model database |
-| `model-data/assessed-models.template.md` | ✓ | Template for model docs |
-| `model-data/model-lookup.json` | ✗ local | Your model database (gitignored) |
-| `model-data/assessed-models.md` | ✗ local | Your model docs (gitignored) |
+| `model-data/model-assessor.db` | ✗ local | **SQLite source of truth** (gitignored) |
+| `model-data/assessed-models.md` | ✗ local | Regenerated from DB (gitignored) |
 | `model-selector-prompt.yaml` | ✓ | System prompt for model selection |
 | `model-assessment-prompt.yaml` | ✓ | System prompt for assessing new models |
 | `agent-model-management/` | ✓ | Agent config references and instructions |
-| `ref/` | ✗ local | Optional scratch folder for local config copies (gitignored) |
 
 ---
 
@@ -234,16 +252,39 @@ For writing tasks, models are tiered by quality/speed tradeoff:
 
 > **For humans:** This section tells LLMs how to behave when encountering these files. Skip unless curious.
 
+### @LLM: Environment Assumption
+
+**You are running as a tool-calling agent with shell access** (Cursor, Cline, Continue, or similar). You can execute commands directly. Do not ask the user to paste data — query the database yourself.
+
 ### @LLM: Task Routing
 
-| User wants to... | Load these files | Action |
-|------------------|------------------|--------|
-| Select a model | `computer-profile/hardware-profile.yaml` + `model-data/model-lookup.json` | Return structured recommendation |
-| Get model details | `model-data/assessed-models.md` | Summarize specs and caveats |
-| Assess new model | `computer-profile/hardware-profile.yaml` + `model-assessment-prompt.yaml` | Copy templates if missing, then generate JSON + Markdown |
-| Install a model | `model-data/model-lookup.json` | Return `models.{name}.install` |
+| User wants to... | Action |
+|------------------|--------|
+| Select a model | Query `model-assessor.db` via `./scripts/query-db.sh` + read `hardware-profile.yaml`. Return structured recommendation. |
+| Get model details | Read `model-data/assessed-models.md` or query `SELECT * FROM model_docs WHERE model_id='...'` |
+| Assess new model | Read `model-assessment-prompt.yaml`, generate YAML, run `python3 scripts/add-model-from-yaml.py`, then `python3 scripts/export-assessed-models.py` |
+| Install a model | `./scripts/query-db.sh "SELECT install FROM models WHERE model_id='...'"` → run the returned command |
 
-**Note:** If local files don't exist, copy from `*.template.*` first.
+**If DB is missing:** Run `./scripts/init-db.sh`.
+
+### @LLM: Key Queries
+
+```bash
+# All models sorted by VRAM
+./scripts/query-db.sh "SELECT model_id, vram, class, tps FROM models ORDER BY vram"
+
+# Find model for a role
+./scripts/query-db.sh "SELECT model_id FROM role_model WHERE role='coding' AND variant='primary'"
+
+# Models matching a constraint
+./scripts/query-db.sh "SELECT model_id FROM constraint_model WHERE constraint_name='has_vision'"
+
+# Decision tree fallback chain
+./scripts/query-db.sh "SELECT chain_text FROM decision_tree WHERE need_key='need_coding'"
+
+# Hardware budget
+cat computer-profile/hardware-profile.yaml | grep -A2 vram_budget
+```
 
 ### @LLM: Response Format
 
@@ -269,14 +310,18 @@ For writing tasks, models are tiered by quality/speed tradeoff:
 # Heavy Lifters (30-48GB) always run solo
 ```
 
-### @LLM: Model Database Schema
+### @LLM: Database Schema (SQLite)
 
-```text
-models.{model:tag}         → {vram, ctx, class, tps, install, url, ...}
-by_role.{role}.primary     → default model for role
-by_role.{role}.{variant}   → alternative (e.g., "quick", "quality")
-by_constraint.{constraint} → array of matching models
-decision_tree.{need}       → fallback chain
+```sql
+-- model-data/model-assessor.db
+SELECT * FROM models;              -- model_id, vram, ctx, class, tps, install, url, vision, tools, ...
+SELECT * FROM role_model;          -- role, variant, model_id
+SELECT * FROM constraint_model;    -- constraint_name, model_id
+SELECT * FROM decision_tree;       -- need_key, chain_text
+SELECT * FROM rag_pipeline;        -- pipeline configs
+SELECT * FROM model_docs;          -- model_id, description, best_for, caveats
+SELECT * FROM hardware_profile;    -- yaml_content (stored profile)
+SELECT * FROM software_profile;    -- yaml_content (stored profile)
 ```
 
 <!-- END LLM INSTRUCTIONS -->

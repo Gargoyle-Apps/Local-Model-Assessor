@@ -1,19 +1,19 @@
 # Agent Model Management
 
-This folder holds **reference configs and instructions** for keeping agent/IDE tools in sync with the models in your **local** model data. When you add, remove, or reclassify models in your local `model-data/model-lookup.json`, update the corresponding agent configs using the instructions below.
+This folder holds **reference configs and instructions** for keeping agent/IDE tools in sync with the models in your **local** model data. When you add, remove, or reclassify models in `model-data/model-assessor.db`, update the corresponding agent configs using the instructions below.
 
-**Prerequisite:** You've copied the templates and created your local files (`model-lookup.json`, `assessed-models.md`, `hardware-profile.yaml`). These are gitignored and live only on your machine.
+**Prerequisite:** You've run `./scripts/init-db.sh` and created local profiles (`model-assessor.db`, `hardware-profile.yaml`). These are gitignored.
 
-**Optional:** The `ref/` folder (gitignored) is for local copies of agent configs—e.g. project-specific Continue configs—before copying into `.continue/config.yaml`. Use it if you want a staging area separate from your projects.
+**Optional:** The `ref/` folder (gitignored) is for local copies of agent configs before copying into `.continue/config.yaml`.
 
-**Source of truth (local):** `model-data/model-lookup.json` and `model-data/assessed-models.md` — created from templates, not in the repo.  
-**Hardware context (local):** `computer-profile/hardware-profile.yaml` — also local-only.
+**Source of truth (local):** `model-data/model-assessor.db` — SQLite DB. Query directly via `./scripts/query-db.sh`.  
+**Hardware context (local):** `computer-profile/hardware-profile.yaml` or `SELECT yaml_content FROM hardware_profile` in the DB.
 
 ---
 
 ## Overview: Role Mapping
 
-| This repo (model-lookup) | Typical agent use |
+| This repo (model-assessor.db) | Typical agent use |
 |-------------------------|-------------------|
 | `coding.primary`        | Chat, Edit, Apply (main agent) |
 | `vision.primary`        | Chat with image input |
@@ -21,7 +21,7 @@ This folder holds **reference configs and instructions** for keeping agent/IDE t
 | `autocomplete.balanced` | Autocomplete / ghost text |
 | `embedding.primary`     | Embed / RAG indexing |
 
-Use `by_role` and `models` in `model-lookup.json` to pick the right model names and capabilities when editing agent configs.
+Use `role_model` and `models` tables in `model-assessor.db` to pick the right model names and capabilities.
 
 ---
 
@@ -43,24 +43,24 @@ Use the project-level file so this repo can version a reference; you can copy fr
 ### How to update `config.yaml` when models change
 
 1. **Check the source of truth**  
-   In `model-data/model-lookup.json`:
-   - `models` — `model-name:tag`, `ctx`, capabilities (`tools` → `tool_use`, `vision` → `image_input`).
-   - `by_role` — which model to use for coding, vision, reasoning, autocomplete, embedding.
+   Query `model-assessor.db` directly:
+   - `models` — model_id, ctx, tools, vision, etc.
+   - `role_model` — which model for coding, vision, reasoning, autocomplete, embedding.
 
 2. **Map roles to Continue**  
-   - **Primary agent (chat + edit + apply):** `by_role.coding.primary` (e.g. `qwen3-coder:30b`).  
+   - **Primary agent (chat + edit + apply):** `SELECT model_id FROM role_model WHERE role='coding' AND variant='primary'` (e.g. `qwen3-coder:30b`).  
      - In Continue: `roles: [chat, edit, apply]`, `capabilities: [tool_use]` if the model supports tools.
-   - **Vision:** `by_role.vision.primary` (e.g. `qwen3-vl:8b`).  
+   - **Vision:** role='vision', variant='primary' (e.g. `qwen3-vl:8b`).  
      - In Continue: `roles: [chat]`, `capabilities: [image_input]`.
-   - **Reasoning (no tools):** `by_role.reasoning.primary` (e.g. `gpt-oss:20b` or `deepseek-r1:14b`).  
+   - **Reasoning (no tools):** role='reasoning', variant='primary' (e.g. `gpt-oss:20b`).  
      - In Continue: `roles: [chat, edit]`, no `capabilities` (or omit tool_use) so the UI doesn’t try to use tools.
-   - **Autocomplete:** `by_role.autocomplete.balanced` or `fastest` (e.g. `granite4:3b`, `granite4:350m`).  
+   - **Autocomplete:** role='autocomplete', variant='balanced' or 'fastest' (e.g. `granite4:3b`).  
      - In Continue: `roles: [autocomplete]` only.
-   - **Embeddings:** `by_role.embedding.primary` (e.g. `embeddinggemma:latest` or `qwen3-embedding:0.6b`).  
+   - **Embeddings:** role='embedding', variant='primary' (e.g. `embeddinggemma:latest`).  
      - In Continue: `roles: [embed]`.
 
 3. **Set context length**  
-   Use the `ctx` value from `model-lookup.json` for each model (e.g. 32768, 128000). In Continue this is `contextLength` (or under `defaultCompletionOptions.contextLength` depending on schema).
+   Use the `ctx` value from the `models` table for each model (e.g. 32768, 128000). In Continue this is `contextLength` (or under `defaultCompletionOptions.contextLength` depending on schema).
 
 4. **Optional: edit/apply templates**  
    If a model needs a strict “code only” edit template (e.g. to avoid markdown wrappers), keep a `promptTemplates.edit` (and optionally `apply`) in that model’s block. The reference [continue/config.yaml](continue/config.yaml) includes an example for the primary coding model.
@@ -74,13 +74,13 @@ Use the project-level file so this repo can version a reference; you can copy fr
 models:
   - name: "Display Name"
     provider: ollama
-    model: "model-name:tag"   # must match Ollama / model-lookup.json
+    model: "model-name:tag"   # must match Ollama / model-assessor.db
     roles: [chat, edit, apply]  # or [autocomplete], [embed], etc.
     capabilities: [tool_use]    # and/or image_input if supported
-    contextLength: 32768        # from model-lookup.json "ctx"
+    contextLength: 32768        # from models.ctx
 ```
 
-Only include `capabilities` that the model actually has in `model-lookup.json`; omit for reasoning-only models to avoid tool errors.
+Only include `capabilities` that the model has in the DB (tools → tool_use, vision → image_input); omit for reasoning-only models.
 
 ### Copying the reference config into a project
 
@@ -102,7 +102,7 @@ When you add support for another agent/IDE (e.g. Cursor, Windsurf, another tool)
 2. Add a **section in this README** (e.g. `## Other App`) with:
    - Link to the app’s config/docs.
    - Config file name and path (where the app loads it).
-   - Step-by-step “How to update …” using `model-lookup.json` and `by_role`.
+   - Step-by-step "How to update" using model-assessor.db and role_model.
    - Any app-specific quirks (e.g. role names, capability flags).
 3. Put a reference config file in that subfolder (e.g. `config.yaml` or `settings.json`) so the repo keeps a copy that matches your local fleet.
 

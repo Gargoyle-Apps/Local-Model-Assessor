@@ -43,8 +43,15 @@ local/
 
 ref/
 
-# Local-only generated files (use *.template.* for the committed versions)
+# Cursor rules (user-specific)
+.cursorrules
+
+# Local-only files (gitignored)
 computer-profile/hardware-profile.yaml
 computer-profile/software-profile.yaml
-model-data/model-lookup.json
+model-data/model-assessor.db
 model-data/assessed-models.md
+model-data/*.db
+
+# Legacy (if still present locally)
+model-data/model-lookup.json

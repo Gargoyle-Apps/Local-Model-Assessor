@@ -1,7 +1,18 @@
 # Project-specific Cursor rules for Local-Model-Assessor
 
+## Environment Assumption
+This system is for **tool-calling AI agents with shell access** (Cursor, Cline, Continue, etc.). You can query the database and run scripts directly — do not ask the user to paste data or run commands manually.
+
+## Architecture: SQLite as Source of Truth
+The model database is `model-data/model-assessor.db` (SQLite). Query it directly:
+- `./scripts/query-db.sh "SQL"` — run any query against the DB
+- `./scripts/init-db.sh` — create empty DB
+- `python3 scripts/add-model-from-yaml.py file.yaml` — insert models from assessment output
+- `python3 scripts/export-assessed-models.py` — regenerate assessed-models.md from DB
+- `python3 scripts/import-profiles.py` — import hardware/software YAML into DB
+
 ## Local vs Tracked Files
-When this repo is cloned locally, prefer editing the **gitignored local files** in `computer-profile/` and `model-data/` (hardware-profile.yaml, software-profile.yaml, model-lookup.json, assessed-models.md). If you need to change tracked files (templates, prompts, README, etc.), ask the user to create a branch first. To create local files from templates, use the setup block in model-assessment-prompt.yaml — do not create those files manually.
+Prefer editing **gitignored local files** (`model-assessor.db`, hardware-profile.yaml, software-profile.yaml, assessed-models.md). Templates and prompts are tracked. To create local files from templates, use the setup block in `model-assessment-prompt.yaml` or run `./scripts/init-db.sh`.
 
 ## Git Operations
 When running git commands (push, pull, commit, fetch, merge, checkout, branch operations), use `required_permissions: ["all"]` to avoid sandbox restrictions on .git/config writes.
