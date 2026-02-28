@@ -55,3 +55,6 @@ model-data/*.db
 
 # Legacy (if still present locally)
 model-data/model-lookup.json
+
+# Agent configs (local copies; template stays in repo)
+agent-model-management/continue/config.yaml

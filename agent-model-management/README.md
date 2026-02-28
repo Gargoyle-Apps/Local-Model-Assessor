@@ -29,16 +29,24 @@ Use `role_model` and `models` tables in `model-assessor.db` to pick the right mo
 
 **Docs:** [Continue config reference](https://docs.continue.dev/reference)  
 **Config file:** `config.yaml` (YAML; replaces legacy `config.json`)  
-**Reference copy in this repo:** [continue/config.yaml](continue/config.yaml)
+**Default location:** `~/.continue/config.yaml` — see [continue/config-location.md](continue/config-location.md)
 
 Continue uses a single `config.yaml` with `name`, `version`, `schema`, `models`, `context`, and optional `rules`, `prompts`, `docs`, `mcpServers`, `data`.
 
+### Setup (local reference in this repo)
+
+To keep an untracked local copy of your Continue config in this folder, copy from the default location (see [config-location.md](continue/config-location.md)):
+
+```bash
+cp ~/.continue/config.yaml agent-model-management/continue/config.yaml
+```
+
+The file is gitignored — it never gets committed. Edit your actual config at `~/.continue/config.yaml`; re-copy here when you want to refresh the local reference.
+
 ### Where Continue loads config
 
-- **Project-level:** `.continue/config.yaml` in the project root (or `config.json` for legacy).
-- **User-level:** Continue settings may also define or override models.
-
-Use the project-level file so this repo can version a reference; you can copy from `agent-model-management/continue/config.yaml` into `.continue/config.yaml` in any project where you want this fleet.
+- **User-level:** `~/.continue/config.yaml` (default)
+- **Project-level:** `.continue/config.yaml` in the project root
 
 ### How to update `config.yaml` when models change
 
@@ -63,7 +71,7 @@ Use the project-level file so this repo can version a reference; you can copy fr
    Use the `ctx` value from the `models` table for each model (e.g. 32768, 128000). In Continue this is `contextLength` (or under `defaultCompletionOptions.contextLength` depending on schema).
 
 4. **Optional: edit/apply templates**  
-   If a model needs a strict “code only” edit template (e.g. to avoid markdown wrappers), keep a `promptTemplates.edit` (and optionally `apply`) in that model’s block. The reference [continue/config.yaml](continue/config.yaml) includes an example for the primary coding model.
+   If a model needs a strict “code only” edit template (e.g. to avoid markdown wrappers), keep a `promptTemplates.edit` (and optionally `apply`) in that model’s block. Your local `config.yaml` in this folder (copied from ~/.continue) may include an example for the primary coding model.
 
 5. **Bump version**  
    Update the top-level `version` in `config.yaml` when you change models or roles (e.g. `1.0.5` → `1.0.6`).
@@ -82,12 +90,13 @@ models:
 
 Only include `capabilities` that the model has in the DB (tools → tool_use, vision → image_input); omit for reasoning-only models.
 
-### Copying the reference config into a project
+### Copying into a project
 
 ```bash
-# From repo root
+# From repo root — use your local config (after copying from ~/.continue) or copy directly
 mkdir -p .continue
 cp agent-model-management/continue/config.yaml .continue/config.yaml
+# Or: cp ~/.continue/config.yaml .continue/config.yaml
 ```
 
 Then adjust `name`/`version` if desired and ensure the listed Ollama models are installed (`ollama pull <model>:<tag>`).
