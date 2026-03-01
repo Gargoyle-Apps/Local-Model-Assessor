@@ -48,6 +48,9 @@ content: |
 
   6. **Task categories:** `SELECT role_name FROM task_category WHERE category='writing'`
 
+  7. **Model-specific caveats:** `SELECT model_id, caveats FROM model_docs WHERE model_id IN ('model:tag', ...) AND caveats IS NOT NULL`
+     - Use this for recommended models — caveats include Ollama version requirements, FIM notes, context limits, prompt tips, etc.
+
   ---
 
   **RESPONSE FORMAT:**
@@ -76,11 +79,5 @@ content: |
 
   ---
 
-  **SPECIAL NOTES:**
-  - Granite models have native FIM for code completion (`fim: true`)
-  - Ministral models require Ollama 0.13.1+
-  - gpt-oss has configurable reasoning effort (low/medium/high)
-  - qwen3:72b uses q3_k_m, limited to 4k context (`no_corun: true`)
-  - For RAG tasks, check `requires_embedding` and use appropriate pipeline
-  - Creative tasks benefit from iteration: start with draft tier, polish at end
-  - **TranslateGemma:** Use structured prompt: `You are a professional {SOURCE_LANG} ({SOURCE_CODE}) to {TARGET_LANG} ({TARGET_CODE}) translator...` — include two blank lines before the text to translate; output only the translation
+  **MODEL-SPECIFIC CAVEATS:**
+  Query `model_docs.caveats` for recommended models — include any caveats in your response (Ollama version requirements, FIM, context limits, prompt tips). Assessors populate caveats when adding models; ensure the assessment prompt includes known quirks in the `model_docs.caveats` field.

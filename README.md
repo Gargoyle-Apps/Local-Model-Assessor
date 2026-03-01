@@ -71,7 +71,7 @@ your-project/
 ```bash
 cd .model-assessor
 
-# Create empty DB and profile files
+# Create empty DB (init-db.sh creates only the database, not profile files)
 ./scripts/init-db.sh
 cp computer-profile/hardware-profile.template.yaml computer-profile/hardware-profile.yaml
 cp computer-profile/software-profile.template.yaml computer-profile/software-profile.yaml
@@ -189,7 +189,7 @@ Models are categorized by VRAM footprint and performance:
 
 ---
 
-## Role Quick Reference
+## Role Quick Reference (examples — query DB for your actual models)
 
 | Role | Primary Model | Notes |
 |------|---------------|-------|
@@ -205,7 +205,7 @@ Query `model-assessor.db` or see `assessed-models.md` for detailed descriptions.
 
 ---
 
-## Creative Tiers
+## Creative Tiers (examples — query DB for your actual models)
 
 For writing tasks, models are tiered by quality/speed tradeoff:
 

@@ -71,7 +71,7 @@ content: |
     model-name:tag:
       description: "1-2 sentence summary of the model."
       best_for: "Use case 1, use case 2, use case 3"
-      caveats: "Known limitations or requirements"
+      caveats: "Known limitations or requirements (Ollama version, FIM, context limits, prompt tips)"
   ```
 
   **Required fields (per model):** vram, ctx, class, tps, url, install
