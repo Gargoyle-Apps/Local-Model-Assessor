@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS models (
   multilingual INTEGER DEFAULT 0,
   rag INTEGER DEFAULT 0,
   no_corun INTEGER DEFAULT 0,
-  latency TEXT
+  latency TEXT,
+  assessed_at TEXT DEFAULT (datetime('now'))
 );
 
 -- Role assignments: by_role.{role}.{variant} → model

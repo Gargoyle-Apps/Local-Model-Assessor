@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Insert models from YAML output directly into model-assessor.db.
-Used by model-assessment-prompt: LLM outputs YAML → pipe to this script.
+Used by LLM-prompts/model-assessment-prompt.yaml: LLM outputs YAML → pipe to this script.
 
 Usage:
   python scripts/add-model-from-yaml.py < assessment-output.yaml
@@ -13,6 +13,7 @@ import os
 import re
 import sqlite3
 import sys
+from datetime import datetime
 from pathlib import Path
 
 try:
@@ -38,36 +39,55 @@ def load_yaml(content: str) -> dict:
     return yaml.safe_load(content) or {}
 
 
+def _models_has_assessed_at(c) -> bool:
+    c.execute("PRAGMA table_info(models)")
+    return any(row[1] == "assessed_at" for row in c.fetchall())
+
+
 def insert_model(c, model_id: str, m: dict) -> None:
-    c.execute(
-        """
-        INSERT OR REPLACE INTO models
-        (model_id, vram, ctx, class, tps, url, install,
-         vision, tools, reasoning, moe, fim, structured, creative,
-         multilingual, rag, no_corun, latency)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            model_id,
-            float(m.get("vram", 0)),
-            int(m.get("ctx", 0)),
-            str(m.get("class", "")),
-            int(m.get("tps", 0)),
-            str(m.get("url", "")),
-            str(m.get("install", "")),
-            1 if _truthy(m.get("vision")) else 0,
-            1 if _truthy(m.get("tools")) else 0,
-            1 if _truthy(m.get("reasoning")) else 0,
-            1 if _truthy(m.get("moe")) else 0,
-            1 if _truthy(m.get("fim")) else 0,
-            1 if _truthy(m.get("structured")) else 0,
-            m.get("creative"),
-            1 if _truthy(m.get("multilingual")) else 0,
-            1 if _truthy(m.get("rag")) else 0,
-            1 if _truthy(m.get("no_corun")) else 0,
-            m.get("latency"),
-        ),
+    values = (
+        model_id,
+        float(m.get("vram", 0)),
+        int(m.get("ctx", 0)),
+        str(m.get("class", "")),
+        int(m.get("tps", 0)),
+        str(m.get("url", "")),
+        str(m.get("install", "")),
+        1 if _truthy(m.get("vision")) else 0,
+        1 if _truthy(m.get("tools")) else 0,
+        1 if _truthy(m.get("reasoning")) else 0,
+        1 if _truthy(m.get("moe")) else 0,
+        1 if _truthy(m.get("fim")) else 0,
+        1 if _truthy(m.get("structured")) else 0,
+        m.get("creative"),
+        1 if _truthy(m.get("multilingual")) else 0,
+        1 if _truthy(m.get("rag")) else 0,
+        1 if _truthy(m.get("no_corun")) else 0,
+        m.get("latency"),
     )
+    if _models_has_assessed_at(c):
+        assessed_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        c.execute(
+            """
+            INSERT OR REPLACE INTO models
+            (model_id, vram, ctx, class, tps, url, install,
+             vision, tools, reasoning, moe, fim, structured, creative,
+             multilingual, rag, no_corun, latency, assessed_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            values + (assessed_at,),
+        )
+    else:
+        c.execute(
+            """
+            INSERT OR REPLACE INTO models
+            (model_id, vram, ctx, class, tps, url, install,
+             vision, tools, reasoning, moe, fim, structured, creative,
+             multilingual, rag, no_corun, latency)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            values,
+        )
 
 
 def insert_role(c, role: str, variant: str, model_id: str, notes: str = None) -> None:

@@ -17,7 +17,7 @@ A system for selecting, assessing, and configuring local Ollama models — desig
 **What's in Git (the shell):**
 - SQL schema and scripts (`scripts/`) — init DB, import, export, query
 - Templates (`.template.yaml`) — starting points for hardware/software profiles
-- Prompts (`model-selector-prompt.yaml`, `model-assessment-prompt.yaml`) — system prompts for agents
+- Prompts (`LLM-prompts/model-selector-prompt.yaml`, `LLM-prompts/model-assessment-prompt.yaml`) — system prompts for agents
 - Agent config references (`agent-model-management/`)
 - `.gitkeep` files so `computer-profile/` and `model-data/` exist when cloned
 
@@ -26,6 +26,12 @@ A system for selecting, assessing, and configuring local Ollama models — desig
 - `computer-profile/software-profile.yaml`
 - `model-data/model-assessor.db` — **SQLite source of truth** for models, roles, constraints, profiles
 - `model-data/assessed-models.md` — human-readable docs (regenerated from DB)
+- `model-data/*.db` — any SQLite DBs in model-data
+- `agent-model-management/continue/config.yaml` — local copy of Continue config (template/docs stay in repo)
+- `ref/` — local copies of agent configs before syncing
+- `.cursorrules` — Cursor-specific overrides (gitignored); generic rules are in `AGENTS.md`
+
+**Gitkeep:** `computer-profile/` and `model-data/` use `.gitkeep` so those empty dirs exist when cloned.
 
 Clone → run `./scripts/init-db.sh` → fill in hardware → run assessments. Your agent queries the DB directly. All data stays local.
 
@@ -44,26 +50,39 @@ cp -r /path/to/local-model-assessor .model-assessor
 ```
 
 ```text
-your-project/
-├── .model-assessor/          # This package
-│   ├── computer-profile/
-│   │   ├── hardware-profile.template.yaml
-│   │   ├── software-profile.template.yaml
-│   │   └── .gitkeep
-│   ├── model-data/
-│   │   ├── model-assessor.db     # local SQLite DB (gitignored)
-│   │   └── .gitkeep
-│   ├── scripts/
-│   │   ├── schema.sql
-│   │   ├── init-db.sh
-│   │   ├── add-model-from-yaml.py
-│   │   ├── export-assessed-models.py
-│   │   ├── import-profiles.py
-│   │   └── query-db.sh
-│   ├── agent-model-management/
-│   └── *.yaml
-├── src/
-└── ...
+.model-assessor/               # This package (or your-project/.model-assessor)
+├── computer-profile/
+│   ├── hardware-profile.template.yaml
+│   ├── software-profile.template.yaml
+│   ├── hardware-profile.yaml      # local (gitignored)
+│   ├── software-profile.yaml     # local (gitignored)
+│   └── .gitkeep
+├── model-data/
+│   ├── model-assessor.db         # local SQLite DB (gitignored)
+│   ├── assessed-models.md       # regenerated from DB (gitignored)
+│   └── .gitkeep
+├── scripts/
+│   ├── schema.sql
+│   ├── init-db.sh
+│   ├── migrate-schema.sh         # for existing DBs
+│   ├── add-model-from-yaml.py
+│   ├── export-assessed-models.py
+│   ├── import-profiles.py
+│   └── query-db.sh
+├── agent-model-management/
+│   ├── README.md
+│   └── continue/
+│       ├── config-location.md
+│       └── config.yaml          # local copy (gitignored)
+├── ref/                         # local agent config copies (gitignored)
+├── LLM-prompts/
+│   ├── model-assessment-prompt.yaml
+│   ├── model-selector-prompt.yaml
+│   └── ollama-search.md
+├── AGENTS.md              # agent instructions (generic)
+├── requirements.txt
+├── .gitignore
+└── LICENSE
 ```
 
 ### 2. Initialize the Database and Profiles
@@ -73,6 +92,7 @@ cd .model-assessor
 
 # Create empty DB (init-db.sh creates only the database, not profile files)
 ./scripts/init-db.sh
+# Existing DB? Run ./scripts/migrate-schema.sh to add assessed_at and other columns
 cp computer-profile/hardware-profile.template.yaml computer-profile/hardware-profile.yaml
 cp computer-profile/software-profile.template.yaml computer-profile/software-profile.yaml
 
@@ -103,7 +123,7 @@ primary_agent:
 
 ### 4. Run Initial Model Assessments
 
-Use `model-assessment-prompt.yaml` + your hardware profile + Ollama model URLs. Send to `gpt-oss:20b` (or a capable cloud LLM). The prompt outputs YAML — save it and run:
+Use `LLM-prompts/model-assessment-prompt.yaml` + your hardware profile + Ollama model URLs. Send to `gpt-oss:20b` (or a capable cloud LLM). The prompt outputs YAML — save it and run:
 ```bash
 python3 scripts/add-model-from-yaml.py new-models.yaml
 python3 scripts/export-assessed-models.py   # regenerate assessed-models.md
@@ -114,7 +134,7 @@ python3 scripts/export-assessed-models.py   # regenerate assessed-models.md
 Your coding agent reads the selector prompt and queries the DB directly:
 
 ```text
-[System: contents of .model-assessor/model-selector-prompt.yaml]
+[System: contents of .model-assessor/LLM-prompts/model-selector-prompt.yaml]
 
 I'm setting up Cline for coding tasks. What models should I configure?
 ```
@@ -145,14 +165,24 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 ### Template Shell → SQLite DB → Local Assessments
 
 The repo ships **scripts and schema**, not pre-assessed models. Your local `model-assessor.db` starts empty and is populated by:
-- **Assessment:** Your agent runs `model-assessment-prompt.yaml`, outputs YAML, and runs `add-model-from-yaml.py` to insert directly
+- **Assessment:** Your agent runs `LLM-prompts/model-assessment-prompt.yaml`, outputs YAML, and runs `add-model-from-yaml.py` to insert directly
 - **Export:** `export-assessed-models.py` regenerates `assessed-models.md` from the DB
 
-### Adding New Models
+### Discovering New Models from Ollama
 
-When a new model appears on Ollama:
+Follow **`LLM-prompts/ollama-search.md`** to:
+1. Fetch the [Ollama popular models](https://ollama.com/search?o=popular) page
+2. Parse entries, pre-filter by hardware/software profiles, exclude Cloud-only
+3. Prioritize new-to-DB and recently-updated models
+4. Cap at 7 candidates; only assess models that "beat" existing ones (size, performance, need)
+5. Assess via `LLM-prompts/model-assessment-prompt.yaml` and insert into DB
+6. Update `meta.last_ollama_scan`
 
-1. Use `model-assessment-prompt.yaml` + your local `hardware-profile.yaml`
+### Adding New Models Manually
+
+When a new model appears on Ollama and you want to assess it directly:
+
+1. Use `LLM-prompts/model-assessment-prompt.yaml` + your local `hardware-profile.yaml`
 2. Provide the Ollama URL(s) for the new model(s)
 3. Send to `gpt-oss:20b` (default local assessor) or a capable cloud LLM
 4. Save the YAML output and run: `python3 scripts/add-model-from-yaml.py new-models.yaml`
@@ -227,15 +257,22 @@ For writing tasks, models are tiered by quality/speed tradeoff:
 | `scripts/export-assessed-models.py` | ✓ | Regenerate assessed-models.md from DB |
 | `scripts/import-profiles.py` | ✓ | Import hardware/software YAML → DB |
 | `scripts/query-db.sh` | ✓ | Run ad-hoc SQL queries against DB |
+| `scripts/migrate-schema.sh` | ✓ | Add columns to existing DB (e.g. assessed_at) |
+| `LLM-prompts/ollama-search.md` | ✓ | Pipeline to discover & assess new models from Ollama popular |
 | `computer-profile/hardware-profile.template.yaml` | ✓ | Template for hardware specs |
 | `computer-profile/software-profile.template.yaml` | ✓ | Template for IDE/agent setup |
 | `computer-profile/hardware-profile.yaml` | ✗ local | Your hardware specs (gitignored) |
 | `computer-profile/software-profile.yaml` | ✗ local | Your IDE/agent config (gitignored) |
 | `model-data/model-assessor.db` | ✗ local | **SQLite source of truth** (gitignored) |
 | `model-data/assessed-models.md` | ✗ local | Regenerated from DB (gitignored) |
-| `model-selector-prompt.yaml` | ✓ | System prompt for model selection |
-| `model-assessment-prompt.yaml` | ✓ | System prompt for assessing new models |
+| `model-data/model-lookup.json` | ✗ legacy | Legacy format (gitignored if present) |
+| `requirements.txt` | ✓ | Python deps (PyYAML) |
+| `LLM-prompts/model-selector-prompt.yaml` | ✓ | System prompt for model selection |
+| `LLM-prompts/model-assessment-prompt.yaml` | ✓ | System prompt for assessing new models |
+| `AGENTS.md` | ✓ | Project rules for AI coding agents (generic) |
 | `agent-model-management/` | ✓ | Agent config references and instructions |
+| `agent-model-management/continue/config.yaml` | ✗ local | Local copy of Continue config (gitignored) |
+| `ref/` | ✗ local | Local copies of agent configs (gitignored) |
 
 ---
 
@@ -261,11 +298,12 @@ For writing tasks, models are tiered by quality/speed tradeoff:
 | User wants to... | Action |
 |------------------|--------|
 | Select a model | Query `model-assessor.db` via `./scripts/query-db.sh` + read `hardware-profile.yaml`. Return structured recommendation. |
+| Discover new models | Follow `LLM-prompts/ollama-search.md` — fetch Ollama popular page, parse, pre-filter, cap at 7, assess via `LLM-prompts/model-assessment-prompt.yaml` |
 | Get model details | Read `model-data/assessed-models.md` or query `SELECT * FROM model_docs WHERE model_id='...'` |
-| Assess new model | Read `model-assessment-prompt.yaml`, generate YAML, run `python3 scripts/add-model-from-yaml.py`, then `python3 scripts/export-assessed-models.py` |
+| Assess new model | Read `LLM-prompts/model-assessment-prompt.yaml`, generate YAML, run `python3 scripts/add-model-from-yaml.py`, then `python3 scripts/export-assessed-models.py` |
 | Install a model | `./scripts/query-db.sh "SELECT install FROM models WHERE model_id='...'"` → run the returned command |
 
-**If DB is missing:** Run `./scripts/init-db.sh`.
+**If DB is missing:** Run `./scripts/init-db.sh`. **If DB exists but lacks `assessed_at`:** Run `./scripts/migrate-schema.sh`.
 
 ### @LLM: Key Queries
 
@@ -284,6 +322,12 @@ For writing tasks, models are tiered by quality/speed tradeoff:
 
 # Hardware budget
 cat computer-profile/hardware-profile.yaml | grep -A2 vram_budget
+
+# Last Ollama scan (for ollama-search pipeline)
+./scripts/query-db.sh "SELECT value FROM meta WHERE key='last_ollama_scan'"
+
+# Model assessed timestamps
+./scripts/query-db.sh "SELECT model_id, assessed_at FROM models WHERE assessed_at IS NOT NULL"
 ```
 
 ### @LLM: Response Format
