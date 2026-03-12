@@ -126,10 +126,10 @@ A candidate that doesn't beat any existing model on size, performance, or need s
 For each accepted candidate, follow **`LLM-prompts/model-assessment-prompt.yaml`**:
 
 1. Read `computer-profile/hardware-profile.yaml` (or template)
-2. For each model URL/name, produce YAML output per the prompt. Use `new-models.template.yaml` as the schema reference; write to `new-models.yaml` (gitignored).
+2. For each model URL/name, produce YAML output per the prompt. Use `model-data/new-models.template.yaml` as the schema reference; write to `model-data/new-models.yaml` (gitignored).
 3. Run:
    ```bash
-   python3 scripts/add-model-from-yaml.py new-models.yaml
+   python3 scripts/add-model-from-yaml.py model-data/new-models.yaml
    python3 scripts/export-assessed-models.py
    ```
 

@@ -4,16 +4,17 @@ Insert models from YAML output directly into model-assessor.db.
 Used by LLM-prompts/model-assessment-prompt.yaml: LLM outputs YAML → pipe to this script.
 
 Usage:
+  python scripts/add-model-from-yaml.py model-data/new-models.yaml
+  python scripts/add-model-from-yaml.py   # defaults to model-data/new-models.yaml if it exists
   python scripts/add-model-from-yaml.py < assessment-output.yaml
-  python scripts/add-model-from-yaml.py new-models.yaml
-  # Or paste YAML; script extracts from ```yaml ... ``` blocks if present
+  # Script extracts from ```yaml ... ``` blocks if present
 """
 
 import os
 import re
 import sqlite3
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 try:
@@ -24,6 +25,7 @@ except ImportError:
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB = REPO_ROOT / "model-data" / "model-assessor.db"
+DEFAULT_YAML = REPO_ROOT / "model-data" / "new-models.yaml"
 
 
 def _truthy(v):
@@ -66,7 +68,7 @@ def insert_model(c, model_id: str, m: dict) -> None:
         m.get("latency"),
     )
     if _models_has_assessed_at(c):
-        assessed_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        assessed_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         c.execute(
             """
             INSERT OR REPLACE INTO models
@@ -108,6 +110,8 @@ def main():
     if len(sys.argv) > 1:
         path = Path(sys.argv[1])
         content = path.read_text()
+    elif DEFAULT_YAML.exists():
+        content = DEFAULT_YAML.read_text()
     else:
         content = sys.stdin.read()
 

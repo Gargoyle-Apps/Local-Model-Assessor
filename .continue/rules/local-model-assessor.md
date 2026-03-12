@@ -2,13 +2,15 @@
 
 This project manages a local fleet of Ollama models via a SQLite database. You are a tool-calling agent with shell access — query the DB and run scripts directly. Do not ask the user to paste data or run commands manually.
 
+**Full agent rules (data flow, task routing, key queries):** [AGENTS.md](AGENTS.md)
+
 ## Source of Truth
 
 The model database is `model-data/model-assessor.db` (SQLite). Use these scripts:
 
 - `./scripts/query-db.sh "SQL"` — run any query
 - `./scripts/init-db.sh` — create empty DB
-- `python3 scripts/add-model-from-yaml.py file.yaml` — insert models from YAML
+- `python3 scripts/add-model-from-yaml.py model-data/new-models.yaml` — insert models from YAML
 - `python3 scripts/export-assessed-models.py` — regenerate assessed-models.md from DB
 - `python3 scripts/import-profiles.py` — import hardware/software YAML into DB
 - `./scripts/migrate-schema.sh` — add schema columns to existing DB
@@ -36,11 +38,11 @@ The model database is `model-data/model-assessor.db` (SQLite). Use these scripts
 
 ## Local vs Tracked Files
 
-**Gitignored (local-only):** `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `new-models.yaml`, `.cursorrules`, `agent-model-management/continue/config.yaml`, `ref/`
+**Gitignored (local-only):** `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `model-data/new-models.yaml`, `.cursorrules`, `agent-model-management/continue/config.yaml`, `ref/`
 
 **Tracked (in git):** Templates (`.template.yaml`), scripts, prompts (`LLM-prompts/`), `AGENTS.md`, this rules file.
 
-Never commit local-only files. When creating new local files, use the corresponding template. For model assessment output, copy `new-models.template.yaml` to `new-models.yaml`.
+Never commit local-only files. When creating new local files, use the corresponding template. For model assessment output, copy `model-data/new-models.template.yaml` to `model-data/new-models.yaml`.
 
 ## Hardware Context
 
@@ -50,10 +52,10 @@ Read `computer-profile/hardware-profile.yaml` (or the template) for system specs
 
 ### Assess New Models
 
-Follow `LLM-prompts/ollama-search.md` to discover models from Ollama, or use `LLM-prompts/model-assessment-prompt.yaml` to assess specific models. Output goes to `new-models.yaml`, then:
+Follow `LLM-prompts/ollama-search.md` to discover models from Ollama, or use `LLM-prompts/model-assessment-prompt.yaml` to assess specific models. Output goes to `model-data/new-models.yaml`, then:
 
 ```bash
-python3 scripts/add-model-from-yaml.py new-models.yaml
+python3 scripts/add-model-from-yaml.py model-data/new-models.yaml
 python3 scripts/export-assessed-models.py
 ```
 

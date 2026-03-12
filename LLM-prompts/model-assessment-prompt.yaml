@@ -18,7 +18,7 @@ content: |
   # Import profiles into DB
   python3 scripts/import-profiles.py
   ```
-  If migrating from a legacy model-lookup.json, convert it to YAML and run `add-model-from-yaml.py`.
+  If migrating from a legacy model-lookup.json, convert it to YAML and run `add-model-from-yaml.py model-data/new-models.yaml`.
 
   **HARDWARE CONTEXT:**
   Refer to the provided computer-profile/hardware-profile.yaml for:
@@ -77,9 +77,9 @@ content: |
   **Required fields (per model):** vram, ctx, class, tps, url, install
   **Optional (only if true):** vision, tools, reasoning, moe, fim, structured, creative, multilingual, rag, no_corun, latency
 
-  **After generating output:** Write the YAML to a file and run:
+  **After generating output:** Write the YAML to `model-data/new-models.yaml` and run:
   ```bash
-  python3 scripts/add-model-from-yaml.py new-models.yaml
+  python3 scripts/add-model-from-yaml.py model-data/new-models.yaml
   python3 scripts/export-assessed-models.py   # regenerate assessed-models.md
   ```
   You have shell access — execute these commands directly, do not ask the user to run them.
