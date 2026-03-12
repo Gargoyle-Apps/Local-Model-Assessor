@@ -29,7 +29,8 @@ Use `role_model` and `models` tables in `model-assessor.db` to pick the right mo
 
 **Docs:** [Continue config reference](https://docs.continue.dev/reference)  
 **Config file:** `config.yaml` (YAML; replaces legacy `config.json`)  
-**Default location:** `~/.continue/config.yaml` — see [continue/config-location.md](continue/config-location.md)
+**Default location:** `~/.continue/config.yaml` — see [continue/config-location.md](continue/config-location.md)  
+**Project rules:** `.continue/rules/local-model-assessor.md` — auto-loaded by Continue's agent mode ([docs](https://docs.continue.dev/guides/codebase-documentation-awareness))
 
 Continue uses a single `config.yaml` with `name`, `version`, `schema`, `models`, `context`, and optional `rules`, `prompts`, `docs`, `mcpServers`, `data`.
 

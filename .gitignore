@@ -1,6 +1,13 @@
 # Cursor IDE
 .cursorignore
 
+# Continue: override global .gitignore_global which ignores all of .continue/
+# Track the rules directory (project knowledge); keep config.yaml local
+!.continue/
+.continue/*
+!.continue/rules/
+!.continue/rules/**
+
 # macOS
 .DS_Store
 .AppleDouble
