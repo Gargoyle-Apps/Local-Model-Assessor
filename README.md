@@ -16,7 +16,7 @@ A system for selecting, assessing, and configuring local Ollama models — desig
 
 **What's in Git (the shell):**
 - SQL schema and scripts (`scripts/`) — init DB, import, export, query
-- Templates (`.template.yaml`) — starting points for hardware/software profiles
+- Templates (`.template.yaml`) — starting points for hardware/software profiles and model assessment output
 - Prompts (`LLM-prompts/model-selector-prompt.yaml`, `LLM-prompts/model-assessment-prompt.yaml`) — system prompts for agents
 - Agent config references (`agent-model-management/`)
 - `.gitkeep` files so `computer-profile/` and `model-data/` exist when cloned
@@ -27,6 +27,7 @@ A system for selecting, assessing, and configuring local Ollama models — desig
 - `model-data/model-assessor.db` — **SQLite source of truth** for models, roles, constraints, profiles
 - `model-data/assessed-models.md` — human-readable docs (regenerated from DB)
 - `model-data/*.db` — any SQLite DBs in model-data
+- `new-models.yaml` — model assessment output (gitignored); copy from `new-models.template.yaml`
 - `agent-model-management/continue/config.yaml` — local copy of Continue config (template/docs stay in repo)
 - `ref/` — local copies of agent configs before syncing
 - `.cursorrules` — Cursor-specific overrides (gitignored); generic rules are in `AGENTS.md`
@@ -51,6 +52,7 @@ cp -r /path/to/local-model-assessor .model-assessor
 
 ```text
 .model-assessor/               # This package (or your-project/.model-assessor)
+├── new-models.template.yaml   # Schema for assessment output (copy → new-models.yaml, gitignored)
 ├── computer-profile/
 │   ├── hardware-profile.template.yaml
 │   ├── software-profile.template.yaml
@@ -261,10 +263,12 @@ For writing tasks, models are tiered by quality/speed tradeoff:
 | `LLM-prompts/ollama-search.md` | ✓ | Pipeline to discover & assess new models from Ollama popular |
 | `computer-profile/hardware-profile.template.yaml` | ✓ | Template for hardware specs |
 | `computer-profile/software-profile.template.yaml` | ✓ | Template for IDE/agent setup |
+| `new-models.template.yaml` | ✓ | Template for model assessment YAML output |
 | `computer-profile/hardware-profile.yaml` | ✗ local | Your hardware specs (gitignored) |
 | `computer-profile/software-profile.yaml` | ✗ local | Your IDE/agent config (gitignored) |
 | `model-data/model-assessor.db` | ✗ local | **SQLite source of truth** (gitignored) |
 | `model-data/assessed-models.md` | ✗ local | Regenerated from DB (gitignored) |
+| `new-models.yaml` | ✗ local | Assessment output; copy from template (gitignored) |
 | `model-data/model-lookup.json` | ✗ legacy | Legacy format (gitignored if present) |
 | `requirements.txt` | ✓ | Python deps (PyYAML) |
 | `LLM-prompts/model-selector-prompt.yaml` | ✓ | System prompt for model selection |

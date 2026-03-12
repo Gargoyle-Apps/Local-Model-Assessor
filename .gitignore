@@ -51,6 +51,7 @@ computer-profile/hardware-profile.yaml
 computer-profile/software-profile.yaml
 model-data/model-assessor.db
 model-data/assessed-models.md
+new-models.yaml
 model-data/*.db
 
 # Legacy (if still present locally)

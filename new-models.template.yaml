@@ -1,0 +1,30 @@
+# Model assessment output template
+# Copy to new-models.yaml and fill in. Then: python3 scripts/add-model-from-yaml.py new-models.yaml
+# See LLM-prompts/model-assessment-prompt.yaml and LLM-prompts/ollama-search.md
+
+models:
+  model-name:tag:
+    vram: 12
+    ctx: 32768
+    class: Daily Driver
+    tps: 40
+    # Optional (only if true): vision, tools, reasoning, moe, fim, structured, multilingual
+    url: https://ollama.com/library/model-name
+    install: ollama pull model-name:tag
+
+by_role:
+  # Add role assignments for new models. Existing roles are preserved.
+  role_name:
+    variant: model-name:tag
+
+by_constraint:
+  # Add new models to constraints. Existing entries are preserved.
+  has_tools: [model-name:tag]
+  has_vision: [model-name:tag]
+  has_reasoning: [model-name:tag]
+
+model_docs:
+  model-name:tag:
+    description: "1-2 sentence summary."
+    best_for: "Use case 1, use case 2"
+    caveats: "Known limitations or requirements"

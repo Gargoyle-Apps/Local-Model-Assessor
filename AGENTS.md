@@ -15,7 +15,7 @@ The model database is `model-data/model-assessor.db` (SQLite). Query it directly
 - For discovering new models from Ollama: follow `LLM-prompts/ollama-search.md`
 
 ## Local vs Tracked Files
-Prefer editing **gitignored local files** (`model-assessor.db`, hardware-profile.yaml, software-profile.yaml, assessed-models.md). Templates and prompts are tracked. To create local files from templates, use the setup block in `LLM-prompts/model-assessment-prompt.yaml` or run `./scripts/init-db.sh`.
+Prefer editing **gitignored local files** (`model-assessor.db`, hardware-profile.yaml, software-profile.yaml, assessed-models.md, new-models.yaml). Templates and prompts are tracked. To create local files from templates, use the setup block in `LLM-prompts/model-assessment-prompt.yaml` or run `./scripts/init-db.sh`. For model assessment output, copy `new-models.template.yaml` to `new-models.yaml`.
 
 ## Git Operations
 When running git commands (push, pull, commit, fetch, merge, checkout, branch operations), ensure the agent has write access to `.git` — some sandboxes restrict this.
