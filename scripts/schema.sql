@@ -1,5 +1,10 @@
 -- Local Model Assessor Database Schema
 -- SQLite 3.x — single source of truth for models, profiles, and assessments
+--
+-- Provenance columns (on content tables):
+--   created_at / created_by / created_by_type  — set once on first insert, never overwritten
+--   updated_at / updated_by / updated_by_type  — set on every insert or update
+--   created_by_type / updated_by_type: 'local' | 'cloud' | 'human'
 
 -- Meta / config (replaces _meta, recommended_fleet)
 CREATE TABLE IF NOT EXISTS meta (
@@ -27,7 +32,13 @@ CREATE TABLE IF NOT EXISTS models (
   rag INTEGER DEFAULT 0,
   no_corun INTEGER DEFAULT 0,
   latency TEXT,
-  assessed_at TEXT DEFAULT (datetime('now'))
+  assessed_at TEXT DEFAULT (datetime('now')),
+  created_at TEXT DEFAULT (datetime('now')),
+  created_by TEXT,
+  created_by_type TEXT,
+  updated_at TEXT DEFAULT (datetime('now')),
+  updated_by TEXT,
+  updated_by_type TEXT
 );
 
 -- Role assignments: by_role.{role}.{variant} → model
@@ -36,6 +47,12 @@ CREATE TABLE IF NOT EXISTS role_model (
   variant TEXT NOT NULL,
   model_id TEXT NOT NULL,
   notes TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  created_by TEXT,
+  created_by_type TEXT,
+  updated_at TEXT DEFAULT (datetime('now')),
+  updated_by TEXT,
+  updated_by_type TEXT,
   PRIMARY KEY (role, variant),
   FOREIGN KEY (model_id) REFERENCES models(model_id)
 );
@@ -45,6 +62,12 @@ CREATE TABLE IF NOT EXISTS constraint_model (
   constraint_name TEXT NOT NULL,
   model_id TEXT NOT NULL,
   sort_order INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  created_by TEXT,
+  created_by_type TEXT,
+  updated_at TEXT DEFAULT (datetime('now')),
+  updated_by TEXT,
+  updated_by_type TEXT,
   PRIMARY KEY (constraint_name, model_id),
   FOREIGN KEY (model_id) REFERENCES models(model_id)
 );
@@ -54,6 +77,12 @@ CREATE TABLE IF NOT EXISTS task_category (
   category TEXT NOT NULL,
   role_name TEXT NOT NULL,
   sort_order INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  created_by TEXT,
+  created_by_type TEXT,
+  updated_at TEXT DEFAULT (datetime('now')),
+  updated_by TEXT,
+  updated_by_type TEXT,
   PRIMARY KEY (category, role_name)
 );
 
@@ -81,6 +110,12 @@ CREATE TABLE IF NOT EXISTS model_docs (
   best_for TEXT,
   caveats TEXT,
   creative_tier TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  created_by TEXT,
+  created_by_type TEXT,
+  updated_at TEXT DEFAULT (datetime('now')),
+  updated_by TEXT,
+  updated_by_type TEXT,
   FOREIGN KEY (model_id) REFERENCES models(model_id)
 );
 

@@ -27,8 +27,8 @@ This project is designed for **tool-calling AI agents with shell access** (Curso
 **Key scripts:**
 - `./scripts/query-db.sh "SQL"` — run any query
 - `./scripts/init-db.sh` — create empty DB
-- `./scripts/migrate-schema.sh` — add schema columns (e.g. `assessed_at`)
-- `python3 scripts/add-model-from-yaml.py model-data/new-models.yaml` — insert models (or no args to use default path)
+- `./scripts/migrate-schema.sh` — add schema columns (e.g. `assessed_at`, provenance)
+- `python3 scripts/add-model-from-yaml.py --assessor NAME --assessor-type local|cloud|human model-data/new-models.yaml` — insert models with provenance (or no args to use default path; provenance also via `LMA_ASSESSOR` / `LMA_ASSESSOR_TYPE` env vars)
 - `python3 scripts/export-assessed-models.py` — regenerate `assessed-models.md`
 - `python3 scripts/import-profiles.py` — import hardware/software YAML into DB
 
@@ -58,7 +58,32 @@ Create local files from templates: `cp computer-profile/hardware-profile.templat
 | Install a model | `./scripts/query-db.sh "SELECT install FROM models WHERE model_id='...'"` → run the returned command |
 | Configure IDE/agent | Read `IDE-model-management/IDE.md`, find the app section (Continue, OpenCode, Goose, Pi, Zed), query DB for role assignments, generate config. **Auto-trigger:** after profile import, if `software-profile.yaml` names a supported app, generate its config automatically. |
 
-**If DB missing:** Run `./scripts/init-db.sh`. **If DB lacks `assessed_at`:** Run `./scripts/migrate-schema.sh`.
+**If DB missing:** Run `./scripts/init-db.sh`. **If DB lacks `assessed_at` or provenance columns:** Run `./scripts/migrate-schema.sh`.
+
+---
+
+## Provenance
+
+Content tables (`models`, `role_model`, `constraint_model`, `task_category`, `model_docs`) track who created and last updated each row:
+
+| Column | Set when | Preserved on update? |
+|--------|----------|---------------------|
+| `created_at` | First insert | Yes |
+| `created_by` | First insert (assessor name) | Yes |
+| `created_by_type` | First insert (`local`/`cloud`/`human`) | Yes |
+| `updated_at` | Every write | No (overwritten) |
+| `updated_by` | Every write (assessor name) | No (overwritten) |
+| `updated_by_type` | Every write (`local`/`cloud`/`human`) | No (overwritten) |
+
+**How agents provide provenance:**
+- `add-model-from-yaml.py --assessor gpt-oss:20b --assessor-type local`
+- Or env vars: `LMA_ASSESSOR=gpt-oss:20b LMA_ASSESSOR_TYPE=local`
+- Direct SQL: include `created_by`, `created_by_type`, `updated_by`, `updated_by_type` in INSERT
+
+**Query provenance:**
+```bash
+./scripts/query-db.sh "SELECT model_id, created_at, created_by, created_by_type, updated_at, updated_by FROM models"
+```
 
 ---
 

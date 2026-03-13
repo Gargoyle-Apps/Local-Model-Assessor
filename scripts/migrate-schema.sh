@@ -26,6 +26,23 @@ add_col_if_missing() {
   fi
 }
 
+add_provenance() {
+  local table="$1"
+  echo "  Provenance columns for $table..."
+  add_col_if_missing "$table" "created_at" "TEXT"
+  add_col_if_missing "$table" "created_by" "TEXT"
+  add_col_if_missing "$table" "created_by_type" "TEXT"
+  add_col_if_missing "$table" "updated_at" "TEXT"
+  add_col_if_missing "$table" "updated_by" "TEXT"
+  add_col_if_missing "$table" "updated_by_type" "TEXT"
+}
+
 echo "Migrating schema..."
 add_col_if_missing "models" "assessed_at" "TEXT"
+
+add_provenance "models"
+add_provenance "role_model"
+add_provenance "constraint_model"
+add_provenance "task_category"
+add_provenance "model_docs"
 echo "Done."
