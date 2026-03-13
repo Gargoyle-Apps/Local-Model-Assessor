@@ -1,12 +1,9 @@
 # Cursor IDE
 .cursorignore
 
-# Continue: override global .gitignore_global which ignores all of .continue/
-# Track the rules directory (project knowledge); keep config.yaml local
-!.continue/
-.continue/*
-!.continue/rules/
-!.continue/rules/**
+# Agent/IDE app runtime dirs (generated on-demand)
+.continue/
+.opencode/
 
 # macOS
 .DS_Store
@@ -64,5 +61,14 @@ model-data/*.db
 # Legacy (if still present locally)
 model-data/model-lookup.json
 
-# Agent configs (local copies; template stays in repo)
-agent-model-management/continue/config.yaml
+# IDE config copies (local references; generated on-demand)
+IDE-model-management/continue/config.yaml
+IDE-model-management/opencode/opencode.json
+IDE-model-management/goose/config.yaml
+IDE-model-management/pi/settings.json
+IDE-model-management/pi/models.json
+IDE-model-management/zed/settings.json
+
+# OpenCode (project-level config is local)
+opencode.json
+opencode.jsonc

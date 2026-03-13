@@ -40,8 +40,8 @@ This project is designed for **tool-calling AI agents with shell access** (Curso
 
 | Type | Files |
 |------|-------|
-| **Tracked** | Templates (`.template.yaml`), prompts (`LLM-prompts/`), scripts, `AGENTS.md` |
-| **Gitignored** | `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `model-data/new-models.yaml`, `.cursorrules`, `agent-model-management/continue/config.yaml`, `ref/` |
+| **Tracked** | Templates (`.template.yaml`), prompts (`LLM-prompts/`), scripts, `AGENTS.md`, `IDE-model-management/` (setup docs + config references) |
+| **Gitignored** | `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `model-data/new-models.yaml`, `.cursorrules`, `.continue/`, `.opencode/`, `opencode.json`, local config copies (`IDE-model-management/*/config.*`), `ref/` |
 
 Create local files from templates: `cp computer-profile/hardware-profile.template.yaml computer-profile/hardware-profile.yaml` (or use setup in `model-assessment-prompt.yaml`). For assessment output: `cp model-data/new-models.template.yaml model-data/new-models.yaml`.
 
@@ -56,6 +56,7 @@ Create local files from templates: `cp computer-profile/hardware-profile.templat
 | Get model details | Read `model-data/assessed-models.md` or query `model_docs` |
 | Assess new model | Read `model-assessment-prompt.yaml`, generate YAML to `model-data/new-models.yaml`, run `add-model-from-yaml.py`, then `export-assessed-models.py` |
 | Install a model | `./scripts/query-db.sh "SELECT install FROM models WHERE model_id='...'"` → run the returned command |
+| Configure IDE/agent | Read `IDE-model-management/IDE.md`, find the app section (Continue, OpenCode, Goose, Pi, Zed), query DB for role assignments, generate config **on-demand** — do not pre-create configs |
 
 **If DB missing:** Run `./scripts/init-db.sh`. **If DB lacks `assessed_at`:** Run `./scripts/migrate-schema.sh`.
 

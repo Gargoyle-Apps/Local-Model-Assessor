@@ -34,10 +34,6 @@ cp -r /path/to/local-model-assessor .model-assessor
 
 ```text
 .model-assessor/
-├── .continue/
-│   ├── rules/
-│   │   └── local-model-assessor.md   # Continue agent rules (tracked)
-│   └── config.yaml                   # local (gitignored)
 ├── computer-profile/
 │   ├── hardware-profile.template.yaml
 │   ├── software-profile.template.yaml
@@ -58,11 +54,13 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   ├── export-assessed-models.py
 │   ├── import-profiles.py
 │   └── query-db.sh
-├── agent-model-management/
-│   ├── README.md
-│   └── continue/
-│       ├── config-location.md
-│       └── config.yaml              # local copy (gitignored)
+├── IDE-model-management/
+│   ├── IDE.md                       # setup docs, role mappings, config templates
+│   ├── continue/                    # Continue (VS Code)
+│   ├── opencode/                    # OpenCode (CLI/TUI)
+│   ├── goose/                       # Goose (CLI/Desktop)
+│   ├── pi/                          # Pi coding-agent (Terminal)
+│   └── zed/                         # Zed (Editor)
 ├── ref/                             # local agent config copies (gitignored)
 ├── LLM-prompts/
 │   ├── model-assessment-prompt.yaml
@@ -166,14 +164,16 @@ Follow **`LLM-prompts/ollama-search.md`** to fetch the [Ollama popular](https://
 
 ---
 
-## Agent Model Management
+## IDE Model Management
 
-The `agent-model-management/` folder holds reference configs and instructions for keeping agent/IDE tools (e.g. Continue) in sync with your local model data.
+The `IDE-model-management/` folder holds setup docs and config templates for keeping IDE agent tools (Continue, OpenCode, etc.) in sync with your local model data.
 
-See [agent-model-management/README.md](agent-model-management/README.md) for:
-- How to update Continue's `config.yaml` when models change
-- Role mapping from model-assessor.db to agent configs
-- Adding support for other apps (Cursor, Windsurf, etc.)
+See [IDE-model-management/IDE.md](IDE-model-management/IDE.md) for:
+- Role mapping from model-assessor.db to IDE/agent configs
+- Setup instructions for supported apps (Continue, OpenCode, Goose, Pi, Zed)
+- Adding support for new apps
+
+Configs are **on-demand** — only generated when the user asks. See AGENTS.md task routing.
 
 ---
 
@@ -231,9 +231,9 @@ Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `ge
 | `LLM-prompts/model-selector-prompt.yaml` | ✓ | System prompt for model selection |
 | `LLM-prompts/model-assessment-prompt.yaml` | ✓ | System prompt for assessing new models |
 | `AGENTS.md` | ✓ | Agent rules, data flow, task routing |
-| `.continue/rules/local-model-assessor.md` | ✓ | Continue agent rules (project context) |
-| `agent-model-management/` | ✓ | Agent config references and instructions |
-| `agent-model-management/continue/config.yaml` | ✗ local | Local copy of Continue config (gitignored) |
+| `IDE-model-management/IDE.md` | ✓ | IDE config setup docs, role mappings, config templates |
+| `IDE-model-management/*/config-location.md` | ✓ | Per-app config format and locations (Continue, OpenCode, Goose, Pi, Zed) |
+| `IDE-model-management/*/config.*` | ✗ local | Local reference copies of filled-out configs (gitignored) |
 | `ref/` | ✗ local | Local copies of agent configs (gitignored) |
 
 ---
