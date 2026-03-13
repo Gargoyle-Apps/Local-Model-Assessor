@@ -7,6 +7,7 @@ A system for selecting, assessing, and configuring local Ollama models — desig
 **Prerequisites:**
 - [Ollama](https://ollama.com) installed and running
 - An IDE with a tool-calling AI agent (Cursor, VS Code + Cline/Continue, etc.)
+  - Automated setup: [IDE-model-management/IDE.md](IDE-model-management/IDE.md) — config templates and role mappings for Continue, OpenCode, Goose, Pi, Zed
 - Python 3 + PyYAML (`python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`)
 - For model assessment: `ollama pull gpt-oss:20b` (14GB VRAM)
 
@@ -131,7 +132,7 @@ Install the recommended models:
 ollama pull <model:tag>
 ```
 
-Configure your agent's settings file with the recommended models.
+Configure your agent's settings file with the recommended models. See [IDE-model-management/IDE.md](IDE-model-management/IDE.md) for app-specific templates.
 
 ### 7. Ad-Hoc Selection
 
@@ -166,14 +167,7 @@ Follow **`LLM-prompts/ollama-search.md`** to fetch the [Ollama popular](https://
 
 ## IDE Model Management
 
-The `IDE-model-management/` folder holds setup docs and config templates for keeping IDE agent tools (Continue, OpenCode, etc.) in sync with your local model data.
-
-See [IDE-model-management/IDE.md](IDE-model-management/IDE.md) for:
-- Role mapping from model-assessor.db to IDE/agent configs
-- Setup instructions for supported apps (Continue, OpenCode, Goose, Pi, Zed)
-- Adding support for new apps
-
-Configs are **on-demand** — only generated when the user asks. See AGENTS.md task routing.
+[IDE-model-management/IDE.md](IDE-model-management/IDE.md) — setup docs, role mappings, and config templates for Continue, OpenCode, Goose, Pi, Zed. Configs are **on-demand** (generated when you ask); see [AGENTS.md](AGENTS.md) task routing.
 
 ---
 
