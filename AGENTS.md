@@ -56,7 +56,7 @@ Create local files from templates: `cp computer-profile/hardware-profile.templat
 | Get model details | Read `model-data/assessed-models.md` or query `model_docs` |
 | Assess new model | Read `model-assessment-prompt.yaml`, generate YAML to `model-data/new-models.yaml`, run `add-model-from-yaml.py`, then `export-assessed-models.py` |
 | Install a model | `./scripts/query-db.sh "SELECT install FROM models WHERE model_id='...'"` → run the returned command |
-| Configure IDE/agent | Read `IDE-model-management/IDE.md`, find the app section (Continue, OpenCode, Goose, Pi, Zed), query DB for role assignments, generate config **on-demand** — do not pre-create configs |
+| Configure IDE/agent | Read `IDE-model-management/IDE.md`, find the app section (Continue, OpenCode, Goose, Pi, Zed), query DB for role assignments, generate config. **Auto-trigger:** after profile import, if `software-profile.yaml` names a supported app, generate its config automatically. |
 
 **If DB missing:** Run `./scripts/init-db.sh`. **If DB lacks `assessed_at`:** Run `./scripts/migrate-schema.sh`.
 

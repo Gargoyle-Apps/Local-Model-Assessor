@@ -9,7 +9,8 @@ A system for selecting, assessing, and configuring local Ollama models — desig
 - An IDE with a tool-calling AI agent (Cursor, VS Code + Cline/Continue, etc.)
   - Automated setup: [IDE-model-management/IDE.md](IDE-model-management/IDE.md) — config templates and role mappings for Continue, OpenCode, Goose, Pi, Zed
 - Python 3 + PyYAML (`python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`)
-- For model assessment: `ollama pull gpt-oss:20b` (14GB VRAM)
+- For model assessment: a capable local model (e.g. `ollama pull gpt-oss:20b`, 14GB VRAM) or a cloud LLM service
+- Your machine's hardware specs and IDE/agent info — see [Define Your Environment](#3-define-your-environment)
 
 ---
 

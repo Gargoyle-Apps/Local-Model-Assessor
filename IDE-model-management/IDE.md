@@ -2,7 +2,7 @@
 
 This folder holds **setup docs and config references** for keeping IDE agent tools in sync with models in `model-data/model-assessor.db`.
 
-**On-demand:** Configs are generated only when the user asks. Do not proactively create config files. Query the DB and follow the instructions below for the requested app.
+**On-demand or auto:** Configs are generated when the user asks, or automatically after profile import if `computer-profile/software-profile.yaml` names a supported app (Continue, OpenCode, Goose, Pi, Zed). Check the `primary_agent.name`, `embedded_assistant.name`, and `optional_agents[].name` fields against the supported apps below.
 
 **Source of truth:** `model-data/model-assessor.db` (SQLite). Query via `./scripts/query-db.sh`.
 **Hardware context:** `computer-profile/hardware-profile.yaml`
