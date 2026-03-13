@@ -128,48 +128,54 @@ def main():
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
 
-    for model_id, m in (data.get("models") or {}).items():
-        if str(model_id).startswith("_"):
-            continue
-        if not isinstance(m, dict):
-            continue
-        insert_model(c, model_id, m)
-        print(f"Added/updated model: {model_id}")
+    try:
+        for model_id, m in (data.get("models") or {}).items():
+            if str(model_id).startswith("_"):
+                continue
+            if not isinstance(m, dict):
+                continue
+            insert_model(c, model_id, m)
+            print(f"Added/updated model: {model_id}")
 
-    for role, variants in (data.get("by_role") or {}).items():
-        for variant, val in (variants or {}).items():
-            model_id = val.get("primary", val) if isinstance(val, dict) else val
-            notes = val.get("notes") if isinstance(val, dict) else None
-            if model_id and not str(model_id).startswith("_"):
-                insert_role(c, role, variant, str(model_id), notes)
+        for role, variants in (data.get("by_role") or {}).items():
+            for variant, val in (variants or {}).items():
+                model_id = val.get("primary", val) if isinstance(val, dict) else val
+                notes = val.get("notes") if isinstance(val, dict) else None
+                if model_id and not str(model_id).startswith("_"):
+                    insert_role(c, role, variant, str(model_id), notes)
 
-    for constraint_name, model_ids in (data.get("by_constraint") or {}).items():
-        for i, model_id in enumerate(model_ids or []):
-            if model_id:
-                insert_constraint(c, constraint_name, model_id, i)
+        for constraint_name, model_ids in (data.get("by_constraint") or {}).items():
+            for i, model_id in enumerate(model_ids or []):
+                if model_id:
+                    insert_constraint(c, constraint_name, model_id, i)
 
-    for model_id, doc in (data.get("model_docs") or {}).items():
-        if str(model_id).startswith("_"):
-            continue
-        if not isinstance(doc, dict):
-            continue
-        c.execute(
-            """
-            INSERT OR REPLACE INTO model_docs (model_id, spec_table, description, best_for, caveats, creative_tier)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (
-                model_id,
-                doc.get("spec_table") or "",
-                doc.get("description") or "",
-                doc.get("best_for") or "",
-                doc.get("caveats") or "",
-                doc.get("creative_tier"),
-            ),
-        )
+        for model_id, doc in (data.get("model_docs") or {}).items():
+            if str(model_id).startswith("_"):
+                continue
+            if not isinstance(doc, dict):
+                continue
+            c.execute(
+                """
+                INSERT OR REPLACE INTO model_docs (model_id, spec_table, description, best_for, caveats, creative_tier)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    model_id,
+                    doc.get("spec_table") or "",
+                    doc.get("description") or "",
+                    doc.get("best_for") or "",
+                    doc.get("caveats") or "",
+                    doc.get("creative_tier"),
+                ),
+            )
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Database error: {e}", file=sys.stderr)
+        conn.rollback()
+        sys.exit(1)
+    finally:
+        conn.close()
 
     print("Done. Run: python scripts/export-assessed-models.py  # to update assessed-models.md")
 

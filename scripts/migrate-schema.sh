@@ -16,7 +16,9 @@ add_col_if_missing() {
   local table="$1"
   local col="$2"
   local def="$3"
-  if sqlite3 "$DB_PATH" "PRAGMA table_info($table)" | grep -q "^[0-9]*|${col}|"; then
+  local exists
+  exists=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM pragma_table_info('$table') WHERE name='$col'")
+  if [ "$exists" -gt 0 ]; then
     echo "  $table.$col already exists"
   else
     echo "  Adding $table.$col"

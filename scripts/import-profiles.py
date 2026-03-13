@@ -32,30 +32,36 @@ def main():
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
 
-    hw_src = HARDWARE if HARDWARE.exists() else HARDWARE_TEMPLATE
-    if hw_src.exists():
-        content = hw_src.read_text()
-        c.execute(
-            "INSERT OR REPLACE INTO hardware_profile (id, yaml_content, updated_at) VALUES (1, ?, datetime('now'))",
-            (content,),
-        )
-        print(f"Imported hardware profile from {hw_src}")
-    else:
-        print("Skip: no hardware profile found")
+    try:
+        hw_src = HARDWARE if HARDWARE.exists() else HARDWARE_TEMPLATE
+        if hw_src.exists():
+            content = hw_src.read_text()
+            c.execute(
+                "INSERT OR REPLACE INTO hardware_profile (id, yaml_content, updated_at) VALUES (1, ?, datetime('now'))",
+                (content,),
+            )
+            print(f"Imported hardware profile from {hw_src}")
+        else:
+            print("Skip: no hardware profile found")
 
-    sw_src = SOFTWARE if SOFTWARE.exists() else SOFTWARE_TEMPLATE
-    if sw_src.exists():
-        content = sw_src.read_text()
-        c.execute(
-            "INSERT OR REPLACE INTO software_profile (id, yaml_content, updated_at) VALUES (1, ?, datetime('now'))",
-            (content,),
-        )
-        print(f"Imported software profile from {sw_src}")
-    else:
-        print("Skip: no software profile found")
+        sw_src = SOFTWARE if SOFTWARE.exists() else SOFTWARE_TEMPLATE
+        if sw_src.exists():
+            content = sw_src.read_text()
+            c.execute(
+                "INSERT OR REPLACE INTO software_profile (id, yaml_content, updated_at) VALUES (1, ?, datetime('now'))",
+                (content,),
+            )
+            print(f"Imported software profile from {sw_src}")
+        else:
+            print("Skip: no software profile found")
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Database error: {e}", file=sys.stderr)
+        conn.rollback()
+        sys.exit(1)
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":

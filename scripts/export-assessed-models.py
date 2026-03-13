@@ -21,7 +21,7 @@ def build_spec_row(label: str, value: str) -> str:
 
 
 def _truthy(v):
-    return v in (True, 1, "true", "1")
+    return v in (True, 1, "true", "1", "yes")
 
 
 def model_to_spec_table(m: dict, doc: dict | None) -> str:
@@ -62,15 +62,19 @@ def main():
         print(f"Error: {db_path} not found. Run init-db.sh first.", file=sys.stderr)
         sys.exit(1)
 
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
 
-    c.execute("SELECT * FROM models ORDER BY vram, model_id")
-    models = [dict(r) for r in c.fetchall()]
+        c.execute("SELECT * FROM models ORDER BY vram, model_id")
+        models = [dict(r) for r in c.fetchall()]
 
-    c.execute("SELECT * FROM model_docs")
-    docs = {r["model_id"]: dict(r) for r in c.fetchall()}
+        c.execute("SELECT * FROM model_docs")
+        docs = {r["model_id"]: dict(r) for r in c.fetchall()}
+    except sqlite3.Error as e:
+        print(f"Database error: {e}", file=sys.stderr)
+        sys.exit(1)
 
     # Group by class for section headers
     class_order = ["Utility", "Speedster", "Middleweight", "Daily Driver", "Heavy Lifter"]
