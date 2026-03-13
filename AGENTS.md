@@ -40,8 +40,8 @@ This project is designed for **tool-calling AI agents with shell access** (Curso
 
 | Type | Files |
 |------|-------|
-| **Tracked** | Templates (`.template.yaml`), prompts (`LLM-prompts/`), scripts, `AGENTS.md`, `IDE-model-management/` (setup docs + config references) |
-| **Gitignored** | `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `model-data/new-models.yaml`, `.cursorrules`, `.continue/`, `.opencode/`, `opencode.json`, local config copies (`IDE-model-management/*/config.*`), `ref/` |
+| **Tracked** | Templates (`.template.yaml`), prompts (`LLM-prompts/`), scripts, `AGENTS.md`, `IDE-model-management/`, `benchmarks/benchmark.template.yaml` |
+| **Gitignored** | `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `model-data/new-models.yaml`, `benchmarks/*.yaml` (except template), `.cursorrules`, `.continue/`, `.opencode/`, `opencode.json`, local config copies (`IDE-model-management/*/config.*`), `ref/` |
 
 Create local files from templates: `cp computer-profile/hardware-profile.template.yaml computer-profile/hardware-profile.yaml` (or use setup in `model-assessment-prompt.yaml`). For assessment output: `cp model-data/new-models.template.yaml model-data/new-models.yaml`.
 
@@ -57,6 +57,7 @@ Create local files from templates: `cp computer-profile/hardware-profile.templat
 | Assess new model | Read `model-assessment-prompt.yaml`, generate YAML to `model-data/new-models.yaml`, run `add-model-from-yaml.py`, then `export-assessed-models.py` |
 | Install a model | `./scripts/query-db.sh "SELECT install FROM models WHERE model_id='...'"` → run the returned command |
 | Configure IDE/agent | Read `IDE-model-management/IDE.md`, find the app section (Continue, OpenCode, Goose, Pi, Zed), query DB for role assignments, generate config. **Auto-trigger:** after profile import, if `software-profile.yaml` names a supported app, generate its config automatically. |
+| Run personal benchmark | Read `benchmarks/benchmark.template.yaml` for schema. List `benchmarks/*.yaml`, filter by `target_roles`/`target_constraints` vs models in DB. For each matching model, run the benchmark prompt (LLM rating, `ollama run`, or eval). Report results. |
 
 **If DB missing:** Run `./scripts/init-db.sh`. **If DB lacks `assessed_at`:** Run `./scripts/migrate-schema.sh`.
 

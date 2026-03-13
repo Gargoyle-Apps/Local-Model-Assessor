@@ -47,6 +47,10 @@ local/
 
 ref/
 
+# Personal benchmarks (human-maintained, local)
+benchmarks/*.yaml
+!benchmarks/*.template.yaml
+
 # Cursor rules (user-specific)
 .cursorrules
 

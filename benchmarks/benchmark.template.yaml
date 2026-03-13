@@ -1,0 +1,26 @@
+# Personal Benchmark Template
+# Copy to benchmarks/<name>.yaml and fill in. Contents are gitignored.
+# See README "Personal Benchmarks" and AGENTS.md task routing.
+#
+# Prerequisite: target_roles / target_constraints — only models matching these
+# will run this benchmark (e.g. a translation model won't run a coding benchmark).
+
+name: "My Benchmark"
+description: "What this benchmark tests and how it's scored"
+
+# Required: which models/roles should run this benchmark
+target_roles:           # Roles from role_model (coding, vision, reasoning, etc.)
+  - coding
+  - generalist
+# target_constraints:   # Optional: further filter by constraint (has_vision, has_tools, etc.)
+#   - has_tools
+
+# Benchmark content — human-maintained prompts or instructions
+prompt: |
+  Your testing prompt here. The LLM will receive this and you can have it
+  rate the response, run ollama benchmark commands, or evaluate output.
+
+# Optional: scoring criteria for the agent to apply
+scoring:
+  - "Criterion 1: e.g. correctness of code"
+  - "Criterion 2: e.g. clarity of explanation"

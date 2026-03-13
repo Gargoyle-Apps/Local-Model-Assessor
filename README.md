@@ -63,6 +63,9 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   ├── goose/                       # Goose (CLI/Desktop)
 │   ├── pi/                          # Pi coding-agent (Terminal)
 │   └── zed/                         # Zed (Editor)
+├── benchmarks/
+│   ├── benchmark.template.yaml      # schema for personal benchmarks (tracked)
+│   └── *.yaml                       # your benchmarks (gitignored)
 ├── ref/                             # local agent config copies (gitignored)
 ├── LLM-prompts/
 │   ├── model-assessment-prompt.yaml
@@ -172,6 +175,16 @@ Follow **`LLM-prompts/ollama-search.md`** to fetch the [Ollama popular](https://
 
 ---
 
+## Personal Benchmarks
+
+The `benchmarks/` folder holds human-maintained tests for refining model selection. Copy `benchmarks/benchmark.template.yaml` to `benchmarks/<name>.yaml` and fill in your prompt and scoring criteria.
+
+**Required:** Each benchmark must specify `target_roles` (and optionally `target_constraints`) — only models matching those roles run the benchmark. E.g. a translation model won't run a coding benchmark.
+
+Use cases: have the LLM rate model output, run `ollama run` with a test prompt, or evaluate against specific challenges. See [AGENTS.md](AGENTS.md) task routing.
+
+---
+
 ## Hardware Classes
 
 Models are categorized by VRAM footprint and performance:
@@ -229,6 +242,8 @@ Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `ge
 | `IDE-model-management/IDE.md` | ✓ | IDE config setup docs, role mappings, config templates |
 | `IDE-model-management/*/config-location.md` | ✓ | Per-app config format and locations (Continue, OpenCode, Goose, Pi, Zed) |
 | `IDE-model-management/*/config.*` | ✗ local | Local reference copies of filled-out configs (gitignored) |
+| `benchmarks/benchmark.template.yaml` | ✓ | Schema for personal benchmarks |
+| `benchmarks/*.yaml` | ✗ local | Your benchmark definitions (gitignored) |
 | `ref/` | ✗ local | Local copies of agent configs (gitignored) |
 
 ---
