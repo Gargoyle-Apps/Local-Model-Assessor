@@ -239,6 +239,16 @@ Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `ge
 
 ---
 
+## Next version
+
+Planned follow-ups (see local notes in `ref/TODO.md` if you use a `ref/` folder):
+
+- **Custom GGUF imports** — Verify end-to-end: download GGUF from Hugging Face → `Modelfile` → `ollama create` / `ollama run`, using **`computer-profile/`** (VRAM budget, quant defaults, context strategy) to decide what fits.
+- **Ollama search prompt** — If imports work, update **`LLM-prompts/ollama-search.md`** to mention **cloud-only** Ollama models where useful, with the caveat that **local** use may need the HF GGUF path, not `ollama pull` alone.
+- **Automation** — If the above holds, sketch an **LLM + Python** flow (and script) for that import pipeline, reading **`hardware-profile.yaml`** to filter candidates and suggest context.
+
+---
+
 ## License
 
 For personal use. Individual models have their own licenses — check each model's Ollama page.
