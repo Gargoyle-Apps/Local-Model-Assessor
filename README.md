@@ -246,6 +246,7 @@ Planned follow-ups (see local notes in `ref/TODO.md` if you use a `ref/` folder)
 - **Custom GGUF imports** — Verify end-to-end: download GGUF from Hugging Face → `Modelfile` → `ollama create` / `ollama run`, using **`computer-profile/`** (VRAM budget, quant defaults, context strategy) to decide what fits.
 - **Ollama search prompt** — If imports work, update **`LLM-prompts/ollama-search.md`** to mention **cloud-only** Ollama models where useful, with the caveat that **local** use may need the HF GGUF path, not `ollama pull` alone.
 - **Automation** — If the above holds, sketch an **LLM + Python** flow (and script) for that import pipeline, reading **`hardware-profile.yaml`** to filter candidates and suggest context.
+- **Alternate runtimes** — For HF/Safetensors models Ollama can’t load, compare [Docker Model Runner](https://docs.docker.com/ai/model-runner/), [vLLM](https://vllm.ai), and Apple Silicon **[vllm-metal](https://github.com/vllm-project/vllm-metal)** — tradeoffs and profile tie-ins in local **`ref/TODO.md`**.
 
 ---
 
