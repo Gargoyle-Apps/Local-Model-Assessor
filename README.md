@@ -7,7 +7,7 @@ A system for selecting, assessing, and configuring local Ollama models — desig
 **Prerequisites:**
 - [Ollama](https://ollama.com) installed and running
 - An IDE with a tool-calling AI agent (Cursor, VS Code + Cline/Continue, etc.)
-  - Automated setup: [IDE-model-management/IDE.md](IDE-model-management/IDE.md) — config templates and role mappings for Continue, OpenCode, Goose, Pi, Zed
+  - Automated setup: [IDE-model-management/IDE.md](IDE-model-management/IDE.md) — config templates and role mappings for Continue, OpenCode, Goose, Pi, Zed (Cline/Roo timeout notes: planned Fork 1.1, **`ref/IDE Timeout Configuration.md`**)
 - Python 3 + PyYAML (`python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`)
 - For model assessment: a capable local model (e.g. `ollama pull gpt-oss:20b`, 14GB VRAM) or a cloud LLM service
 - Your machine's hardware specs and IDE/agent info — see [Define Your Environment](#3-define-your-environment)
@@ -169,7 +169,7 @@ Follow **`LLM-prompts/ollama-search.md`** to fetch the [Ollama popular](https://
 
 ## IDE Model Management
 
-[IDE-model-management/IDE.md](IDE-model-management/IDE.md) — setup docs, role mappings, and config templates for Continue, OpenCode, Goose, Pi, Zed. Configs are **on-demand** (generated when you ask); see [AGENTS.md](AGENTS.md) task routing.
+[IDE-model-management/IDE.md](IDE-model-management/IDE.md) — setup docs, role mappings, and config templates for Continue, OpenCode, Goose, Pi, Zed. Configs are **on-demand** (generated when you ask); see [AGENTS.md](AGENTS.md) task routing. **Continue** uses **`~/.continue/config.yaml`** (YAML); Fork 1.1 adds aligned **request-timeout** guidance and Cline/Roo coverage — **`ref/IDE Timeout Configuration.md`**.
 
 ---
 
@@ -247,8 +247,8 @@ Planned work is split into **parallel git forks** (separate branches); merge eac
 
 | Fork | Suggested branch | Scope |
 |------|------------------|--------|
-| **1** | `fork/provisioning-context` | Human-in-the-loop provisioning, Modelfile / `num_ctx` rules, `provisioning_profiles`, DB — per **`ref/context setting.md`**. |
-| **1.1** | `fork/ide-timeout-config` | **IDE timeouts & assistant JSON** (Continue, Cline/Roo) so optimized Ollama aliases are usable — avoid short defaults killing chat/agentic loops; per **`ref/IDE Timeout Configuration.md`**. |
+| **1** | `fork/provisioning-context` | `provisioned_models` table — role-tuned Ollama clones (`num_ctx`, temp, Modelfile, commands in DB); naming convention `base:tag_role_ctx`; selector prompt reads clones and checks `ollama list` — spec **`ref/context setting.md`**. |
+| **1.1** | `fork/ide-timeout-config` | **IDE request timeouts** so optimized Ollama aliases stay usable: **Continue** via **`config.yaml`** (`requestOptions.timeout` per model; see **`IDE-model-management/IDE.md`**); **Cline/Roo** via provider JSON / extension export (`requestTimeoutMs`, etc.) — spec **`ref/IDE Timeout Configuration.md`**. |
 | **2** | `fork/hf-gguf-ollama` | Verify HF GGUF → `Modelfile` → `ollama create` / `ollama run`; gate on **`computer-profile/`**. |
 | **3** | `fork/ollama-catalog-automation` | Update **`LLM-prompts/ollama-search.md`** (cloud-only caveat); then LLM + Python automation for the import pipeline (after Fork 2). |
 

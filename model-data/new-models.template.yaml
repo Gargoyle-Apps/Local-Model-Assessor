@@ -12,6 +12,20 @@ models:
     url: https://ollama.com/library/model-name
     install: ollama pull model-name:tag
 
+    # Provisioning: role-tuned clones (Fork 1).
+    # Only declare alias, role, variant, and parameter overrides here.
+    # The import script derives modelfile_content, modelfile_path,
+    # create_command, and pull_command — those live only in the DB.
+    # Naming convention: base:tag_role_ctxk (e.g. model-name:tag_coding_8k)
+    provisioning:
+      - alias: "model-name:tag_coding_8k"
+        role: coding
+        variant: primary
+        num_ctx: 8192
+        temperature: 0.2
+        # num_predict: 4096        # optional — max tokens to generate
+        # system_prompt: "..."     # optional — SYSTEM line baked into the Modelfile
+
 by_role:
   # Add role assignments for new models. Existing roles are preserved.
   role_name:
