@@ -206,13 +206,13 @@ Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `ge
 
 | File | In Git? | Purpose |
 |------|---------|---------|
-| `scripts/schema.sql` | ✓ | SQLite schema for models, roles, profiles |
+| `scripts/schema.sql` | ✓ | SQLite schema for models, roles, profiles, **`provisioned_models`** (Fork 1) |
 | `scripts/init-db.sh` | ✓ | Create empty DB |
 | `scripts/add-model-from-yaml.py` | ✓ | Insert models from assessment YAML → DB |
 | `scripts/export-assessed-models.py` | ✓ | Regenerate assessed-models.md from DB |
 | `scripts/import-profiles.py` | ✓ | Import hardware/software YAML → DB |
 | `scripts/query-db.sh` | ✓ | Run ad-hoc SQL queries against DB |
-| `scripts/migrate-schema.sh` | ✓ | Add columns to existing DB (e.g. assessed_at) |
+| `scripts/migrate-schema.sh` | ✓ | Add columns to existing DB (e.g. assessed_at) and **`provisioned_models`** if missing |
 | `LLM-prompts/ollama-search.md` | ✓ | Pipeline to discover & assess new models from Ollama popular |
 | `computer-profile/hardware-profile.template.yaml` | ✓ | Template for hardware specs |
 | `computer-profile/software-profile.template.yaml` | ✓ | Template for IDE/agent setup |
@@ -243,12 +243,19 @@ Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `ge
 
 ## Next version
 
-Planned work is split into **parallel git forks** (separate branches); merge each to `main` when ready. Full checklist: local **`ref/TODO.md`**. **Fork 1 spec:** **`ref/context setting.md`**. **Fork 1.1 spec:** **`ref/IDE Timeout Configuration.md`**.
+### Current milestone (branch `auto`)
+
+- **Fork 1 (shipped here):** **`provisioned_models`** in SQLite (see **`scripts/schema.sql`** / **`scripts/migrate-schema.sh`**), slim **`provisioning`** in assessment YAML, **`scripts/add-model-from-yaml.py`** writes **`model-data/modelfile/*.mf`** and DB commands, selector prompt joins clones + **`ollama list`**, export lists provisioned rows. Phase 5 optional script (`deploy-provisioned.py`) not started.
+- **Fork 1.1 (in progress on this branch):** IDE **request timeouts** and copy-pasteable configs so Continue / Cline / Roo keep up with local Ollama and **provisioned aliases**. Canonical spec: **`ref/IDE Timeout Configuration.md`** (local copy if `ref/` is gitignored). Checklist: **`ref/TODO.md`**.
+
+### Roadmap (all forks)
+
+Work may land on **dedicated fork branches** or **sequenced on one branch** (e.g. `auto`); merge order still matters at integration. **Fork 1 spec:** **`ref/context setting.md`**. **Fork 1.1 spec:** **`ref/IDE Timeout Configuration.md`**. Full scratchpad: **`ref/TODO.md`**.
 
 | Fork | Suggested branch | Scope |
 |------|------------------|--------|
-| **1** | `fork/provisioning-context` | `provisioned_models` table — role-tuned Ollama clones (`num_ctx`, temp, Modelfile, commands in DB); naming convention `base:tag_role_ctx`; selector prompt reads clones and checks `ollama list` — spec **`ref/context setting.md`**. |
-| **1.1** | `fork/ide-timeout-config` | **IDE request timeouts** so optimized Ollama aliases stay usable: **Continue** via **`config.yaml`** (`requestOptions.timeout` per model; see **`IDE-model-management/IDE.md`**); **Cline/Roo** via provider JSON / extension export (`requestTimeoutMs`, etc.) — spec **`ref/IDE Timeout Configuration.md`**. |
+| **1** | `fork/provisioning-context` | **Done (Phases 1–4)** — `provisioned_models`, Modelfiles, import, selector — spec **`ref/context setting.md`**. |
+| **1.1** | `fork/ide-timeout-config` | **Active** — **IDE request timeouts**: Continue **`config.yaml`** (`requestOptions.timeout`); Cline/Roo (`requestTimeoutMs`, etc.); generator + **`IDE-model-management/`** docs — spec **`ref/IDE Timeout Configuration.md`**. |
 | **2** | `fork/hf-gguf-ollama` | Verify HF GGUF → `Modelfile` → `ollama create` / `ollama run`; gate on **`computer-profile/`**. |
 | **3** | `fork/ollama-catalog-automation` | Update **`LLM-prompts/ollama-search.md`** (cloud-only caveat); then LLM + Python automation for the import pipeline (after Fork 2). |
 

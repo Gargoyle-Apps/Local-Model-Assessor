@@ -23,6 +23,7 @@ import sqlite3
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 try:
     import yaml
@@ -43,9 +44,211 @@ def _now():
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
 
-def _has_column(c, table, col) -> bool:
+_KNOWN_TABLES = frozenset({
+    "models", "role_model", "constraint_model", "task_category",
+    "model_docs", "provisioned_models",
+})
+
+
+def _has_column(c, table: str, col: str) -> bool:
+    if table not in _KNOWN_TABLES:
+        raise ValueError(f"_has_column called with unknown table {table!r}")
     c.execute(f"SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name='{col}'")
     return c.fetchone()[0] > 0
+
+
+def _table_exists(c, name: str) -> bool:
+    c.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+        (name,),
+    )
+    return c.fetchone() is not None
+
+
+def alias_to_modelfile_path(alias: str) -> str:
+    return f"model-data/modelfile/{alias.replace(':', '-')}.mf"
+
+
+def build_modelfile_content(
+    base_model_id: str,
+    num_ctx: int,
+    temperature: Optional[float],
+    num_predict: Optional[int],
+    system_prompt: Optional[str],
+) -> str:
+    """Build a deterministic Modelfile body from normalized parameters.
+
+    Callers must pass typed values (float/int/str or None); raw strings are
+    not re-parsed here.
+    """
+    lines = [f"FROM {base_model_id}", f"PARAMETER num_ctx {int(num_ctx)}"]
+    if temperature is not None:
+        lines.append(f"PARAMETER temperature {float(temperature)}")
+    if num_predict is not None:
+        lines.append(f"PARAMETER num_predict {int(num_predict)}")
+    if system_prompt:
+        sp = system_prompt.strip()
+        if "\n" in sp:
+            lines.append(f'SYSTEM """\n{sp}\n"""')
+        else:
+            esc = sp.replace("\\", "\\\\").replace('"', '\\"')
+            lines.append(f'SYSTEM "{esc}"')
+    return "\n".join(lines) + "\n"
+
+
+def upsert_provisioned(
+    c,
+    base_model_id: str,
+    install: str,
+    entry: dict,
+    assessor: str,
+    assessor_type: str,
+) -> Optional[str]:
+    """Insert/update provisioned_models and write .mf file. Returns alias or None if skipped.
+
+    create_command uses a repo-relative -f path; run it from the repository root.
+    """
+    alias = str(entry.get("alias", "")).strip()
+    role = str(entry.get("role", "")).strip()
+    if not alias or not role:
+        return None
+    variant = str(entry.get("variant", "primary")).strip() or "primary"
+    try:
+        num_ctx = int(entry["num_ctx"])
+    except (KeyError, TypeError, ValueError):
+        print(f"Warning: skip provisioning for {base_model_id!r}: invalid num_ctx", file=sys.stderr)
+        return None
+
+    temperature = entry.get("temperature")
+    if temperature == "":
+        temperature = None
+    elif temperature is not None:
+        try:
+            temperature = float(temperature)
+        except (TypeError, ValueError):
+            temperature = None
+
+    num_predict = entry.get("num_predict")
+    if num_predict == "" or num_predict is None:
+        num_predict = None
+    else:
+        try:
+            num_predict = int(num_predict)
+        except (TypeError, ValueError):
+            num_predict = None
+
+    system_prompt = entry.get("system_prompt")
+    if system_prompt is not None:
+        system_prompt = str(system_prompt).strip() or None
+
+    pull_command = (install or "").strip()
+    modelfile_path = alias_to_modelfile_path(alias)
+    modelfile_content = build_modelfile_content(
+        base_model_id, num_ctx, temperature, num_predict, system_prompt
+    )
+    create_command = f"ollama create {alias} -f {modelfile_path}"
+    now = _now()
+
+    c.execute(
+        "SELECT base_model_id, role, variant FROM provisioned_models WHERE alias=?",
+        (alias,),
+    )
+    alias_row = c.fetchone()
+    if alias_row:
+        eb, er, ev = alias_row
+        if (eb, er, ev) != (base_model_id, role, variant):
+            print(
+                f"Error: provisioning alias {alias!r} is already used for "
+                f"{eb!r} role={er!r} variant={ev!r}; cannot reuse for "
+                f"{base_model_id!r} role={role!r} variant={variant!r}.",
+                file=sys.stderr,
+            )
+            return None
+
+    c.execute(
+        "SELECT modelfile_path, is_active, modelfile_content, alias FROM provisioned_models "
+        "WHERE base_model_id=? AND role=? AND variant=?",
+        (base_model_id, role, variant),
+    )
+    prior = c.fetchone()
+    if prior:
+        old_path_str, was_active, old_content, old_alias = prior
+        if was_active and (
+            old_content != modelfile_content or old_alias != alias
+        ):
+            print(
+                f"Warning: reprovisioning {base_model_id!r} ({role}/{variant}) changed "
+                f"Modelfile body or alias; is_active was cleared. Re-verify with `ollama list` "
+                f"after rebuilding the clone in Ollama.",
+                file=sys.stderr,
+            )
+
+    c.execute(
+        """
+        INSERT INTO provisioned_models (
+          alias, base_model_id, role, variant, num_ctx, temperature, num_predict, system_prompt,
+          modelfile_content, modelfile_path, create_command, pull_command, is_active,
+          created_at, created_by, created_by_type, updated_at, updated_by, updated_by_type
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?)
+        ON CONFLICT(base_model_id, role, variant) DO UPDATE SET
+          alias=excluded.alias,
+          num_ctx=excluded.num_ctx,
+          temperature=excluded.temperature,
+          num_predict=excluded.num_predict,
+          system_prompt=excluded.system_prompt,
+          modelfile_content=excluded.modelfile_content,
+          modelfile_path=excluded.modelfile_path,
+          create_command=excluded.create_command,
+          pull_command=excluded.pull_command,
+          is_active=CASE
+            WHEN excluded.modelfile_content = provisioned_models.modelfile_content
+             AND excluded.alias = provisioned_models.alias
+            THEN provisioned_models.is_active
+            ELSE 0
+          END,
+          updated_at=excluded.updated_at,
+          updated_by=excluded.updated_by,
+          updated_by_type=excluded.updated_by_type
+        """,
+        (
+            alias,
+            base_model_id,
+            role,
+            variant,
+            num_ctx,
+            temperature,
+            num_predict,
+            system_prompt,
+            modelfile_content,
+            modelfile_path,
+            create_command,
+            pull_command,
+            now,
+            assessor,
+            assessor_type,
+            now,
+            assessor,
+            assessor_type,
+        ),
+    )
+
+    out_path = REPO_ROOT / modelfile_path
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        out_path.write_text(modelfile_content, encoding="utf-8")
+    except OSError as e:
+        print(f"Error: could not write {out_path}: {e}", file=sys.stderr)
+        raise
+
+    if prior and prior[0] and prior[0] != modelfile_path:
+        stale = REPO_ROOT / prior[0]
+        if stale.is_file() and stale.resolve() != out_path.resolve():
+            try:
+                stale.unlink()
+            except OSError as e:
+                print(f"Warning: could not remove stale modelfile {stale}: {e}", file=sys.stderr)
+
+    return alias
 
 
 def load_yaml(content: str) -> dict:
@@ -222,13 +425,15 @@ def main():
         print(f"Error: {db_path} not found. Run init-db.sh first.", file=sys.stderr)
         sys.exit(1)
 
-    assessor = args.assessor
-    assessor_type = args.assessor_type
+    assessor = args.assessor or "unknown"
+    assessor_type = args.assessor_type or "human"
 
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
 
     try:
+        prov_table = _table_exists(c, "provisioned_models")
+
         for model_id, m in (data.get("models") or {}).items():
             if str(model_id).startswith("_"):
                 continue
@@ -236,6 +441,25 @@ def main():
                 continue
             insert_model(c, model_id, m, assessor, assessor_type)
             print(f"Added/updated model: {model_id}")
+
+            raw_prov = m.get("provisioning")
+            if raw_prov and prov_table:
+                entries = raw_prov if isinstance(raw_prov, list) else [raw_prov]
+                install = str(m.get("install", ""))
+                for entry in entries:
+                    if not isinstance(entry, dict):
+                        continue
+                    done_alias = upsert_provisioned(
+                        c, str(model_id), install, entry, assessor, assessor_type
+                    )
+                    if done_alias:
+                        print(f"  Provisioned clone: {done_alias}")
+            elif raw_prov and not prov_table:
+                print(
+                    "Warning: YAML has provisioning but provisioned_models table is missing. "
+                    "Run ./scripts/migrate-schema.sh",
+                    file=sys.stderr,
+                )
 
         for role, variants in (data.get("by_role") or {}).items():
             for variant, val in (variants or {}).items():
@@ -257,8 +481,8 @@ def main():
             insert_doc(c, model_id, doc, assessor, assessor_type)
 
         conn.commit()
-    except sqlite3.Error as e:
-        print(f"Database error: {e}", file=sys.stderr)
+    except (sqlite3.Error, OSError) as e:
+        print(f"Error: {e}", file=sys.stderr)
         conn.rollback()
         sys.exit(1)
     finally:

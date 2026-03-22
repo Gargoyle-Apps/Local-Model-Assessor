@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Add schema columns introduced after initial release (assessed_at, etc.)
+# and the provisioned_models table (Fork 1) if missing.
 # Run from repo root: ./scripts/migrate-schema.sh
 # Safe to run multiple times; skips if column already exists.
 
@@ -45,4 +46,35 @@ add_provenance "role_model"
 add_provenance "constraint_model"
 add_provenance "task_category"
 add_provenance "model_docs"
+
+echo "  provisioned_models table (Fork 1)..."
+sqlite3 "$DB_PATH" <<'EOSQL'
+CREATE TABLE IF NOT EXISTS provisioned_models (
+  alias             TEXT PRIMARY KEY,
+  base_model_id     TEXT NOT NULL,
+  role              TEXT NOT NULL,
+  variant           TEXT NOT NULL DEFAULT 'primary',
+  num_ctx           INTEGER NOT NULL,
+  temperature       REAL,
+  num_predict       INTEGER,
+  system_prompt     TEXT,
+  modelfile_content TEXT NOT NULL,
+  modelfile_path    TEXT NOT NULL,
+  create_command    TEXT NOT NULL,
+  pull_command      TEXT NOT NULL,
+  is_active         INTEGER DEFAULT 0,
+  created_at        TEXT DEFAULT (datetime('now')),
+  created_by        TEXT,
+  created_by_type   TEXT,
+  updated_at        TEXT DEFAULT (datetime('now')),
+  updated_by        TEXT,
+  updated_by_type   TEXT,
+  FOREIGN KEY (base_model_id) REFERENCES models(model_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_provisioned_base_role_variant
+  ON provisioned_models(base_model_id, role, variant);
+CREATE INDEX IF NOT EXISTS idx_provisioned_role
+  ON provisioned_models(role);
+EOSQL
+
 echo "Done."

@@ -119,6 +119,36 @@ CREATE TABLE IF NOT EXISTS model_docs (
   FOREIGN KEY (model_id) REFERENCES models(model_id)
 );
 
+-- Provisioned model clones: role-tuned Ollama aliases (Modelfile overrides)
+CREATE TABLE IF NOT EXISTS provisioned_models (
+  alias             TEXT PRIMARY KEY,
+  base_model_id     TEXT NOT NULL,
+  role              TEXT NOT NULL,
+  variant           TEXT NOT NULL DEFAULT 'primary',
+  num_ctx           INTEGER NOT NULL,
+  temperature       REAL,
+  num_predict       INTEGER,
+  system_prompt     TEXT,
+  modelfile_content TEXT NOT NULL,
+  modelfile_path    TEXT NOT NULL,
+  create_command    TEXT NOT NULL,
+  pull_command      TEXT NOT NULL,
+  is_active         INTEGER DEFAULT 0,
+  created_at        TEXT DEFAULT (datetime('now')),
+  created_by        TEXT,
+  created_by_type   TEXT,
+  updated_at        TEXT DEFAULT (datetime('now')),
+  updated_by        TEXT,
+  updated_by_type   TEXT,
+  FOREIGN KEY (base_model_id) REFERENCES models(model_id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_provisioned_base_role_variant
+  ON provisioned_models(base_model_id, role, variant);
+
+CREATE INDEX IF NOT EXISTS idx_provisioned_role
+  ON provisioned_models(role);
+
 -- Hardware profile (consolidated)
 CREATE TABLE IF NOT EXISTS hardware_profile (
   id INTEGER PRIMARY KEY CHECK (id = 1),

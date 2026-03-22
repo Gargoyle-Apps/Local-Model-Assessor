@@ -14,7 +14,7 @@ This project is designed for **tool-calling AI agents with shell access** (Curso
 |-----------------|--------|---------|
 | `init-db.sh` | `scripts/schema.sql` | `model-data/model-assessor.db` |
 | `import-profiles.py` | `computer-profile/*.yaml` | DB (`hardware_profile`, `software_profile`) |
-| `add-model-from-yaml.py` | `model-data/new-models.yaml` | DB (`models`, `role_model`, `constraint_model`, `model_docs`) |
+| `add-model-from-yaml.py` | `model-data/new-models.yaml` | DB (`models`, `role_model`, `constraint_model`, `model_docs`, `provisioned_models`); writes `model-data/modelfile/*.mf` |
 | `export-assessed-models.py` | DB | `model-data/assessed-models.md` |
 | `ollama-search.md` → `model-assessment-prompt.yaml` → `add-model-from-yaml.py` | Ollama popular page, `hardware-profile.yaml` | DB, `assessed-models.md` |
 
@@ -27,7 +27,7 @@ This project is designed for **tool-calling AI agents with shell access** (Curso
 **Key scripts:**
 - `./scripts/query-db.sh "SQL"` — run any query
 - `./scripts/init-db.sh` — create empty DB
-- `./scripts/migrate-schema.sh` — add schema columns (e.g. `assessed_at`, provenance)
+- `./scripts/migrate-schema.sh` — add schema columns (e.g. `assessed_at`, provenance) and **`provisioned_models`** (Fork 1) if missing
 - `python3 scripts/add-model-from-yaml.py --assessor NAME --assessor-type local|cloud|human model-data/new-models.yaml` — insert models with provenance (or no args to use default path; provenance also via `LMA_ASSESSOR` / `LMA_ASSESSOR_TYPE` env vars)
 - `python3 scripts/export-assessed-models.py` — regenerate `assessed-models.md`
 - `python3 scripts/import-profiles.py` — import hardware/software YAML into DB
@@ -51,20 +51,20 @@ Create local files from templates: `cp computer-profile/hardware-profile.templat
 
 | User wants to... | Action |
 |------------------|--------|
-| Select a model | Query DB via `./scripts/query-db.sh` + read `hardware-profile.yaml`. Return structured recommendation. |
+| Select a model | Follow `LLM-prompts/model-selector-prompt.yaml`: join `role_model` → `provisioned_models` → `models`, run `ollama list` for drift, recommend alias or print `pull_command` / `create_command`. Read `hardware-profile.yaml` for budget. |
 | Discover new models | Follow `LLM-prompts/ollama-search.md` — fetch Ollama popular, parse, pre-filter, cap at 7, assess via `model-assessment-prompt.yaml` |
 | Get model details | Read `model-data/assessed-models.md` or query `model_docs` |
 | Assess new model | Read `model-assessment-prompt.yaml`, generate YAML to `model-data/new-models.yaml`, run `add-model-from-yaml.py`, then `export-assessed-models.py` |
 | Install a model | `./scripts/query-db.sh "SELECT install FROM models WHERE model_id='...'"` → run the returned command |
 | Configure IDE/agent | Read `IDE-model-management/IDE.md`, find the app section (Continue, OpenCode, Goose, Pi, Zed), query DB for role assignments, generate config. **Auto-trigger:** after profile import, if `software-profile.yaml` names a supported app, generate its config automatically. |
 
-**If DB missing:** Run `./scripts/init-db.sh`. **If DB lacks `assessed_at` or provenance columns:** Run `./scripts/migrate-schema.sh`.
+**If DB missing:** Run `./scripts/init-db.sh`. **If DB lacks `assessed_at`, provenance columns, or `provisioned_models`:** Run `./scripts/migrate-schema.sh`.
 
 ---
 
 ## Provenance
 
-Content tables (`models`, `role_model`, `constraint_model`, `task_category`, `model_docs`) track who created and last updated each row:
+Content tables (`models`, `role_model`, `constraint_model`, `task_category`, `model_docs`, `provisioned_models`) track who created and last updated each row:
 
 | Column | Set when | Preserved on update? |
 |--------|----------|---------------------|
@@ -94,15 +94,18 @@ Content tables (`models`, `role_model`, `constraint_model`, `task_category`, `mo
 ./scripts/query-db.sh "SELECT model_id FROM role_model WHERE role='coding' AND variant='primary'"
 ./scripts/query-db.sh "SELECT model_id FROM constraint_model WHERE constraint_name='has_vision'"
 ./scripts/query-db.sh "SELECT value FROM meta WHERE key='last_ollama_scan'"
+./scripts/query-db.sh "SELECT alias, base_model_id, role, num_ctx, is_active FROM provisioned_models ORDER BY role"
 ```
 
-**Hardware budget:** `grep -A2 vram_budget computer-profile/hardware-profile.yaml`
+**Hardware budget:** `grep -A5 vram_budget computer-profile/hardware-profile.yaml` (includes `os_headroom_gb`; effective budget ≈ `total_available - os_headroom_gb`)
 
 **Co-run rule:** `(model_vram + concurrency_reserve) < total_available` → can co-run. Heavy Lifters (30–48GB) run solo.
 
 ---
 
 ## Response Format (Model Selection)
+
+Prefer a **provisioned alias** when `provisioned_models` has a row for that role (see `model-selector-prompt.yaml`). Fallback when no clone exists:
 
 ```markdown
 **Recommended:** `model:tag`
