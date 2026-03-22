@@ -243,11 +243,12 @@ Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `ge
 
 ## Next version
 
-Planned work is split into **three parallel git forks** (separate branches); merge each to `main` when ready. Full checklist: local **`ref/TODO.md`**. **Fork 1 spec:** **`ref/context setting.md`**.
+Planned work is split into **parallel git forks** (separate branches); merge each to `main` when ready. Full checklist: local **`ref/TODO.md`**. **Fork 1 spec:** **`ref/context setting.md`**. **Fork 1.1 spec:** **`ref/IDE Timeout Configuration.md`**.
 
 | Fork | Suggested branch | Scope |
 |------|------------------|--------|
 | **1** | `fork/provisioning-context` | Human-in-the-loop provisioning, Modelfile / `num_ctx` rules, `provisioning_profiles`, DB — per **`ref/context setting.md`**. |
+| **1.1** | `fork/ide-timeout-config` | **IDE timeouts & assistant JSON** (Continue, Cline/Roo) so optimized Ollama aliases are usable — avoid short defaults killing chat/agentic loops; per **`ref/IDE Timeout Configuration.md`**. |
 | **2** | `fork/hf-gguf-ollama` | Verify HF GGUF → `Modelfile` → `ollama create` / `ollama run`; gate on **`computer-profile/`**. |
 | **3** | `fork/ollama-catalog-automation` | Update **`LLM-prompts/ollama-search.md`** (cloud-only caveat); then LLM + Python automation for the import pipeline (after Fork 2). |
 
