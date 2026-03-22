@@ -47,7 +47,7 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   ├── assessed-models.md            # regenerated from DB (gitignored)
 │   ├── new-models.template.yaml     # schema for assessment output (tracked)
 │   ├── new-models.yaml              # assessment output (gitignored; copy from template)
-│   ├── .modelfile/                  # Ollama Modelfiles (.mf); contents gitignored, .gitkeep only
+│   ├── modelfile/                   # Ollama Modelfiles (.mf); contents gitignored, .gitkeep only
 │   └── .gitkeep
 ├── scripts/
 │   ├── schema.sql
@@ -217,7 +217,7 @@ Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `ge
 | `computer-profile/hardware-profile.template.yaml` | ✓ | Template for hardware specs |
 | `computer-profile/software-profile.template.yaml` | ✓ | Template for IDE/agent setup |
 | `model-data/new-models.template.yaml` | ✓ | Template for model assessment YAML output |
-| `model-data/.modelfile/.gitkeep` | ✓ | Placeholder for Ollama Modelfiles; `*.mf` in this dir are gitignored |
+| `model-data/modelfile/.gitkeep` | ✓ | Placeholder for Ollama Modelfiles; `*.mf` in this dir are gitignored |
 | `computer-profile/hardware-profile.yaml` | ✗ local | Your hardware specs (gitignored) |
 | `computer-profile/software-profile.yaml` | ✗ local | Your IDE/agent config (gitignored) |
 | `model-data/model-assessor.db` | ✗ local | **SQLite source of truth** (gitignored) |

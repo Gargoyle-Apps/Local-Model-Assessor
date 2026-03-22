@@ -59,8 +59,8 @@ model-data/new-models.yaml
 model-data/*.db
 
 # Ollama Modelfile workspace: keep directory, ignore generated .mf / Modelfile contents
-model-data/.modelfile/*
-!model-data/.modelfile/.gitkeep
+model-data/modelfile/*
+!model-data/modelfile/.gitkeep
 
 # Legacy (if still present locally)
 model-data/model-lookup.json
