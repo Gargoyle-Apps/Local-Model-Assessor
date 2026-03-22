@@ -18,7 +18,9 @@ A system for selecting, assessing, and configuring local Ollama models — desig
 
 The repo ships **scripts, schema, and templates** — not pre-assessed models. Your local `model-assessor.db` starts empty. Clone → run `./scripts/init-db.sh` → fill in hardware → run assessments. Your agent queries the DB directly. All data stays local.
 
-See **File Reference** below for what's tracked vs gitignored.
+**Tracked** in `computer-profile/` and `model-data/` include templates (e.g. `*.template.yaml`), `new-models.template.yaml`, `modelfile/.gitkeep`, and scripts/schema. **Gitignored** (local only): `hardware-profile.yaml`, `software-profile.yaml`, `model-assessor.db`, `assessed-models.md`, `new-models.yaml`, generated `model-data/modelfile/*.mf`, IDE reference configs under `IDE-model-management/` (e.g. `continue/config.yaml`, `cline/provider-settings.json`), and `ref/`.
+
+> **For AI agents:** See [AGENTS.md](AGENTS.md) — task routing, key queries, data flow, provenance, and response format.
 
 ---
 
@@ -55,7 +57,7 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   ├── migrate-schema.sh
 │   ├── add-model-from-yaml.py
 │   ├── export-assessed-models.py
-│   ├── generate-ide-config.py       # Continue + Cline/Roo timeouts from DB (Fork 1.1)
+│   ├── generate-ide-config.py       # Continue + Cline/Roo config from DB
 │   ├── import-profiles.py
 │   └── query-db.sh
 ├── IDE-model-management/
@@ -148,9 +150,11 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 ---
 
-## Model Hydration
+## Model hydration
 
-### Assess New Models
+Ways to grow what’s in `model-assessor.db` after the first setup.
+
+## Assess new models
 
 **Canonical flow** (manual or via `ollama-search.md` pipeline):
 
@@ -163,9 +167,9 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
    python3 scripts/export-assessed-models.py
    ```
 
-### Discover New Models from Ollama
+## Discover new models from Ollama
 
-Follow **`LLM-prompts/ollama-search.md`** to fetch the [Ollama popular](https://ollama.com/search?o=popular) page, parse, pre-filter (exclude Cloud-only), cap at 7 candidates, and run the assessment flow above. Updates `meta.last_ollama_scan`.
+Follow **`LLM-prompts/ollama-search.md`** to fetch the [Ollama popular](https://ollama.com/search?o=popular) page, parse, pre-filter (exclude Cloud-only), cap at 7 candidates, and run the [assessment flow](#assess-new-models) above. Updates `meta.last_ollama_scan`.
 
 ---
 
@@ -177,7 +181,7 @@ Follow **`LLM-prompts/ollama-search.md`** to fetch the [Ollama popular](https://
 
 ## Hardware Classes
 
-Models are categorized by VRAM footprint and performance:
+Models are categorized by VRAM footprint and performance. **Full fields** (budget, `os_headroom_gb`, quantization, concurrency, `context_strategy`, hardware class definitions) live in **`computer-profile/hardware-profile.template.yaml`** — copy to `hardware-profile.yaml` and edit.
 
 | Class | VRAM | Speed | Use Case |
 |-------|------|-------|----------|
@@ -201,64 +205,6 @@ Query `model-assessor.db` for current assignments:
 ```
 
 Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `generalist`. See `model-data/assessed-models.md` for descriptions.
-
----
-
-## File Reference
-
-| File | In Git? | Purpose |
-|------|---------|---------|
-| `scripts/schema.sql` | ✓ | SQLite schema for models, roles, profiles, `provisioned_models` |
-| `scripts/init-db.sh` | ✓ | Create empty DB |
-| `scripts/add-model-from-yaml.py` | ✓ | Insert models from assessment YAML → DB |
-| `scripts/export-assessed-models.py` | ✓ | Regenerate assessed-models.md from DB |
-| `scripts/import-profiles.py` | ✓ | Import hardware/software YAML → DB |
-| `scripts/query-db.sh` | ✓ | Run ad-hoc SQL queries against DB |
-| `scripts/migrate-schema.sh` | ✓ | Add columns to existing DB (e.g. assessed_at) and `provisioned_models` if missing |
-| `scripts/generate-ide-config.py` | ✓ | Continue `config.yaml` + Cline/Roo `provider-settings.json` from DB; `--target`, `--dry-run`, `--active-only` |
-| `LLM-prompts/ollama-search.md` | ✓ | Pipeline to discover & assess new models from Ollama popular |
-| `computer-profile/hardware-profile.template.yaml` | ✓ | Template for hardware specs |
-| `computer-profile/software-profile.template.yaml` | ✓ | Template for IDE/agent setup |
-| `model-data/new-models.template.yaml` | ✓ | Template for model assessment YAML output |
-| `model-data/modelfile/.gitkeep` | ✓ | Placeholder for Ollama Modelfiles; `*.mf` in this dir are gitignored |
-| `computer-profile/hardware-profile.yaml` | ✗ local | Your hardware specs (gitignored) |
-| `computer-profile/software-profile.yaml` | ✗ local | Your IDE/agent config (gitignored) |
-| `model-data/model-assessor.db` | ✗ local | **SQLite source of truth** (gitignored) |
-| `model-data/assessed-models.md` | ✗ local | Regenerated from DB (gitignored) |
-| `model-data/new-models.yaml` | ✗ local | Assessment output; copy from template (gitignored) |
-| `model-data/model-lookup.json` | ✗ legacy | Legacy format (gitignored if present) |
-| `requirements.txt` | ✓ | Python deps (PyYAML) |
-| `LLM-prompts/model-selector-prompt.yaml` | ✓ | System prompt for model selection |
-| `LLM-prompts/model-assessment-prompt.yaml` | ✓ | System prompt for assessing new models |
-| `AGENTS.md` | ✓ | Agent rules, data flow, task routing |
-| `IDE-model-management/IDE.md` | ✓ | IDE config setup docs, role mappings, config templates |
-| `IDE-model-management/*/config-location.md` | ✓ | Per-app config format and locations (Continue, Cline/Roo, OpenCode, Goose, Pi, Zed) |
-| `IDE-model-management/*/config.*` | ✗ local | Local reference copies of filled-out configs (gitignored) |
-| `IDE-model-management/cline/provider-settings.json` | ✗ local | Generated Cline/Roo provider JSON (gitignored) |
-| `ref/` | ✗ local | Local copies of agent configs (gitignored) |
-
----
-
-## For AI Agents
-
-**Task routing, key queries, response format:** See [AGENTS.md](AGENTS.md).
-
----
-
-## What's shipped
-
-- **Provisioned models (Fork 1):** `provisioned_models` in SQLite, slim `provisioning` in assessment YAML, `add-model-from-yaml.py` writes `model-data/modelfile/*.mf`, selector prompt + export integration, `os_headroom_gb` in the hardware template.
-- **IDE timeout configuration (Fork 1.1):** `scripts/generate-ide-config.py` builds **Continue** `IDE-model-management/continue/config.yaml` and **Cline/Roo** `IDE-model-management/cline/provider-settings.json` from the DB — **60s** for autocomplete/embedding/OCR, **300s** for chat/coding/reasoning/vision/etc. (`IDE-model-management/IDE.md`). Flags: **`--target continue|cline`**, **`--dry-run`**, **`--active-only`** (only `is_active=1` provisioned rows). Uses **`LEFT JOIN`** to `models` and **skips** rows whose base model is missing (with a warning). **Cline** profile keys are **sanitized aliases** (`:` → `-`) so multiple base models for the same role/variant never overwrite each other.
-
-## Roadmap
-
-| Area | Scope |
-|------|--------|
-| **Fork 1.1 optional** | Assessment prompt could emit copy-paste IDE fragments; generator remains the canonical source. |
-| **Provisioning automation** | `deploy-provisioned.py` — run `pull_command`, write `.mf`, `create_command`, verify `ollama list`, flip `is_active`. |
-| **HF GGUF → Ollama** | Verify HF GGUF → `Modelfile` → `ollama create` / `ollama run`; gate on `computer-profile/`. |
-| **Catalog automation** | Update `LLM-prompts/ollama-search.md` (cloud-only caveat); LLM + Python automation for the import pipeline. |
-| **Alternate runtimes** | [Docker Model Runner](https://docs.docker.com/ai/model-runner/), [vLLM](https://vllm.ai), [vllm-metal](https://github.com/vllm-project/vllm-metal) — notes in `ref/TODO.md`. |
 
 ---
 

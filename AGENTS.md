@@ -26,13 +26,15 @@ This project is designed for **tool-calling AI agents with shell access** (Curso
 **Source of truth:** `model-data/model-assessor.db` (SQLite)
 
 **Key scripts:**
-- `./scripts/query-db.sh "SQL"` — run any query
+- `./scripts/query-db.sh "SQL"` — run any query (**no args = interactive session; always pass a SQL string**)
 - `./scripts/init-db.sh` — create empty DB
 - `./scripts/migrate-schema.sh` — add schema columns (e.g. `assessed_at`, provenance) and **`provisioned_models`** if missing
 - `python3 scripts/add-model-from-yaml.py --assessor NAME --assessor-type local|cloud|human model-data/new-models.yaml` — insert models with provenance (or no args to use default path; provenance also via `LMA_ASSESSOR` / `LMA_ASSESSOR_TYPE` env vars)
-- `python3 scripts/export-assessed-models.py` — regenerate `assessed-models.md`
-- `python3 scripts/import-profiles.py` — import hardware/software YAML into DB
+- `python3 scripts/export-assessed-models.py [output.md]` — regenerate `assessed-models.md` (optional path overrides default)
+- `python3 scripts/import-profiles.py [db_path]` — import hardware/software YAML into DB (optional DB path overrides default)
 - `python3 scripts/generate-ide-config.py [--target continue|cline] [--active-only] [--dry-run]` — emit IDE configs with role-appropriate timeouts from `provisioned_models`
+
+**Env var overrides:** `LMA_DB` overrides the DB path in all Python scripts. `LMA_ASSESSOR` / `LMA_ASSESSOR_TYPE` set provenance defaults for `add-model-from-yaml.py`.
 
 **Discover new models:** Follow `LLM-prompts/ollama-search.md`.
 
@@ -97,6 +99,9 @@ Content tables (`models`, `role_model`, `constraint_model`, `task_category`, `mo
 ./scripts/query-db.sh "SELECT model_id FROM constraint_model WHERE constraint_name='has_vision'"
 ./scripts/query-db.sh "SELECT value FROM meta WHERE key='last_ollama_scan'"
 ./scripts/query-db.sh "SELECT alias, base_model_id, role, num_ctx, is_active FROM provisioned_models ORDER BY role"
+./scripts/query-db.sh "SELECT chain_text FROM decision_tree WHERE need_key='need_vision'"
+./scripts/query-db.sh "SELECT * FROM rag_pipeline"
+./scripts/query-db.sh "SELECT role_name FROM task_category WHERE category='writing'"
 ```
 
 **Hardware budget:** `grep -A5 vram_budget computer-profile/hardware-profile.yaml` (includes `os_headroom_gb`; effective budget ≈ `total_available - os_headroom_gb`)
