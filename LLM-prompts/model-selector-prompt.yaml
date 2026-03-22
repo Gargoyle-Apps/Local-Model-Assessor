@@ -31,7 +31,7 @@ content: |
   ./scripts/query-db.sh "SELECT role, variant, model_id FROM role_model ORDER BY role, variant"
   ```
 
-  **Provisioned clones (Fork 1 — primary path for recommendations):**
+  **Provisioned clones (primary path for recommendations):**
   Join role assignments to clones and base specs:
 
   ```sql

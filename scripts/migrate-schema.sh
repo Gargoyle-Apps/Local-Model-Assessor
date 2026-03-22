@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Add schema columns introduced after initial release (assessed_at, etc.)
-# and the provisioned_models table (Fork 1) if missing.
+# and the provisioned_models table if missing.
 # Run from repo root: ./scripts/migrate-schema.sh
 # Safe to run multiple times; skips if column already exists.
 
@@ -47,7 +47,7 @@ add_provenance "constraint_model"
 add_provenance "task_category"
 add_provenance "model_docs"
 
-echo "  provisioned_models table (Fork 1)..."
+echo "  provisioned_models table..."
 sqlite3 "$DB_PATH" <<'EOSQL'
 CREATE TABLE IF NOT EXISTS provisioned_models (
   alias             TEXT PRIMARY KEY,

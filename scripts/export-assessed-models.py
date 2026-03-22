@@ -179,7 +179,7 @@ For writing and creative tasks, choose based on stage:
     if provisioned:
         body_parts.append("## Role-tuned provisioned clones (Ollama aliases)\n\n")
         body_parts.append(
-            "These rows come from `provisioned_models` (Fork 1). "
+            "These rows come from `provisioned_models`. "
             "`is_active` is set after you run `pull_command` / `create_command` and confirm with `ollama list`.\n\n"
         )
         body_parts.append(

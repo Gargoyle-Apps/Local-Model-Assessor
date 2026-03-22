@@ -2,7 +2,9 @@
 
 This folder holds **setup docs and config references** for keeping IDE agent tools in sync with models in `model-data/model-assessor.db`.
 
-**On-demand or auto:** Configs are generated when the user asks, or automatically after profile import if `computer-profile/software-profile.yaml` names a supported app (Continue, OpenCode, Goose, Pi, Zed). Check the `primary_agent.name`, `embedded_assistant.name`, and `optional_agents[].name` fields against the supported apps below.
+**On-demand or auto:** Configs are generated when the user asks, or automatically after profile import if `computer-profile/software-profile.yaml` names a supported app (Continue, OpenCode, Goose, Pi, Zed, Cline, Roo Code). Check the `primary_agent.name`, `embedded_assistant.name`, and `optional_agents[].name` fields against the supported apps below.
+
+**Config generator:** `python3 scripts/generate-ide-config.py` reads provisioned aliases from `provisioned_models` (with `LEFT JOIN` to `models`) and emits IDE configs with role-appropriate timeouts. Use `--target continue` or `--target cline` to limit output, `--active-only` for rows with `is_active=1` only, and `--dry-run` to preview. **Cline/Roo** JSON is keyed by sanitized alias (`:` → `-`) so profiles never collide.
 
 **Source of truth:** `model-data/model-assessor.db` (SQLite). Query via `./scripts/query-db.sh`.
 **Hardware context:** `computer-profile/hardware-profile.yaml`
@@ -44,10 +46,27 @@ Query the DB for current assignments:
 | App | Config format | Subfolder |
 |-----|--------------|-----------|
 | Continue | `config.yaml` | [continue/](continue/) |
+| Cline / Roo Code | JSON (provider settings) | [cline/](cline/) |
 | OpenCode | `opencode.json` | [opencode/](opencode/) |
 | Goose | `config.yaml` | [goose/](goose/) |
 | Pi | `settings.json` + `models.json` | [pi/](pi/) |
 | Zed | `settings.json` | [zed/](zed/) |
+
+---
+
+## Timeout Policy
+
+IDEs default to short HTTP timeouts that cause failures when Ollama needs time for cold loads, large context pre-fill, or agentic multi-turn loops. The config generator (`scripts/generate-ide-config.py`) applies these role-based timeouts:
+
+| Role category | Timeout (ms) | Rationale |
+|---------------|-------------|-----------|
+| **Autocomplete / embedding / OCR** | `60000` (60 s) | Snappy roles — if completion takes > 1 min, the user has moved on |
+| **Chat / coding / reasoning / vision / creative / heavy_lifter** | `300000` (5 min) | Deep roles — large context pre-fill and agentic loops need a long leash |
+
+These values map to:
+- **Continue:** `requestOptions.timeout` on each `models[]` entry; `autocompleteOptions.modelTimeout` on autocomplete entries
+- **Cline / Roo Code:** `requestTimeoutMs` in the API provider configuration
+- **Other IDEs:** Apply the same ms values to whatever timeout field the app exposes (see per-app sections)
 
 ---
 
@@ -66,25 +85,89 @@ Query the DB for current assignments:
 | `role='reasoning', variant='primary'` | `roles: [chat, edit]` (no capabilities) |
 | `role='autocomplete', variant='balanced'` | `roles: [autocomplete]` |
 | `role='embedding', variant='primary'` | `roles: [embed]` |
+| `role='ocr', variant='primary'` | `roles: [embed]` (OCR uses the embed role path in Continue) |
 
 ### Config block template
 
+When provisioned aliases exist, use the alias as `model` and `num_ctx` as `contextLength`:
+
 ```yaml
 models:
-  - name: "Display Name"
+  - name: "qwen3:30b_coding_8k (coding)"
     provider: ollama
-    model: "model-name:tag"   # must match model-assessor.db
+    model: qwen3:30b_coding_8k      # provisioned alias from DB
+    apiBase: http://localhost:11434
     roles: [chat, edit, apply]
-    capabilities: [tool_use]  # tool_use and/or image_input; omit if neither
-    contextLength: 32768      # from models.ctx
+    capabilities: [tool_use]
+    defaultCompletionOptions:
+      contextLength: 8192            # from provisioned_models.num_ctx
+    requestOptions:
+      timeout: 300000                # chat/coding → 5 min
+```
+
+Autocomplete entries get a shorter timeout:
+
+```yaml
+  - name: "granite4:3b_autocomplete_8k (autocomplete)"
+    provider: ollama
+    model: granite4:3b_autocomplete_8k
+    apiBase: http://localhost:11434
+    roles: [autocomplete]
+    defaultCompletionOptions:
+      contextLength: 8192
+    requestOptions:
+      timeout: 60000
+    autocompleteOptions:
+      debounceDelay: 250
+      maxPromptTokens: 2048
+      modelTimeout: 60000
 ```
 
 ### Setup steps (on-demand)
 
-1. Query DB for current role assignments
-2. Generate `config.yaml` using the role mapping above
-3. Write to `~/.continue/config.yaml` (user-level)
-4. Optionally save a copy to `IDE-model-management/continue/config.yaml` as local reference
+1. Run `python3 scripts/generate-ide-config.py --target continue` (or `--dry-run` to preview)
+2. Review the generated `IDE-model-management/continue/config.yaml`
+3. Copy or merge into `~/.continue/config.yaml`
+4. Restart Continue to pick up changes
+
+---
+
+## Cline / Roo Code (VS Code)
+
+**Cline docs:** [Cline — GitHub](https://github.com/cline/cline)
+**Roo Code docs:** [Roo Code — GitHub](https://github.com/RooVetGit/Roo-Code)
+**Config file:** JSON (provider settings) — see [cline/config-location.md](cline/config-location.md)
+**Config location:** Managed through the extension UI; export/import as JSON.
+
+Cline and Roo Code are autonomous agent extensions that read/write files in agentic loops. A timeout mid-loop breaks the entire chain, so chat-tier timeouts (300 s) are critical.
+
+### Role mapping → Cline / Roo
+
+| DB query | Cline/Roo config |
+|----------|-----------------|
+| `role='coding', variant='primary'` | Primary `ollamaModelId` with `requestTimeoutMs: 300000` |
+| `role='autocomplete', variant='…'` | Separate profile or model with `requestTimeoutMs: 60000` |
+| `role='embedding', variant='primary'` | Roo embedding model (if applicable); use Snappy alias + short timeout |
+
+### Config block template
+
+```json
+{
+  "apiConfiguration": {
+    "apiProvider": "ollama",
+    "ollamaModelId": "qwen3:30b_coding_8k",
+    "apiBaseUrl": "http://localhost:11434",
+    "requestTimeoutMs": 300000
+  }
+}
+```
+
+### Setup steps (on-demand)
+
+1. Run `python3 scripts/generate-ide-config.py --target cline` (or `--dry-run` to preview)
+2. Review the generated `IDE-model-management/cline/provider-settings.json`
+3. In VS Code, open Cline/Roo settings → API Configuration → import or paste the relevant profile
+4. For Roo Code embedding: verify the embedding model timeout is also adequate
 
 ---
 

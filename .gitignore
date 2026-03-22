@@ -72,6 +72,7 @@ IDE-model-management/goose/config.yaml
 IDE-model-management/pi/settings.json
 IDE-model-management/pi/models.json
 IDE-model-management/zed/settings.json
+IDE-model-management/cline/provider-settings.json
 
 # OpenCode (project-level config is local)
 opencode.json

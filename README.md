@@ -7,7 +7,7 @@ A system for selecting, assessing, and configuring local Ollama models — desig
 **Prerequisites:**
 - [Ollama](https://ollama.com) installed and running
 - An IDE with a tool-calling AI agent (Cursor, VS Code + Cline/Continue, etc.)
-  - Automated setup: [IDE-model-management/IDE.md](IDE-model-management/IDE.md) — config templates and role mappings for Continue, OpenCode, Goose, Pi, Zed (Cline/Roo timeout notes: planned Fork 1.1, **`ref/IDE Timeout Configuration.md`**)
+  - Automated setup: [IDE-model-management/IDE.md](IDE-model-management/IDE.md) — config templates, role mappings, and timeout policy for Continue, Cline/Roo, OpenCode, Goose, Pi, Zed
 - Python 3 + PyYAML (`python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`)
 - For model assessment: a capable local model (e.g. `ollama pull gpt-oss:20b`, 14GB VRAM) or a cloud LLM service
 - Your machine's hardware specs and IDE/agent info — see [Define Your Environment](#3-define-your-environment)
@@ -55,11 +55,13 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   ├── migrate-schema.sh
 │   ├── add-model-from-yaml.py
 │   ├── export-assessed-models.py
+│   ├── generate-ide-config.py       # Continue + Cline/Roo timeouts from DB (Fork 1.1)
 │   ├── import-profiles.py
 │   └── query-db.sh
 ├── IDE-model-management/
-│   ├── IDE.md                       # setup docs, role mappings, config templates
+│   ├── IDE.md                       # setup docs, role mappings, timeout policy, templates
 │   ├── continue/                    # Continue (VS Code)
+│   ├── cline/                       # Cline / Roo Code (JSON provider settings)
 │   ├── opencode/                    # OpenCode (CLI/TUI)
 │   ├── goose/                       # Goose (CLI/Desktop)
 │   ├── pi/                          # Pi coding-agent (Terminal)
@@ -134,7 +136,7 @@ Install the recommended models:
 ollama pull <model:tag>
 ```
 
-Configure your agent's settings file with the recommended models. See [IDE-model-management/IDE.md](IDE-model-management/IDE.md) for app-specific templates.
+Configure your agent's settings file with the recommended models. After provisioned clones exist in the DB, run `python3 scripts/generate-ide-config.py --dry-run` (add `--active-only` to limit to `is_active=1` rows), then merge outputs into your IDE paths — see [IDE-model-management/IDE.md](IDE-model-management/IDE.md).
 
 ### 7. Ad-Hoc Selection
 
@@ -169,7 +171,7 @@ Follow **`LLM-prompts/ollama-search.md`** to fetch the [Ollama popular](https://
 
 ## IDE Model Management
 
-[IDE-model-management/IDE.md](IDE-model-management/IDE.md) — setup docs, role mappings, and config templates for Continue, OpenCode, Goose, Pi, Zed. Configs are **on-demand** (generated when you ask); see [AGENTS.md](AGENTS.md) task routing. **Continue** uses **`~/.continue/config.yaml`** (YAML); Fork 1.1 adds aligned **request-timeout** guidance and Cline/Roo coverage — **`ref/IDE Timeout Configuration.md`**.
+[IDE-model-management/IDE.md](IDE-model-management/IDE.md) — setup docs, role mappings, timeout policy, and config templates for Continue, Cline/Roo, OpenCode, Goose, Pi, Zed. Configs are **on-demand** (generated when you ask, or via `scripts/generate-ide-config.py`); see [AGENTS.md](AGENTS.md) task routing. **Continue** uses **`~/.continue/config.yaml`** (YAML); **Cline/Roo Code** use JSON provider settings — both get role-appropriate request timeouts.
 
 ---
 
@@ -206,13 +208,14 @@ Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `ge
 
 | File | In Git? | Purpose |
 |------|---------|---------|
-| `scripts/schema.sql` | ✓ | SQLite schema for models, roles, profiles, **`provisioned_models`** (Fork 1) |
+| `scripts/schema.sql` | ✓ | SQLite schema for models, roles, profiles, `provisioned_models` |
 | `scripts/init-db.sh` | ✓ | Create empty DB |
 | `scripts/add-model-from-yaml.py` | ✓ | Insert models from assessment YAML → DB |
 | `scripts/export-assessed-models.py` | ✓ | Regenerate assessed-models.md from DB |
 | `scripts/import-profiles.py` | ✓ | Import hardware/software YAML → DB |
 | `scripts/query-db.sh` | ✓ | Run ad-hoc SQL queries against DB |
-| `scripts/migrate-schema.sh` | ✓ | Add columns to existing DB (e.g. assessed_at) and **`provisioned_models`** if missing |
+| `scripts/migrate-schema.sh` | ✓ | Add columns to existing DB (e.g. assessed_at) and `provisioned_models` if missing |
+| `scripts/generate-ide-config.py` | ✓ | Continue `config.yaml` + Cline/Roo `provider-settings.json` from DB; `--target`, `--dry-run`, `--active-only` |
 | `LLM-prompts/ollama-search.md` | ✓ | Pipeline to discover & assess new models from Ollama popular |
 | `computer-profile/hardware-profile.template.yaml` | ✓ | Template for hardware specs |
 | `computer-profile/software-profile.template.yaml` | ✓ | Template for IDE/agent setup |
@@ -229,8 +232,9 @@ Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `ge
 | `LLM-prompts/model-assessment-prompt.yaml` | ✓ | System prompt for assessing new models |
 | `AGENTS.md` | ✓ | Agent rules, data flow, task routing |
 | `IDE-model-management/IDE.md` | ✓ | IDE config setup docs, role mappings, config templates |
-| `IDE-model-management/*/config-location.md` | ✓ | Per-app config format and locations (Continue, OpenCode, Goose, Pi, Zed) |
+| `IDE-model-management/*/config-location.md` | ✓ | Per-app config format and locations (Continue, Cline/Roo, OpenCode, Goose, Pi, Zed) |
 | `IDE-model-management/*/config.*` | ✗ local | Local reference copies of filled-out configs (gitignored) |
+| `IDE-model-management/cline/provider-settings.json` | ✗ local | Generated Cline/Roo provider JSON (gitignored) |
 | `ref/` | ✗ local | Local copies of agent configs (gitignored) |
 
 ---
@@ -241,25 +245,20 @@ Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `ge
 
 ---
 
-## Next version
+## What's shipped
 
-### Current milestone (branch `auto`)
+- **Provisioned models (Fork 1):** `provisioned_models` in SQLite, slim `provisioning` in assessment YAML, `add-model-from-yaml.py` writes `model-data/modelfile/*.mf`, selector prompt + export integration, `os_headroom_gb` in the hardware template.
+- **IDE timeout configuration (Fork 1.1):** `scripts/generate-ide-config.py` builds **Continue** `IDE-model-management/continue/config.yaml` and **Cline/Roo** `IDE-model-management/cline/provider-settings.json` from the DB — **60s** for autocomplete/embedding/OCR, **300s** for chat/coding/reasoning/vision/etc. (`IDE-model-management/IDE.md`). Flags: **`--target continue|cline`**, **`--dry-run`**, **`--active-only`** (only `is_active=1` provisioned rows). Uses **`LEFT JOIN`** to `models` and **skips** rows whose base model is missing (with a warning). **Cline** profile keys are **sanitized aliases** (`:` → `-`) so multiple base models for the same role/variant never overwrite each other.
 
-- **Fork 1 (shipped here):** **`provisioned_models`** in SQLite (see **`scripts/schema.sql`** / **`scripts/migrate-schema.sh`**), slim **`provisioning`** in assessment YAML, **`scripts/add-model-from-yaml.py`** writes **`model-data/modelfile/*.mf`** and DB commands, selector prompt joins clones + **`ollama list`**, export lists provisioned rows. Phase 5 optional script (`deploy-provisioned.py`) not started.
-- **Fork 1.1 (in progress on this branch):** IDE **request timeouts** and copy-pasteable configs so Continue / Cline / Roo keep up with local Ollama and **provisioned aliases**. Canonical spec: **`ref/IDE Timeout Configuration.md`** (local copy if `ref/` is gitignored). Checklist: **`ref/TODO.md`**.
+## Roadmap
 
-### Roadmap (all forks)
-
-Work may land on **dedicated fork branches** or **sequenced on one branch** (e.g. `auto`); merge order still matters at integration. **Fork 1 spec:** **`ref/context setting.md`**. **Fork 1.1 spec:** **`ref/IDE Timeout Configuration.md`**. Full scratchpad: **`ref/TODO.md`**.
-
-| Fork | Suggested branch | Scope |
-|------|------------------|--------|
-| **1** | `fork/provisioning-context` | **Done (Phases 1–4)** — `provisioned_models`, Modelfiles, import, selector — spec **`ref/context setting.md`**. |
-| **1.1** | `fork/ide-timeout-config` | **Active** — **IDE request timeouts**: Continue **`config.yaml`** (`requestOptions.timeout`); Cline/Roo (`requestTimeoutMs`, etc.); generator + **`IDE-model-management/`** docs — spec **`ref/IDE Timeout Configuration.md`**. |
-| **2** | `fork/hf-gguf-ollama` | Verify HF GGUF → `Modelfile` → `ollama create` / `ollama run`; gate on **`computer-profile/`**. |
-| **3** | `fork/ollama-catalog-automation` | Update **`LLM-prompts/ollama-search.md`** (cloud-only caveat); then LLM + Python automation for the import pipeline (after Fork 2). |
-
-- **Cross-cutting** — Alternate runtimes ([Docker Model Runner](https://docs.docker.com/ai/model-runner/), [vLLM](https://vllm.ai), [vllm-metal](https://github.com/vllm-project/vllm-metal)): shared notes in **`ref/TODO.md`** (not its own fork).
+| Area | Scope |
+|------|--------|
+| **Fork 1.1 optional** | Assessment prompt could emit copy-paste IDE fragments; generator remains the canonical source. |
+| **Provisioning automation** | `deploy-provisioned.py` — run `pull_command`, write `.mf`, `create_command`, verify `ollama list`, flip `is_active`. |
+| **HF GGUF → Ollama** | Verify HF GGUF → `Modelfile` → `ollama create` / `ollama run`; gate on `computer-profile/`. |
+| **Catalog automation** | Update `LLM-prompts/ollama-search.md` (cloud-only caveat); LLM + Python automation for the import pipeline. |
+| **Alternate runtimes** | [Docker Model Runner](https://docs.docker.com/ai/model-runner/), [vLLM](https://vllm.ai), [vllm-metal](https://github.com/vllm-project/vllm-metal) — notes in `ref/TODO.md`. |
 
 ---
 

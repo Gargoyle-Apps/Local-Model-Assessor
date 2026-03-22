@@ -16,6 +16,7 @@ This project is designed for **tool-calling AI agents with shell access** (Curso
 | `import-profiles.py` | `computer-profile/*.yaml` | DB (`hardware_profile`, `software_profile`) |
 | `add-model-from-yaml.py` | `model-data/new-models.yaml` | DB (`models`, `role_model`, `constraint_model`, `model_docs`, `provisioned_models`); writes `model-data/modelfile/*.mf` |
 | `export-assessed-models.py` | DB | `model-data/assessed-models.md` |
+| `generate-ide-config.py` | DB (`provisioned_models`, `models`) | `IDE-model-management/<app>/` config files with role-appropriate timeouts |
 | `ollama-search.md` → `model-assessment-prompt.yaml` → `add-model-from-yaml.py` | Ollama popular page, `hardware-profile.yaml` | DB, `assessed-models.md` |
 
 ---
@@ -27,10 +28,11 @@ This project is designed for **tool-calling AI agents with shell access** (Curso
 **Key scripts:**
 - `./scripts/query-db.sh "SQL"` — run any query
 - `./scripts/init-db.sh` — create empty DB
-- `./scripts/migrate-schema.sh` — add schema columns (e.g. `assessed_at`, provenance) and **`provisioned_models`** (Fork 1) if missing
+- `./scripts/migrate-schema.sh` — add schema columns (e.g. `assessed_at`, provenance) and **`provisioned_models`** if missing
 - `python3 scripts/add-model-from-yaml.py --assessor NAME --assessor-type local|cloud|human model-data/new-models.yaml` — insert models with provenance (or no args to use default path; provenance also via `LMA_ASSESSOR` / `LMA_ASSESSOR_TYPE` env vars)
 - `python3 scripts/export-assessed-models.py` — regenerate `assessed-models.md`
 - `python3 scripts/import-profiles.py` — import hardware/software YAML into DB
+- `python3 scripts/generate-ide-config.py [--target continue|cline] [--active-only] [--dry-run]` — emit IDE configs with role-appropriate timeouts from `provisioned_models`
 
 **Discover new models:** Follow `LLM-prompts/ollama-search.md`.
 
@@ -41,7 +43,7 @@ This project is designed for **tool-calling AI agents with shell access** (Curso
 | Type | Files |
 |------|-------|
 | **Tracked** | Templates (`.template.yaml`), prompts (`LLM-prompts/`), scripts, `AGENTS.md`, `IDE-model-management/` (setup docs + config references) |
-| **Gitignored** | `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `model-data/new-models.yaml`, `model-data/modelfile/*` (except `.gitkeep`), `.cursorrules`, `.continue/`, `.opencode/`, `opencode.json`, local config copies (`IDE-model-management/*/config.*`), `ref/` |
+| **Gitignored** | `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `model-data/new-models.yaml`, `model-data/modelfile/*` (except `.gitkeep`), `.cursorrules`, `.continue/`, `.opencode/`, `opencode.json`, local config copies (`IDE-model-management/*/config.*`, `cline/provider-settings.json`), `ref/` |
 
 Create local files from templates: `cp computer-profile/hardware-profile.template.yaml computer-profile/hardware-profile.yaml` (or use setup in `model-assessment-prompt.yaml`). For assessment output: `cp model-data/new-models.template.yaml model-data/new-models.yaml`.
 
@@ -56,7 +58,7 @@ Create local files from templates: `cp computer-profile/hardware-profile.templat
 | Get model details | Read `model-data/assessed-models.md` or query `model_docs` |
 | Assess new model | Read `model-assessment-prompt.yaml`, generate YAML to `model-data/new-models.yaml`, run `add-model-from-yaml.py`, then `export-assessed-models.py` |
 | Install a model | `./scripts/query-db.sh "SELECT install FROM models WHERE model_id='...'"` → run the returned command |
-| Configure IDE/agent | Read `IDE-model-management/IDE.md`, find the app section (Continue, OpenCode, Goose, Pi, Zed), query DB for role assignments, generate config. **Auto-trigger:** after profile import, if `software-profile.yaml` names a supported app, generate its config automatically. |
+| Configure IDE/agent | Run `python3 scripts/generate-ide-config.py --target <app>` for Continue or Cline/Roo (uses `provisioned_models` + timeout policy from `IDE-model-management/IDE.md`). For other apps (OpenCode, Goose, Pi, Zed): read `IDE-model-management/IDE.md`, find the app section, query DB for role assignments, generate config manually. **Auto-trigger:** after profile import, if `software-profile.yaml` names a supported app, generate its config automatically. |
 
 **If DB missing:** Run `./scripts/init-db.sh`. **If DB lacks `assessed_at`, provenance columns, or `provisioned_models`:** Run `./scripts/migrate-schema.sh`.
 
