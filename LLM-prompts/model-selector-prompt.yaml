@@ -91,13 +91,13 @@ content: |
   **Why:** [one sentence]
   **Status:** [Active in Ollama / Not yet built]  (from `ollama list` + `is_active`)
   **Alternative:** `other-alias` or base model (reason)
-  **Install (base weights):** `pull_command` or `models.install`
+  **Install (base):** `pull_command` (same value as `models.install` — usually `ollama pull`; for HF GGUF imports: `ollama create -f …`)
   ```
 
   When **`is_active = 0`** or clone missing from `ollama list`, append **Build this clone:**
   ```markdown
   **Build this clone:**
-  1. `pull_command` (pull base weights)
+  1. `pull_command` / `models.install` (catalog: pull base; GGUF: `ollama create` base per AGENTS.md Phase 3)
   2. Ensure Modelfile exists at `modelfile_path` (contents in DB: `modelfile_content`)
   3. `create_command`
   ```

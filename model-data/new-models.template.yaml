@@ -1,8 +1,9 @@
 # Model assessment output template
 # Copy to model-data/new-models.yaml and fill in. Then: python3 scripts/add-model-from-yaml.py model-data/new-models.yaml
-# See LLM-prompts/model-assessment-prompt.yaml and LLM-prompts/ollama-search.md
+# See LLM-prompts/model-assessment-prompt.yaml, LLM-prompts/ollama-search.md, and AGENTS.md → Phase 3 (HF GGUF → Ollama).
 
 models:
+  # Ollama library example:
   model-name:tag:
     vram: 12
     ctx: 32768
@@ -42,3 +43,30 @@ model_docs:
     description: "1-2 sentence summary."
     best_for: "Use case 1, use case 2"
     caveats: "Known limitations or requirements"
+
+# =============================================================================
+# HF GGUF import — full example (all top-level keys; uncomment to use):
+# Base Modelfile is separate — create it before running the install command.
+# See AGENTS.md → Phase 3 for orchestration rules.
+# =============================================================================
+  # my-import:q4:
+  #   vram: 8
+  #   ctx: 8192
+  #   class: Middleweight
+  #   tps: 35
+  #   url: https://huggingface.co/org/repo
+  #   install: ollama create my-import:q4 -f model-data/modelfile/my-import--q4-base.mf
+  #   provisioning:
+  #     - alias: "my-import:q4_coding_8k"
+  #       role: coding
+  #       variant: primary
+  #       num_ctx: 8192
+  #       temperature: 0.2
+  # by_role:
+  #   coding:
+  #     primary: my-import:q4
+  # model_docs:
+  #   my-import:q4:
+  #     description: "Imported GGUF from HF."
+  #     best_for: "Coding on local hardware."
+  #     caveats: "Download GGUF to e.g. ./weights/model.gguf; base .mf uses FROM ./weights/model.gguf; run install before clone create_command."

@@ -154,11 +154,13 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 Ways to grow what’s in `model-assessor.db` after the first setup.
 
+**HF GGUF (not in Ollama’s library):** Same assessment + import scripts; workflow and two-tier Modelfile rules live in **[AGENTS.md](AGENTS.md)** (Phase 3).
+
 ## Assess new models
 
 **Canonical flow** (manual or via `ollama-search.md` pipeline):
 
-1. Use `LLM-prompts/model-assessment-prompt.yaml` + `hardware-profile.yaml` + Ollama model URL(s)
+1. Use `LLM-prompts/model-assessment-prompt.yaml` + `hardware-profile.yaml` + model URL(s) (Ollama library or HF GGUF per [AGENTS.md](AGENTS.md) Phase 3)
 2. Send to `gpt-oss:20b` or a capable cloud LLM
 3. Save YAML output to `model-data/new-models.yaml`
 4. Run:
