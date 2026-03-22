@@ -1,10 +1,10 @@
 # Project Rules for AI Coding Agents
 
-> **Cursor users:** Create a local `.cursorrules` that references this file and adds `required_permissions: ["all"]` for git operations. (`.cursorrules` is gitignored.)
+> **Cursor users:** Create a local `.cursorrules` that references this file and adds `required_permissions: ["all"]` for git operations. (`.cursorrules` is gitignored.) If git commands fail with permission errors, the environment may be blocking writes to `.git` — retry with full permissions or run git outside the sandbox.
 
 This project is designed for **tool-calling AI agents with shell access** (Cursor, Cline, Continue, Claude Code, etc.). Query the database and run scripts directly — do not ask the user to paste data or run commands manually.
 
-**Full setup:** See [README.md](README.md).
+**Scope:** **This file is the canonical contract** for agents in this repo (data flow, scripts, task routing, queries, provenance). [README.md](README.md) is the **human** companion: narrative quick start, folder tree, and concepts — not a substitute for the tables below.
 
 ---
 
@@ -48,6 +48,8 @@ This project is designed for **tool-calling AI agents with shell access** (Curso
 | **Gitignored** | `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `model-data/new-models.yaml`, `model-data/modelfile/*` (except `.gitkeep`), `.cursorrules`, `.continue/`, `.opencode/`, `opencode.json`, local config copies (`IDE-model-management/*/config.*`, `cline/provider-settings.json`), `ref/` |
 
 Create local files from templates: `cp computer-profile/hardware-profile.template.yaml computer-profile/hardware-profile.yaml` (or use setup in `model-assessment-prompt.yaml`). For assessment output: `cp model-data/new-models.template.yaml model-data/new-models.yaml`.
+
+**Repo development vs using the repo:** End-user agents rely on this section matching **`.gitignore`** and the real tree. When you change ignore rules, add generated artifacts, or new local-only paths, update **this table** and **README.md** (“Repo vs Local”) together so agents and humans stay aligned.
 
 ---
 
@@ -121,9 +123,3 @@ Prefer a **provisioned alias** when `provisioned_models` has a row for that role
 **Alternative:** `backup-model` (reason)
 **Install:** `ollama pull model:tag`
 ```
-
----
-
-## Git Operations
-
-When running git commands (push, pull, commit, fetch, merge, checkout, branch), ensure the agent has write access to `.git` — some sandboxes restrict this.
