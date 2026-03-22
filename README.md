@@ -241,12 +241,15 @@ Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `ge
 
 ## Next version
 
-Planned follow-ups (see local notes in `ref/TODO.md` if you use a `ref/` folder):
+Planned work is split into **three parallel git forks** (separate branches); merge each to `main` when ready. Full checklist: local **`ref/TODO.md`**. **Fork 1 spec:** **`ref/context setting.md`**.
 
-- **Custom GGUF imports** — Verify end-to-end: download GGUF from Hugging Face → `Modelfile` → `ollama create` / `ollama run`, using **`computer-profile/`** (VRAM budget, quant defaults, context strategy) to decide what fits.
-- **Ollama search prompt** — If imports work, update **`LLM-prompts/ollama-search.md`** to mention **cloud-only** Ollama models where useful, with the caveat that **local** use may need the HF GGUF path, not `ollama pull` alone.
-- **Automation** — If the above holds, sketch an **LLM + Python** flow (and script) for that import pipeline, reading **`hardware-profile.yaml`** to filter candidates and suggest context.
-- **Alternate runtimes** — For HF/Safetensors models Ollama can’t load, compare [Docker Model Runner](https://docs.docker.com/ai/model-runner/), [vLLM](https://vllm.ai), and Apple Silicon **[vllm-metal](https://github.com/vllm-project/vllm-metal)** — tradeoffs and profile tie-ins in local **`ref/TODO.md`**.
+| Fork | Suggested branch | Scope |
+|------|------------------|--------|
+| **1** | `fork/provisioning-context` | Human-in-the-loop provisioning, Modelfile / `num_ctx` rules, `provisioning_profiles`, DB — per **`ref/context setting.md`**. |
+| **2** | `fork/hf-gguf-ollama` | Verify HF GGUF → `Modelfile` → `ollama create` / `ollama run`; gate on **`computer-profile/`**. |
+| **3** | `fork/ollama-catalog-automation` | Update **`LLM-prompts/ollama-search.md`** (cloud-only caveat); then LLM + Python automation for the import pipeline (after Fork 2). |
+
+- **Cross-cutting** — Alternate runtimes ([Docker Model Runner](https://docs.docker.com/ai/model-runner/), [vLLM](https://vllm.ai), [vllm-metal](https://github.com/vllm-project/vllm-metal)): shared notes in **`ref/TODO.md`** (not its own fork).
 
 ---
 
