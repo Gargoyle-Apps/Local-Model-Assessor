@@ -1,6 +1,6 @@
 -- Sample table for text + embeddings. Dimension MUST match your embedding model
 -- (see versions.lock.yaml default_embedding_dimensions and model card).
--- To change N after init: migrate data or recreate volume — see README.
+-- To change N after init: migrate data or recreate volume — see embed-retrieval-stack.md.
 
 CREATE TABLE IF NOT EXISTS documents (
     id          bigserial PRIMARY KEY,

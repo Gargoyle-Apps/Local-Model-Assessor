@@ -2,10 +2,14 @@
 
 Docker-based **jumping-off point** for embeddings + vector search + optional property-graph queries in **one** PostgreSQL instance. This is **not** a full app framework — copy `embed-retrieval-stack/` (and generated handoff files) into your project when you are ready.
 
+**You do not install `psql` on your Mac for this stack.** The Postgres image already includes `psql`. Use **`docker compose exec postgres psql …`** for ad hoc SQL and checks. Apps use a **library driver** (e.g. `psycopg`) and `DATABASE_URL`, not the `psql` CLI.
+
+**Homebrew `libpq` is not a supported path for this workflow.** After `brew install libpq`, Homebrew prints caveats such as: *libpq is keg-only, which means it was not symlinked into /opt/homebrew, because it conflicts with PostgreSQL.* You must manage `PATH` yourself (`brew info libpq`). This repo ships a [Brewfile](../Brewfile) only for developers who **already** want `libpq` for other reasons — not as something you should install to follow these docs.
+
 **Prerequisites:**
 
 1. [Docker](https://docs.docker.com/get-docker/) and [Docker Compose v2](https://docs.docker.com/compose/).
-2. **Local Model Assessor:** at least **one assessed embedding model** in `model-data/model-assessor.db` — a `models` row plus `role_model` with `role='embedding'` (and preferably a **provisioned** `provisioned_models` entry for `role='embedding'`). **`generate-stack-handoff.py` will exit with an error if none is configured.** The Docker stack itself does not require the SQLite DB; only the generated handoff + `embed_sample.py` do.
+2. **Local Model Assessor (for generated handoff only):** at least **one assessed embedding model** in `model-data/model-assessor.db` — a `models` row plus `role_model` with `role='embedding'` (and preferably a **provisioned** `provisioned_models` entry for `role='embedding'`). **`generate-stack-handoff.py` will exit with an error if none is configured.** The Docker stack itself does not require the SQLite DB; only the generated handoff + `embed_sample.py` do.
 
 **Version pins:** [versions.lock.yaml](versions.lock.yaml) — do not float `:latest`; update the lock file when you intentionally upgrade.
 
@@ -51,10 +55,26 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Wait for healthcheck, then connect:
+**First boot:** `docker compose up -d` returns as soon as the **container** starts, not when Postgres is **ready**. Init (cluster + `docker-entrypoint-initdb.d` scripts) often takes **15–60 seconds**. If you run `pg_isready` or **`docker compose exec postgres psql`** too soon, you may see `/var/run/postgresql:5432 - no response` (exit code 2 from `pg_isready`) — that is normal; wait and retry. **Do not** rely on a one-liner like `docker compose up -d && docker compose logs postgres && docker compose exec postgres pg_isready …` without a wait: logs can flush before the server is listening.
+
+**Init scripts run only on a new data volume.** If you reused an old volume, you may be missing `vector` or the sample `documents` table — `docker compose down` then `docker volume rm embed-retrieval-stack_lma_pgdata`, then `up` again (see Troubleshooting).
+
+Watch until you see *database system is ready to accept connections*:
 
 ```bash
-psql "postgresql://lma:lma_dev_change_me@localhost:5432/lma" -c "SELECT extname FROM pg_extension ORDER BY 1;"
+docker compose logs -f postgres
+```
+
+Or poll (stop with Ctrl+C when it prints `accepting connections` / exit 0):
+
+```bash
+until docker compose exec postgres pg_isready -U lma -d lma; do sleep 2; done
+```
+
+Then verify extensions (works without host `psql`):
+
+```bash
+docker compose exec postgres psql -U lma -d lma -c "SELECT extname FROM pg_extension ORDER BY 1;"
 ```
 
 You should see `age` and `vector` among installed extensions.
@@ -77,7 +97,7 @@ The sample table uses `vector(768)` in [init/02-schema.sql](init/02-schema.sql).
 You can either:
 
 - **Reuse one stack:** keep this compose project running; point your app at `DATABASE_URL` on `localhost` (or Docker network hostname if the app is containerized).
-- **Duplicate:** copy `embed-retrieval-stack/` (Dockerfile, `docker-compose.yml`, `init/`, `versions.lock.yaml`, `.env.example`) into your application repo and run compose there.
+- **Duplicate:** copy `embed-retrieval-stack/` (Dockerfile, `docker-compose.yml`, `init/`, `versions.lock.yaml`, `.env.example`, this doc) into your application repo and run compose there.
 
 Also generate a tailored handoff from your assessed models (**requires embedding prerequisite above**):
 
@@ -98,7 +118,7 @@ Outputs (gitignored by default) include `STACK_HANDOFF.md` and `embed_sample.py`
 | [pgvector](https://github.com/pgvector/pgvector) **v0.8.2** (built in Dockerfile; PG18-compatible) | **vector** type + HNSW / IVFFlat indexes |
 | `init/*.sql` | `CREATE EXTENSION vector` + sample `documents` table |
 
-**Apple Silicon:** The pinned `apache/age` tag lists **linux/arm64** on Docker Hub (verify before upgrading tags). If a future pin is amd64-only, the README in `versions.lock.yaml` should call it out.
+**Apple Silicon:** The pinned `apache/age` tag lists **linux/arm64** on Docker Hub (verify before upgrading tags). If a future pin is amd64-only, the note in [versions.lock.yaml](versions.lock.yaml) should call it out.
 
 ---
 
@@ -106,7 +126,7 @@ Outputs (gitignored by default) include `STACK_HANDOFF.md` and `embed_sample.py`
 
 **`failed to connect to the docker API` / `docker.sock` missing** — Start **Docker Desktop** (or your Docker engine) and wait until it is running; then retry `docker compose up`.
 
-**Image build fails on `vacuum_delay_point` / pgvector compile** — PostgreSQL 18 changed that API; use a **pgvector** release that supports your Postgres major (see [pgvector releases](https://github.com/pgvector/pgvector/releases); this repo pins **v0.8.2+** for PG18 in [versions.lock.yaml](versions.lock.yaml)). For the full upgrade workflow, use **§ Version alignment** above. After changing the pin, rebuild: `docker compose build --no-cache`.
+**Image build fails on `vacuum_delay_point` / pgvector compile** — PostgreSQL 18 changed that API; use a **pgvector** release that supports your Postgres major (see [pgvector releases](https://github.com/pgvector/pgvector/releases); this repo pins **v0.8.2+** for PG18 in [versions.lock.yaml](versions.lock.yaml)). For the full upgrade workflow, use **Version alignment** above. After changing the pin, rebuild: `docker compose build --no-cache`.
 
 ### “Started” but not healthy / can’t connect
 

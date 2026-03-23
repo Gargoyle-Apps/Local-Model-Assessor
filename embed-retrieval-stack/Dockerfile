@@ -1,5 +1,5 @@
 # PostgreSQL + Apache AGE (from official image) + pgvector (built from source).
-# Pins: versions.lock.yaml — compatibility links: README.md § "Version alignment".
+# Pins: versions.lock.yaml — compatibility links: embed-retrieval-stack.md "Version alignment".
 
 ARG AGE_IMAGE=apache/age
 ARG AGE_TAG=release_PG18_1.7.0

@@ -9,6 +9,7 @@ A system for selecting, assessing, and configuring local Ollama models — desig
 - An IDE with a tool-calling AI agent (Cursor, VS Code + Cline/Continue, etc.)
   - Automated setup: [IDE-model-management/IDE.md](IDE-model-management/IDE.md) — config templates, role mappings, and timeout policy for Continue, Cline/Roo, OpenCode, Goose, Pi, Zed
 - Python 3 + PyYAML (`python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`)
+- **embed-retrieval-stack** (Docker Postgres): use **`docker compose exec postgres psql …`** for checks — host `psql` / Homebrew **`libpq` not required** (Homebrew keeps `libpq` keg-only; it conflicts with PostgreSQL — see [embed-retrieval-stack/embed-retrieval-stack.md](embed-retrieval-stack/embed-retrieval-stack.md)).
 - For model assessment: a capable local model (e.g. `ollama pull gpt-oss:20b`, 14GB VRAM) or a cloud LLM service
 - Your machine's hardware specs and IDE/agent info — see [Define Your Environment](#3-define-your-environment)
 
@@ -17,6 +18,8 @@ A system for selecting, assessing, and configuring local Ollama models — desig
 ## Repo vs Local
 
 The repo ships **scripts, schema, and templates** — not pre-assessed models. Your local `model-assessor.db` starts empty. Clone → run `./scripts/init-db.sh` → fill in hardware → run assessments. Your agent queries the DB directly. All data stays local.
+
+The root **Brewfile** lists **`libpq`** for **`brew bundle`** only if you independently want PostgreSQL client libraries on the Mac. Homebrew keeps **`libpq` keg-only** (not symlinked; **conflicts with PostgreSQL** — see `brew info libpq`). It is **not** part of the embed-stack setup path; use **`docker compose exec`**. Python packages stay in **requirements.txt**.
 
 **Tracked** in `computer-profile/` and `model-data/` include templates (e.g. `*.template.yaml`), `new-models.template.yaml`, `modelfile/.gitkeep`, and scripts/schema. **Gitignored** (local only): `hardware-profile.yaml`, `software-profile.yaml`, `model-assessor.db`, `assessed-models.md`, `new-models.yaml`, generated `model-data/modelfile/*.mf`, IDE reference configs under `IDE-model-management/` (e.g. `continue/config.yaml`, `cline/provider-settings.json`), `embed-retrieval-stack/out/`, and `ref/`.
 
@@ -62,7 +65,7 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   ├── import-profiles.py
 │   └── query-db.sh
 ├── embed-retrieval-stack/           # Docker: Postgres + pgvector + Apache AGE (v1)
-│   ├── README.md
+│   ├── embed-retrieval-stack.md
 │   ├── versions.lock.yaml
 │   ├── docker-compose.yml
 │   ├── Dockerfile
@@ -82,6 +85,7 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   └── ollama-search.md
 ├── AGENTS.md                        # agent rules, data flow, task routing
 ├── requirements.txt
+├── Brewfile                         # brew bundle → libpq (keg-only; not for embed-stack setup)
 ├── .gitignore
 └── LICENSE
 ```
@@ -195,7 +199,7 @@ Follow **`LLM-prompts/ollama-search.md`** to fetch the [Ollama popular](https://
 1. **[Docker](https://docs.docker.com/get-docker/)** + Docker Compose (to run Postgres + extensions).
 2. **At least one assessed embedding model** in `model-assessor.db`: a row in `models` for an embedding-capable Ollama model, plus **`role_model`** (`role='embedding'`) and ideally a **provisioned** clone in `provisioned_models` for that role (via `model-assessment-prompt.yaml` → `new-models.yaml` → `add-model-from-yaml.py`). Without this, `generate-stack-handoff.py` has no model to reference. You can still bring up the Docker stack alone for experiments.
 
-[embed-retrieval-stack/README.md](embed-retrieval-stack/README.md) — pinned **PostgreSQL + pgvector + Apache AGE** via Docker (`embed-retrieval-stack/versions.lock.yaml`), **§ Version alignment** (evergreen upstream release links for matching versions), sample `documents` table, and **embedding use-case** bullets (semantic search, RAG, etc.).
+[embed-retrieval-stack/embed-retrieval-stack.md](embed-retrieval-stack/embed-retrieval-stack.md) — pinned **PostgreSQL + pgvector + Apache AGE** via Docker (`embed-retrieval-stack/versions.lock.yaml`), **Version alignment** (evergreen upstream release links for matching versions), sample `documents` table, and **embedding use-case** bullets (semantic search, RAG, etc.).
 
 **Handoff into your app repo** (requires the embedding assessment above — provisioned clone preferred, or at least `role_model.embedding` pointing at an assessed `model_id`):
 

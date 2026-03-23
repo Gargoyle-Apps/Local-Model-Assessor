@@ -2,7 +2,7 @@
 # Do not use floating :latest in compose — bump this file when upgrading.
 #
 # Upgrade checklist: match postgres major across base image, AGE release, and
-# postgresql-server-dev-XX in Dockerfile. See README.md § "Version alignment".
+# postgresql-server-dev-XX in Dockerfile. See embed-retrieval-stack.md "Version alignment".
 #
 # Evergreen reference URLs (verify compatibility before bumping pins):
 #   PostgreSQL release notes (pick your major): https://www.postgresql.org/docs/release/

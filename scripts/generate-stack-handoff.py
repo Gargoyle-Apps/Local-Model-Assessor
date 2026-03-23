@@ -99,7 +99,7 @@ def resolve_embedding_model(
         "No embedding model found. Prerequisite: assess at least one embedding model — "
         "add it to `models`, set `role_model` with role='embedding', and ideally a "
         "provisioned clone (model-assessment-prompt.yaml → new-models.yaml → "
-        "add-model-from-yaml.py). See README.md § Embed + retrieval stack and AGENTS.md."
+        "add-model-from-yaml.py). See embed-retrieval-stack/embed-retrieval-stack.md and AGENTS.md."
     )
 
 
@@ -146,7 +146,7 @@ def build_stack_handoff_md(
         docker compose up -d --build
         ```
 
-        Full steps, use-case ideas, dimension caveats, and AGE notes: **`embed-retrieval-stack/README.md`**
+        Full steps, use-case ideas, dimension caveats, and AGE notes: **`embed-retrieval-stack/embed-retrieval-stack.md`**
         in this repo (especially **Common use cases** and **Embedding dimension**).
 
         ## Next steps

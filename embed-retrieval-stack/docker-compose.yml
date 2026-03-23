@@ -1,6 +1,6 @@
 # Pinned stack: Postgres + Apache AGE + pgvector.
 # Source of truth for tags: versions.lock.yaml
-# Upgrading / API mismatches: README.md § "Version alignment" + URLs in versions.lock.yaml header.
+# Upgrading / API mismatches: embed-retrieval-stack.md "Version alignment" + versions.lock.yaml header URLs.
 #
 # Usage (from this directory):
 #   docker compose --env-file .env up -d --build
