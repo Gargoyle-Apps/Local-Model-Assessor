@@ -18,7 +18,7 @@ A system for selecting, assessing, and configuring local Ollama models — desig
 
 The repo ships **scripts, schema, and templates** — not pre-assessed models. Your local `model-assessor.db` starts empty. Clone → run `./scripts/init-db.sh` → fill in hardware → run assessments. Your agent queries the DB directly. All data stays local.
 
-**Tracked** in `computer-profile/` and `model-data/` include templates (e.g. `*.template.yaml`), `new-models.template.yaml`, `modelfile/.gitkeep`, and scripts/schema. **Gitignored** (local only): `hardware-profile.yaml`, `software-profile.yaml`, `model-assessor.db`, `assessed-models.md`, `new-models.yaml`, generated `model-data/modelfile/*.mf`, IDE reference configs under `IDE-model-management/` (e.g. `continue/config.yaml`, `cline/provider-settings.json`), and `ref/`.
+**Tracked** in `computer-profile/` and `model-data/` include templates (e.g. `*.template.yaml`), `new-models.template.yaml`, `modelfile/.gitkeep`, and scripts/schema. **Gitignored** (local only): `hardware-profile.yaml`, `software-profile.yaml`, `model-assessor.db`, `assessed-models.md`, `new-models.yaml`, generated `model-data/modelfile/*.mf`, IDE reference configs under `IDE-model-management/` (e.g. `continue/config.yaml`, `cline/provider-settings.json`), `embed-retrieval-stack/out/`, and `ref/`.
 
 > **For AI agents:** See [AGENTS.md](AGENTS.md) — task routing, key queries, data flow, provenance, and response format.
 
@@ -58,8 +58,15 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   ├── add-model-from-yaml.py
 │   ├── export-assessed-models.py
 │   ├── generate-ide-config.py       # Continue + Cline/Roo config from DB
+│   ├── generate-stack-handoff.py    # Postgres/pgvector/AGE + embedding handoff
 │   ├── import-profiles.py
 │   └── query-db.sh
+├── embed-retrieval-stack/           # Docker: Postgres + pgvector + Apache AGE (v1)
+│   ├── README.md
+│   ├── versions.lock.yaml
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   └── init/
 ├── IDE-model-management/
 │   ├── IDE.md                       # setup docs, role mappings, timeout policy, templates
 │   ├── continue/                    # Continue (VS Code)
@@ -178,6 +185,25 @@ Follow **`LLM-prompts/ollama-search.md`** to fetch the [Ollama popular](https://
 ## IDE Model Management
 
 [IDE-model-management/IDE.md](IDE-model-management/IDE.md) — setup docs, role mappings, timeout policy, and config templates for Continue, Cline/Roo, OpenCode, Goose, Pi, Zed. Configs are **on-demand** (generated when you ask, or via `scripts/generate-ide-config.py`); see [AGENTS.md](AGENTS.md) task routing. **Continue** uses **`~/.continue/config.yaml`** (YAML); **Cline/Roo Code** use JSON provider settings — both get role-appropriate request timeouts.
+
+---
+
+## Embed + retrieval stack (v1): Postgres + pgvector + Apache AGE
+
+**Prerequisites:**
+
+1. **[Docker](https://docs.docker.com/get-docker/)** + Docker Compose (to run Postgres + extensions).
+2. **At least one assessed embedding model** in `model-assessor.db`: a row in `models` for an embedding-capable Ollama model, plus **`role_model`** (`role='embedding'`) and ideally a **provisioned** clone in `provisioned_models` for that role (via `model-assessment-prompt.yaml` → `new-models.yaml` → `add-model-from-yaml.py`). Without this, `generate-stack-handoff.py` has no model to reference. You can still bring up the Docker stack alone for experiments.
+
+[embed-retrieval-stack/README.md](embed-retrieval-stack/README.md) — pinned **PostgreSQL + pgvector + Apache AGE** via Docker (`embed-retrieval-stack/versions.lock.yaml`), sample `documents` table, and short **embedding use-case** bullets (semantic search, RAG, etc.).
+
+**Handoff into your app repo** (requires the embedding assessment above — provisioned clone preferred, or at least `role_model.embedding` pointing at an assessed `model_id`):
+
+```bash
+python3 scripts/generate-stack-handoff.py
+```
+
+Writes **`embed-retrieval-stack/out/STACK_HANDOFF.md`** and **`embed_sample.py`** (gitignored). Copy those plus the `embed-retrieval-stack/` compose files into your project when you leave this repo. See [AGENTS.md](AGENTS.md) task routing.
 
 ---
 

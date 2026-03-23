@@ -1,0 +1,34 @@
+# Pinned stack: Postgres + Apache AGE + pgvector.
+# Source of truth for tags: versions.lock.yaml
+#
+# Usage (from this directory):
+#   docker compose --env-file .env up -d --build
+#
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        AGE_IMAGE: apache/age
+        AGE_TAG: release_PG18_1.7.0
+        PGVECTOR_REF: v0.8.0
+    image: lma-stack:pg18-age17-pgvector08
+    container_name: lma-postgres-stack
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lma}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lma_dev_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-lma}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - lma_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lma} -d ${POSTGRES_DB:-lma}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  lma_pgdata:

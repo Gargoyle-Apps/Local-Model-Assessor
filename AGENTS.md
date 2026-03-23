@@ -17,6 +17,7 @@ This project is designed for **tool-calling AI agents with shell access** (Curso
 | `add-model-from-yaml.py` | `model-data/new-models.yaml` | DB (`models`, `role_model`, `constraint_model`, `model_docs`, `provisioned_models`); writes `model-data/modelfile/*.mf` |
 | `export-assessed-models.py` | DB | `model-data/assessed-models.md` |
 | `generate-ide-config.py` | DB (`provisioned_models`, `models`) | `IDE-model-management/<app>/` config files with role-appropriate timeouts |
+| `generate-stack-handoff.py` | DB (`provisioned_models` or `role_model` for `embedding`; **requires at least one assessed embedding model** in `models` + assignments) | `embed-retrieval-stack/out/` (`STACK_HANDOFF.md`, `embed_sample.py`) — copy into app repos |
 | `ollama-search.md` → `model-assessment-prompt.yaml` → `add-model-from-yaml.py` | Ollama popular page, `hardware-profile.yaml` | DB, `assessed-models.md` |
 | **Phase 3** (see below) | User-supplied HF GGUF URL + `hardware-profile.yaml` | Same YAML → DB path; base import via `ollama create`; role clones unchanged |
 
@@ -59,6 +60,7 @@ This project is designed for **tool-calling AI agents with shell access** (Curso
 - `python3 scripts/export-assessed-models.py [output.md]` — regenerate `assessed-models.md` (optional path overrides default)
 - `python3 scripts/import-profiles.py [db_path]` — import hardware/software YAML into DB (optional DB path overrides default)
 - `python3 scripts/generate-ide-config.py [--target continue|cline] [--active-only] [--dry-run]` — emit IDE configs with role-appropriate timeouts from `provisioned_models`
+- `python3 scripts/generate-stack-handoff.py [--dry-run] [--active-only] [--output-dir DIR]` — emit Postgres/pgvector/AGE + Ollama embedding handoff (**prerequisite:** at least one **embedding** model assessed and stored in `models`, with `role_model.embedding` and/or a **provisioned** `provisioned_models` row for `role='embedding'` — see `model-assessment-prompt.yaml` + `add-model-from-yaml.py`)
 
 **Env var overrides:** `LMA_DB` overrides the DB path in all Python scripts. `LMA_ASSESSOR` / `LMA_ASSESSOR_TYPE` set provenance defaults for `add-model-from-yaml.py`.
 
@@ -70,8 +72,8 @@ This project is designed for **tool-calling AI agents with shell access** (Curso
 
 | Type | Files |
 |------|-------|
-| **Tracked** | Templates (`.template.yaml`), prompts (`LLM-prompts/`), scripts, `AGENTS.md`, `IDE-model-management/` (setup docs + config references) |
-| **Gitignored** | `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `model-data/new-models.yaml`, `model-data/modelfile/*` (except `.gitkeep`), `.cursorrules`, `.continue/`, `.opencode/`, `opencode.json`, local config copies (`IDE-model-management/*/config.*`, `cline/provider-settings.json`), `ref/` |
+| **Tracked** | Templates (`.template.yaml`), prompts (`LLM-prompts/`), scripts, `AGENTS.md`, `IDE-model-management/` (setup docs + config references), `embed-retrieval-stack/` (Docker stack templates + `versions.lock.yaml`; not runtime data) |
+| **Gitignored** | `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `model-data/new-models.yaml`, `model-data/modelfile/*` (except `.gitkeep`), `.cursorrules`, `.continue/`, `.opencode/`, `opencode.json`, local config copies (`IDE-model-management/*/config.*`, `cline/provider-settings.json`), `embed-retrieval-stack/out/`, `ref/` |
 
 Create local files from templates: `cp computer-profile/hardware-profile.template.yaml computer-profile/hardware-profile.yaml` (or use setup in `model-assessment-prompt.yaml`). For assessment output: `cp model-data/new-models.template.yaml model-data/new-models.yaml`.
 
@@ -90,6 +92,7 @@ Create local files from templates: `cp computer-profile/hardware-profile.templat
 | Assess HF GGUF (not in Ollama library) | Follow **Phase 3 — HF GGUF → Ollama** above, then same scripts. |
 | Install a model | `./scripts/query-db.sh "SELECT install FROM models WHERE model_id='...'"` → run the returned command (may be `ollama pull` or `ollama create -f …` for GGUF bases) |
 | Configure IDE/agent | Run `python3 scripts/generate-ide-config.py --target <app>` for Continue or Cline/Roo (uses `provisioned_models` + timeout policy from `IDE-model-management/IDE.md`). For other apps (OpenCode, Goose, Pi, Zed): read `IDE-model-management/IDE.md`, find the app section, query DB for role assignments, generate config manually. **Auto-trigger:** after profile import, if `software-profile.yaml` names a supported app, generate its config automatically. |
+| Postgres + pgvector + AGE + embeddings jump-off | **Prerequisites:** (1) **Docker** + Docker Compose. (2) **At least one assessed embedding model** in `model-assessor.db` (`models` row + `role_model.embedding` and/or provisioned clone with `role='embedding'`). Read [embed-retrieval-stack/README.md](embed-retrieval-stack/README.md) (pins in `embed-retrieval-stack/versions.lock.yaml`). Run `docker compose` from `embed-retrieval-stack/`. Generate copy-out: `python3 scripts/generate-stack-handoff.py`. Copy `embed-retrieval-stack/` + `embed-retrieval-stack/out/*` into your app repo as needed. |
 
 **If DB missing:** Run `./scripts/init-db.sh`. **If DB lacks `assessed_at`, provenance columns, or `provisioned_models`:** Run `./scripts/migrate-schema.sh`.
 

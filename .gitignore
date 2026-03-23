@@ -74,6 +74,9 @@ IDE-model-management/pi/models.json
 IDE-model-management/zed/settings.json
 IDE-model-management/cline/provider-settings.json
 
+# Stack handoff generator output (copy-out artifacts)
+embed-retrieval-stack/out/
+
 # OpenCode (project-level config is local)
 opencode.json
 opencode.jsonc
