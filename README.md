@@ -195,7 +195,7 @@ Follow **`LLM-prompts/ollama-search.md`** to fetch the [Ollama popular](https://
 1. **[Docker](https://docs.docker.com/get-docker/)** + Docker Compose (to run Postgres + extensions).
 2. **At least one assessed embedding model** in `model-assessor.db`: a row in `models` for an embedding-capable Ollama model, plus **`role_model`** (`role='embedding'`) and ideally a **provisioned** clone in `provisioned_models` for that role (via `model-assessment-prompt.yaml` → `new-models.yaml` → `add-model-from-yaml.py`). Without this, `generate-stack-handoff.py` has no model to reference. You can still bring up the Docker stack alone for experiments.
 
-[embed-retrieval-stack/README.md](embed-retrieval-stack/README.md) — pinned **PostgreSQL + pgvector + Apache AGE** via Docker (`embed-retrieval-stack/versions.lock.yaml`), sample `documents` table, and short **embedding use-case** bullets (semantic search, RAG, etc.).
+[embed-retrieval-stack/README.md](embed-retrieval-stack/README.md) — pinned **PostgreSQL + pgvector + Apache AGE** via Docker (`embed-retrieval-stack/versions.lock.yaml`), **§ Version alignment** (evergreen upstream release links for matching versions), sample `documents` table, and **embedding use-case** bullets (semantic search, RAG, etc.).
 
 **Handoff into your app repo** (requires the embedding assessment above — provisioned clone preferred, or at least `role_model.embedding` pointing at an assessed `model_id`):
 

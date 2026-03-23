@@ -9,6 +9,18 @@ Docker-based **jumping-off point** for embeddings + vector search + optional pro
 
 **Version pins:** [versions.lock.yaml](versions.lock.yaml) — do not float `:latest`; update the lock file when you intentionally upgrade.
 
+### Version alignment (humans & LLMs)
+
+Builds fail when **PostgreSQL major**, **Apache AGE**, and **pgvector** disagree (e.g. PG 18 API changes require a new enough pgvector). Use these **canonical upstream pages** to pick a matching set before editing `versions.lock.yaml`, `Dockerfile`, and `docker-compose.yml`:
+
+| Component | Why you need it | Evergreen / release links |
+|-----------|-----------------|---------------------------|
+| **PostgreSQL** | Major version is fixed by the `apache/age:*` image and `postgresql-server-dev-XX` in the Dockerfile | [All release notes](https://www.postgresql.org/docs/release/) · [Version support policy](https://www.postgresql.org/support/versioning/) |
+| **Apache AGE** | Docker tag encodes PG major (`release_PG18_1.7.0`, etc.) | [GitHub releases](https://github.com/apache/age/releases) · [Docker Hub tags](https://hub.docker.com/r/apache/age/tags) · [AGE docs](https://age.apache.org/) |
+| **pgvector** | Compiled against the **same** server headers as the running Postgres (extension API must match) | [GitHub releases](https://github.com/pgvector/pgvector/releases) · [Installation / compatibility](https://github.com/pgvector/pgvector#installation) · [Issues (search “PostgreSQL 18” or your major)](https://github.com/pgvector/pgvector/issues) |
+
+**Heuristic for another LLM:** (1) Read `postgres_major` and `apache_age_tag` in `versions.lock.yaml`. (2) Confirm the AGE tag exists on Docker Hub. (3) Choose a **pgvector git tag** from [releases](https://github.com/pgvector/pgvector/releases) whose release notes or build match that Postgres major; if the build fails on extension C API errors, open the pgvector issues link above and bump the tag. (4) Keep `postgresql-server-dev-XX` in the Dockerfile aligned with `postgres_major`.
+
 ---
 
 ## Common use cases (why embeddings + pgvector)
@@ -83,10 +95,88 @@ Outputs (gitignored by default) include `STACK_HANDOFF.md` and `embed_sample.py`
 | Piece | Role |
 |-------|------|
 | [apache/age](https://hub.docker.com/r/apache/age) `release_PG18_1.7.0` | PostgreSQL 18 + **Apache AGE** |
-| [pgvector](https://github.com/pgvector/pgvector) (built in Dockerfile) | **vector** type + HNSW / IVFFlat indexes |
+| [pgvector](https://github.com/pgvector/pgvector) **v0.8.2** (built in Dockerfile; PG18-compatible) | **vector** type + HNSW / IVFFlat indexes |
 | `init/*.sql` | `CREATE EXTENSION vector` + sample `documents` table |
 
 **Apple Silicon:** The pinned `apache/age` tag lists **linux/arm64** on Docker Hub (verify before upgrading tags). If a future pin is amd64-only, the README in `versions.lock.yaml` should call it out.
+
+---
+
+## Troubleshooting
+
+**`failed to connect to the docker API` / `docker.sock` missing** — Start **Docker Desktop** (or your Docker engine) and wait until it is running; then retry `docker compose up`.
+
+**Image build fails on `vacuum_delay_point` / pgvector compile** — PostgreSQL 18 changed that API; use a **pgvector** release that supports your Postgres major (see [pgvector releases](https://github.com/pgvector/pgvector/releases); this repo pins **v0.8.2+** for PG18 in [versions.lock.yaml](versions.lock.yaml)). For the full upgrade workflow, use **§ Version alignment** above. After changing the pin, rebuild: `docker compose build --no-cache`.
+
+### “Started” but not healthy / can’t connect
+
+**Run every command from the directory that contains `docker-compose.yml`** (this folder: `embed-retrieval-stack/`). If you see `no configuration file provided`, you are in the wrong directory.
+
+Copy **one line at a time** (don’t paste comment lines — they confuse some shells).
+
+```bash
+cd /path/to/Local-Model-Assessor/embed-retrieval-stack
+```
+
+```bash
+docker compose ps -a
+```
+
+```bash
+docker compose up -d --build
+```
+
+```bash
+docker compose logs postgres
+```
+
+If the service exits, the **last lines** of `docker compose logs postgres` usually show the SQL or config error.
+
+Container name is fixed in compose as `lma-postgres-stack`. If `docker inspect` says **no such object**, the container was never created or was removed — use `docker compose ps -a` first.
+
+```bash
+docker inspect lma-postgres-stack --format 'Status={{.State.Status}} Exit={{.State.ExitCode}} Health={{if .State.Health}}{{.State.Health.Status}}{{else}}n/a{{end}}'
+```
+
+When the service is **running**:
+
+```bash
+docker compose exec postgres pg_isready -U lma -d lma
+```
+
+**First boot** can take **up to ~1–2 minutes** while init scripts run (`docker-entrypoint-initdb.d`). The compose **healthcheck** allows **90s** `start_period` before failed checks count as unhealthy.
+
+**`Restarting (1)` and logs say “18+, these Docker images…” / `/var/lib/postgresql/data (unused mount)`** — Postgres **18+** changed where data lives; the volume must mount at **`/var/lib/postgresql`**, not `/var/lib/postgresql/data` ([docker-library/postgres#1259](https://github.com/docker-library/postgres/pull/1259)). This repo’s `docker-compose.yml` uses the correct path. If you still crash after updating compose, the **old volume** was created with the wrong layout — remove it once (destroys local DB data in that volume):
+
+```bash
+docker compose down
+docker volume rm embed-retrieval-stack_lma_pgdata
+docker compose up -d --build
+```
+
+(`docker volume ls | grep lma` if the name differs.)
+
+**Stale or broken data volume** (other init/SQL errors):
+
+```bash
+docker compose down
+docker volume rm embed-retrieval-stack_lma_pgdata
+docker compose up -d --build
+```
+
+**Port already in use** on the host (`5432`):
+
+```bash
+lsof -i :5432
+```
+
+Set `POSTGRES_PORT=5433` in `.env` and reconnect using that port.
+
+**Run in the foreground** to see errors immediately:
+
+```bash
+docker compose up --build
+```
 
 ---
 

@@ -1,5 +1,5 @@
 # PostgreSQL + Apache AGE (from official image) + pgvector (built from source).
-# Pins: see versions.lock.yaml
+# Pins: versions.lock.yaml — compatibility links: README.md § "Version alignment".
 
 ARG AGE_IMAGE=apache/age
 ARG AGE_TAG=release_PG18_1.7.0
@@ -7,7 +7,7 @@ FROM ${AGE_IMAGE}:${AGE_TAG}
 
 USER root
 
-ARG PGVECTOR_REF=v0.8.0
+ARG PGVECTOR_REF=v0.8.2
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
