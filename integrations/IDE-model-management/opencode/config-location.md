@@ -12,6 +12,6 @@
 
 **To keep an untracked local copy in this repo folder:**
 ```bash
-cp opencode.json IDE-model-management/opencode/opencode.json
-# Or from global: cp ~/.config/opencode/opencode.json IDE-model-management/opencode/opencode.json
+cp opencode.json integrations/IDE-model-management/opencode/opencode.json
+# Or from global: cp ~/.config/opencode/opencode.json integrations/IDE-model-management/opencode/opencode.json
 ```

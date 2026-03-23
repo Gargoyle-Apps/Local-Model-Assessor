@@ -19,6 +19,6 @@
 
 **To keep untracked local copies in this repo folder:**
 ```bash
-cp ~/.pi/agent/settings.json IDE-model-management/pi/settings.json
-cp ~/.pi/agent/models.json IDE-model-management/pi/models.json
+cp ~/.pi/agent/settings.json integrations/IDE-model-management/pi/settings.json
+cp ~/.pi/agent/models.json integrations/IDE-model-management/pi/models.json
 ```

@@ -29,7 +29,7 @@ from typing import Any, Optional
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB = REPO_ROOT / "model-data" / "model-assessor.db"
-DEFAULT_OUT = REPO_ROOT / "embed-retrieval-stack" / "out"
+DEFAULT_OUT = REPO_ROOT / "integrations" / "embed-retrieval-stack" / "out"
 OLLAMA_DEFAULT = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 DEFAULT_VECTOR_DIM = 768
 
@@ -99,7 +99,7 @@ def resolve_embedding_model(
         "No embedding model found. Prerequisite: assess at least one embedding model — "
         "add it to `models`, set `role_model` with role='embedding', and ideally a "
         "provisioned clone (model-assessment-prompt.yaml → new-models.yaml → "
-        "add-model-from-yaml.py). See embed-retrieval-stack/embed-retrieval-stack.md and AGENTS.md."
+        "add-model-from-yaml.py). See integrations/embed-retrieval-stack/embed-retrieval-stack.md and AGENTS.md."
     )
 
 
@@ -140,20 +140,20 @@ def build_stack_handoff_md(
         From the Local Model Assessor repo:
 
         ```bash
-        cd embed-retrieval-stack
+        cd integrations/embed-retrieval-stack
         cp .env.example .env
         # set POSTGRES_PASSWORD, etc.
         docker compose up -d --build
         ```
 
-        Full steps, use-case ideas, dimension caveats, and AGE notes: **`embed-retrieval-stack/embed-retrieval-stack.md`**
+        Full steps, use-case ideas, dimension caveats, and AGE notes: **`integrations/embed-retrieval-stack/embed-retrieval-stack.md`**
         in this repo (especially **Common use cases** and **Embedding dimension**).
 
         ## Next steps
 
         1. Ensure Ollama is running and the base model for `{embedding_alias}` is installed (`ollama list`).
         2. If you use a **provisioned clone** alias, run its `create_command` from `provisioned_models` if you have not already.
-        3. Align `vector({vector_dim})` in `embed-retrieval-stack/init/02-schema.sql` with your model output.
+        3. Align `vector({vector_dim})` in `integrations/embed-retrieval-stack/init/02-schema.sql` with your model output.
         4. Install Python deps for the sample: `pip install 'psycopg[binary]'`
         5. Run `embed_sample.py` (set `DATABASE_URL` and `OLLAMA_HOST` in the environment or edit the script).
 

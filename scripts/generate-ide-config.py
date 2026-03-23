@@ -35,7 +35,7 @@ DEFAULT_DB = REPO_ROOT / "model-data" / "model-assessor.db"
 OLLAMA_API_BASE = "http://localhost:11434"
 
 # ---------------------------------------------------------------------------
-# Timeout policy (ms) — see IDE-model-management/IDE.md § Timeout Policy
+# Timeout policy (ms) — see integrations/IDE-model-management/IDE.md § Timeout Policy
 # ---------------------------------------------------------------------------
 TIMEOUT_SNAPPY_MS = 60_000     # autocomplete, embedding, OCR
 TIMEOUT_DEEP_MS = 300_000      # chat, coding, reasoning, vision, creative, heavy_lifter
@@ -178,7 +178,7 @@ def build_continue_config(rows: list[dict]) -> dict:
 
 
 def write_continue_config(config: dict, dry_run: bool = False) -> Optional[Path]:
-    out_path = REPO_ROOT / "IDE-model-management" / "continue" / "config.yaml"
+    out_path = REPO_ROOT / "integrations" / "IDE-model-management" / "continue" / "config.yaml"
     text = yaml.dump(config, default_flow_style=False, sort_keys=False, allow_unicode=True)
     if dry_run:
         print(f"--- Continue config.yaml (would write to {out_path}) ---")
@@ -220,7 +220,7 @@ def build_cline_config(rows: list[dict]) -> dict:
 
 
 def write_cline_config(config: dict, dry_run: bool = False) -> Optional[Path]:
-    out_path = REPO_ROOT / "IDE-model-management" / "cline" / "provider-settings.json"
+    out_path = REPO_ROOT / "integrations" / "IDE-model-management" / "cline" / "provider-settings.json"
     text = json.dumps(config, indent=2, ensure_ascii=False) + "\n"
     if dry_run:
         print(f"--- Cline/Roo provider-settings.json (would write to {out_path}) ---")
@@ -280,7 +280,7 @@ def main():
     if not args.dry_run:
         print(
             "\nCopy the generated file(s) to the IDE's config location.\n"
-            "See IDE-model-management/<app>/config-location.md for paths."
+            "See integrations/IDE-model-management/<app>/config-location.md for paths."
         )
 
 

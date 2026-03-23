@@ -22,5 +22,5 @@
 **To keep an untracked local copy in this repo folder:**
 ```bash
 # After exporting from the extension, save here:
-cp ~/path/to/exported-settings.json IDE-model-management/cline/provider-settings.json
+cp ~/path/to/exported-settings.json integrations/IDE-model-management/cline/provider-settings.json
 ```

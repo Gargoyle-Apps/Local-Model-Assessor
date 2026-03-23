@@ -17,5 +17,5 @@
 
 **To keep an untracked local copy in this repo folder:**
 ```bash
-cp ~/.config/goose/config.yaml IDE-model-management/goose/config.yaml
+cp ~/.config/goose/config.yaml integrations/IDE-model-management/goose/config.yaml
 ```

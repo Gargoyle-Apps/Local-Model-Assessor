@@ -18,7 +18,7 @@ postgres_major: 18
 apache_age_image: apache/age
 apache_age_tag: release_PG18_1.7.0
 
-# pgvector is compiled in embed-retrieval-stack/Dockerfile (not in apache/age base).
+# pgvector is compiled in this directory's Dockerfile (not in apache/age base).
 pgvector_git_ref: v0.8.2
 
 # Default vector dimension in init/02-schema.sql — MUST match your embedding model output.

@@ -1,10 +1,10 @@
 # Embed + retrieval stack (Postgres + pgvector + Apache AGE)
 
-Docker-based **jumping-off point** for embeddings + vector search + optional property-graph queries in **one** PostgreSQL instance. This is **not** a full app framework — copy `embed-retrieval-stack/` (and generated handoff files) into your project when you are ready.
+Docker-based **jumping-off point** for embeddings + vector search + optional property-graph queries in **one** PostgreSQL instance. This is **not** a full app framework — copy **`integrations/embed-retrieval-stack/`** from Local Model Assessor (this folder) and generated handoff files into your application repo when you are ready.
 
 **You do not install `psql` on your Mac for this stack.** The Postgres image already includes `psql`. Use **`docker compose exec postgres psql …`** for ad hoc SQL and checks. Apps use a **library driver** (e.g. `psycopg`) and `DATABASE_URL`, not the `psql` CLI.
 
-**Homebrew `libpq` is not a supported path for this workflow.** After `brew install libpq`, Homebrew prints caveats such as: *libpq is keg-only, which means it was not symlinked into /opt/homebrew, because it conflicts with PostgreSQL.* You must manage `PATH` yourself (`brew info libpq`). This repo ships a [Brewfile](../Brewfile) only for developers who **already** want `libpq` for other reasons — not as something you should install to follow these docs.
+**Homebrew `libpq` is not a supported path for this workflow.** After `brew install libpq`, Homebrew prints caveats such as: *libpq is keg-only, which means it was not symlinked into /opt/homebrew, because it conflicts with PostgreSQL.* You must manage `PATH` yourself (`brew info libpq`). This repo ships a [Brewfile](../../Brewfile) only for developers who **already** want `libpq` for other reasons — not as something you should install to follow these docs.
 
 **Prerequisites:**
 
@@ -48,7 +48,7 @@ Builds fail when **PostgreSQL major**, **Apache AGE**, and **pgvector** disagree
 From the **repository root**:
 
 ```bash
-cd embed-retrieval-stack
+cd integrations/embed-retrieval-stack
 cp .env.example .env
 # Edit .env — set a strong POSTGRES_PASSWORD for anything beyond local dev
 
@@ -97,7 +97,7 @@ The sample table uses `vector(768)` in [init/02-schema.sql](init/02-schema.sql).
 You can either:
 
 - **Reuse one stack:** keep this compose project running; point your app at `DATABASE_URL` on `localhost` (or Docker network hostname if the app is containerized).
-- **Duplicate:** copy `embed-retrieval-stack/` (Dockerfile, `docker-compose.yml`, `init/`, `versions.lock.yaml`, `.env.example`, this doc) into your application repo and run compose there.
+- **Duplicate:** copy this directory (in Local Model Assessor: `integrations/embed-retrieval-stack/`, including Dockerfile, `docker-compose.yml`, `init/`, `versions.lock.yaml`, `.env.example`, this doc) into your application repo and run compose there. You may rename the folder to `embed-retrieval-stack` in the destination if you prefer.
 
 Also generate a tailored handoff from your assessed models (**requires embedding prerequisite above**):
 
@@ -106,7 +106,7 @@ Also generate a tailored handoff from your assessed models (**requires embedding
 python3 scripts/generate-stack-handoff.py
 ```
 
-Outputs (gitignored by default) include `STACK_HANDOFF.md` and `embed_sample.py` with your **embedding** alias from `model-assessor.db`. See [AGENTS.md](../AGENTS.md) task routing.
+Outputs (gitignored by default) include `STACK_HANDOFF.md` and `embed_sample.py` with your **embedding** alias from `model-assessor.db`. See [AGENTS.md](../../AGENTS.md) task routing.
 
 ---
 
@@ -130,12 +130,12 @@ Outputs (gitignored by default) include `STACK_HANDOFF.md` and `embed_sample.py`
 
 ### “Started” but not healthy / can’t connect
 
-**Run every command from the directory that contains `docker-compose.yml`** (this folder: `embed-retrieval-stack/`). If you see `no configuration file provided`, you are in the wrong directory.
+**Run every command from the directory that contains `docker-compose.yml`** (in this repo: `integrations/embed-retrieval-stack/`). If you see `no configuration file provided`, you are in the wrong directory.
 
 Copy **one line at a time** (don’t paste comment lines — they confuse some shells).
 
 ```bash
-cd /path/to/Local-Model-Assessor/embed-retrieval-stack
+cd /path/to/Local-Model-Assessor/integrations/embed-retrieval-stack
 ```
 
 ```bash

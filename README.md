@@ -7,9 +7,9 @@ A system for selecting, assessing, and configuring local Ollama models — desig
 **Prerequisites:**
 - [Ollama](https://ollama.com) installed and running
 - An IDE with a tool-calling AI agent (Cursor, VS Code + Cline/Continue, etc.)
-  - Automated setup: [IDE-model-management/IDE.md](IDE-model-management/IDE.md) — config templates, role mappings, and timeout policy for Continue, Cline/Roo, OpenCode, Goose, Pi, Zed
+  - Automated setup: [integrations/IDE-model-management/IDE.md](integrations/IDE-model-management/IDE.md) — config templates, role mappings, and timeout policy for Continue, Cline/Roo, OpenCode, Goose, Pi, Zed
 - Python 3 + PyYAML (`python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`)
-- **embed-retrieval-stack** (Docker Postgres): use **`docker compose exec postgres psql …`** for checks — host `psql` / Homebrew **`libpq` not required** (Homebrew keeps `libpq` keg-only; it conflicts with PostgreSQL — see [embed-retrieval-stack/embed-retrieval-stack.md](embed-retrieval-stack/embed-retrieval-stack.md)).
+- **`integrations/embed-retrieval-stack`** (Docker Postgres): use **`docker compose exec postgres psql …`** for checks — host `psql` / Homebrew **`libpq` not required** (Homebrew keeps `libpq` keg-only; it conflicts with PostgreSQL — see [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md)).
 - For model assessment: a capable local model (e.g. `ollama pull gpt-oss:20b`, 14GB VRAM) or a cloud LLM service
 - Your machine's hardware specs and IDE/agent info — see [Define Your Environment](#3-define-your-environment)
 
@@ -21,7 +21,7 @@ The repo ships **scripts, schema, and templates** — not pre-assessed models. Y
 
 The root **Brewfile** lists **`libpq`** for **`brew bundle`** only if you independently want PostgreSQL client libraries on the Mac. Homebrew keeps **`libpq` keg-only** (not symlinked; **conflicts with PostgreSQL** — see `brew info libpq`). It is **not** part of the embed-stack setup path; use **`docker compose exec`**. Python packages stay in **requirements.txt**.
 
-**Tracked** in `computer-profile/` and `model-data/` include templates (e.g. `*.template.yaml`), `new-models.template.yaml`, `modelfile/.gitkeep`, and scripts/schema. **Gitignored** (local only): `hardware-profile.yaml`, `software-profile.yaml`, `model-assessor.db`, `assessed-models.md`, `new-models.yaml`, generated `model-data/modelfile/*.mf`, IDE reference configs under `IDE-model-management/` (e.g. `continue/config.yaml`, `cline/provider-settings.json`), `embed-retrieval-stack/out/`, and `ref/`.
+**Tracked** in `computer-profile/` and `model-data/` include templates (e.g. `*.template.yaml`), `new-models.template.yaml`, `modelfile/.gitkeep`, and scripts/schema. The **`integrations/`** tree (`embed-retrieval-stack/`, `IDE-model-management/`) is tracked as copy-out kits. **Gitignored** (local only): `hardware-profile.yaml`, `software-profile.yaml`, `model-assessor.db`, `assessed-models.md`, `new-models.yaml`, generated `model-data/modelfile/*.mf`, IDE reference configs under `integrations/IDE-model-management/` (e.g. `continue/config.yaml`, `cline/provider-settings.json`), `integrations/embed-retrieval-stack/out/`, and `ref/`.
 
 > **For AI agents:** See [AGENTS.md](AGENTS.md) — task routing, key queries, data flow, provenance, and response format.
 
@@ -64,20 +64,21 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   ├── generate-stack-handoff.py    # Postgres/pgvector/AGE + embedding handoff
 │   ├── import-profiles.py
 │   └── query-db.sh
-├── embed-retrieval-stack/           # Docker: Postgres + pgvector + Apache AGE (v1)
-│   ├── embed-retrieval-stack.md
-│   ├── versions.lock.yaml
-│   ├── docker-compose.yml
-│   ├── Dockerfile
-│   └── init/
-├── IDE-model-management/
-│   ├── IDE.md                       # setup docs, role mappings, timeout policy, templates
-│   ├── continue/                    # Continue (VS Code)
-│   ├── cline/                       # Cline / Roo Code (JSON provider settings)
-│   ├── opencode/                    # OpenCode (CLI/TUI)
-│   ├── goose/                       # Goose (CLI/Desktop)
-│   ├── pi/                          # Pi coding-agent (Terminal)
-│   └── zed/                         # Zed (Editor)
+├── integrations/                    # copy-out kits: IDE configs + Docker data stack
+│   ├── embed-retrieval-stack/       # Postgres + pgvector + Apache AGE
+│   │   ├── embed-retrieval-stack.md
+│   │   ├── versions.lock.yaml
+│   │   ├── docker-compose.yml
+│   │   ├── Dockerfile
+│   │   └── init/
+│   └── IDE-model-management/
+│       ├── IDE.md                   # setup docs, role mappings, timeout policy, templates
+│       ├── continue/                # Continue (VS Code)
+│       ├── cline/                   # Cline / Roo Code (JSON provider settings)
+│       ├── opencode/                # OpenCode (CLI/TUI)
+│       ├── goose/                   # Goose (CLI/Desktop)
+│       ├── pi/                      # Pi coding-agent (Terminal)
+│       └── zed/                     # Zed (Editor)
 ├── ref/                             # local agent config copies (gitignored)
 ├── LLM-prompts/
 │   ├── model-assessment-prompt.yaml
@@ -149,7 +150,7 @@ Install the recommended models:
 ollama pull <model:tag>
 ```
 
-Configure your agent's settings file with the recommended models. After provisioned clones exist in the DB, run `python3 scripts/generate-ide-config.py --dry-run` (add `--active-only` to limit to `is_active=1` rows), then merge outputs into your IDE paths — see [IDE-model-management/IDE.md](IDE-model-management/IDE.md).
+Configure your agent's settings file with the recommended models. After provisioned clones exist in the DB, run `python3 scripts/generate-ide-config.py --dry-run` (add `--active-only` to limit to `is_active=1` rows), then merge outputs into your IDE paths — see [integrations/IDE-model-management/IDE.md](integrations/IDE-model-management/IDE.md).
 
 ### 7. Ad-Hoc Selection
 
@@ -188,7 +189,7 @@ Follow **`LLM-prompts/ollama-search.md`** to fetch the [Ollama popular](https://
 
 ## IDE Model Management
 
-[IDE-model-management/IDE.md](IDE-model-management/IDE.md) — setup docs, role mappings, timeout policy, and config templates for Continue, Cline/Roo, OpenCode, Goose, Pi, Zed. Configs are **on-demand** (generated when you ask, or via `scripts/generate-ide-config.py`); see [AGENTS.md](AGENTS.md) task routing. **Continue** uses **`~/.continue/config.yaml`** (YAML); **Cline/Roo Code** use JSON provider settings — both get role-appropriate request timeouts.
+[integrations/IDE-model-management/IDE.md](integrations/IDE-model-management/IDE.md) — setup docs, role mappings, timeout policy, and config templates for Continue, Cline/Roo, OpenCode, Goose, Pi, Zed. Configs are **on-demand** (generated when you ask, or via `scripts/generate-ide-config.py`); see [AGENTS.md](AGENTS.md) task routing. **Continue** uses **`~/.continue/config.yaml`** (YAML); **Cline/Roo Code** use JSON provider settings — both get role-appropriate request timeouts.
 
 ---
 
@@ -199,7 +200,7 @@ Follow **`LLM-prompts/ollama-search.md`** to fetch the [Ollama popular](https://
 1. **[Docker](https://docs.docker.com/get-docker/)** + Docker Compose (to run Postgres + extensions).
 2. **At least one assessed embedding model** in `model-assessor.db`: a row in `models` for an embedding-capable Ollama model, plus **`role_model`** (`role='embedding'`) and ideally a **provisioned** clone in `provisioned_models` for that role (via `model-assessment-prompt.yaml` → `new-models.yaml` → `add-model-from-yaml.py`). Without this, `generate-stack-handoff.py` has no model to reference. You can still bring up the Docker stack alone for experiments.
 
-[embed-retrieval-stack/embed-retrieval-stack.md](embed-retrieval-stack/embed-retrieval-stack.md) — pinned **PostgreSQL + pgvector + Apache AGE** via Docker (`embed-retrieval-stack/versions.lock.yaml`), **Version alignment** (evergreen upstream release links for matching versions), sample `documents` table, and **embedding use-case** bullets (semantic search, RAG, etc.).
+[integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md) — pinned **PostgreSQL + pgvector + Apache AGE** via Docker (`integrations/embed-retrieval-stack/versions.lock.yaml`), **Version alignment** (evergreen upstream release links for matching versions), sample `documents` table, and **embedding use-case** bullets (semantic search, RAG, etc.).
 
 **Handoff into your app repo** (requires the embedding assessment above — provisioned clone preferred, or at least `role_model.embedding` pointing at an assessed `model_id`):
 
@@ -207,7 +208,7 @@ Follow **`LLM-prompts/ollama-search.md`** to fetch the [Ollama popular](https://
 python3 scripts/generate-stack-handoff.py
 ```
 
-Writes **`embed-retrieval-stack/out/STACK_HANDOFF.md`** and **`embed_sample.py`** (gitignored). Copy those plus the `embed-retrieval-stack/` compose files into your project when you leave this repo. See [AGENTS.md](AGENTS.md) task routing.
+Writes **`integrations/embed-retrieval-stack/out/STACK_HANDOFF.md`** and **`embed_sample.py`** (gitignored). Copy those plus the `integrations/embed-retrieval-stack/` compose files into your project when you leave this repo. See [AGENTS.md](AGENTS.md) task routing.
 
 ---
 

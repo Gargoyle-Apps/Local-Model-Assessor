@@ -6,7 +6,7 @@ This folder holds **setup docs and config references** for keeping IDE agent too
 
 **Config generator:** `python3 scripts/generate-ide-config.py` reads provisioned aliases from `provisioned_models` (with `LEFT JOIN` to `models`) and emits IDE configs with role-appropriate timeouts. Use `--target continue` or `--target cline` to limit output, `--active-only` for rows with `is_active=1` only, and `--dry-run` to preview. **Cline/Roo** JSON is keyed by sanitized alias (`:` → `-`) so profiles never collide.
 
-**Embedding role + data stack:** For **Postgres + pgvector + Apache AGE** (Docker) and a copy-out handoff tied to your assessed **embedding** model, see **[embed-retrieval-stack/embed-retrieval-stack.md](../embed-retrieval-stack/embed-retrieval-stack.md)** and run `python3 scripts/generate-stack-handoff.py` (outputs under `embed-retrieval-stack/out/`, gitignored). **Prerequisite:** at least one **assessed** embedding model in the DB (`models` + `role_model.embedding`, provisioned clone preferred) — same as for IDE embed entries. Use that when you want RAG / semantic search infrastructure beyond IDE model entries alone.
+**Embedding role + data stack:** For **Postgres + pgvector + Apache AGE** (Docker) and a copy-out handoff tied to your assessed **embedding** model, see **[embed-retrieval-stack/embed-retrieval-stack.md](../embed-retrieval-stack/embed-retrieval-stack.md)** and run `python3 scripts/generate-stack-handoff.py` (outputs under `integrations/embed-retrieval-stack/out/`, gitignored). **Prerequisite:** at least one **assessed** embedding model in the DB (`models` + `role_model.embedding`, provisioned clone preferred) — same as for IDE embed entries. Use that when you want RAG / semantic search infrastructure beyond IDE model entries alone.
 
 **Source of truth:** `model-data/model-assessor.db` (SQLite). Query via `./scripts/query-db.sh`.
 **Hardware context:** `computer-profile/hardware-profile.yaml`
@@ -128,7 +128,7 @@ Autocomplete entries get a shorter timeout:
 ### Setup steps (on-demand)
 
 1. Run `python3 scripts/generate-ide-config.py --target continue` (or `--dry-run` to preview)
-2. Review the generated `IDE-model-management/continue/config.yaml`
+2. Review the generated `integrations/IDE-model-management/continue/config.yaml`
 3. Copy or merge into `~/.continue/config.yaml`
 4. Restart Continue to pick up changes
 
@@ -167,7 +167,7 @@ Cline and Roo Code are autonomous agent extensions that read/write files in agen
 ### Setup steps (on-demand)
 
 1. Run `python3 scripts/generate-ide-config.py --target cline` (or `--dry-run` to preview)
-2. Review the generated `IDE-model-management/cline/provider-settings.json`
+2. Review the generated `integrations/IDE-model-management/cline/provider-settings.json`
 3. In VS Code, open Cline/Roo settings → API Configuration → import or paste the relevant profile
 4. For Roo Code embedding: verify the embedding model timeout is also adequate
 
@@ -219,7 +219,7 @@ OpenCode uses `provider` + `model` at the top level. For Ollama:
 1. Query DB for current role assignments
 2. Generate `opencode.json` using the role mapping above
 3. Write to project root (`opencode.json`) or `~/.config/opencode/opencode.json` (global)
-4. Optionally save a copy to `IDE-model-management/opencode/opencode.json` as local reference
+4. Optionally save a copy to `integrations/IDE-model-management/opencode/opencode.json` as local reference
 
 ---
 
@@ -242,7 +242,7 @@ Goose selects one primary model. It supports lead/worker multi-model configs for
 1. Query DB for the primary coding model
 2. Run `goose configure` → Configure Providers → Ollama → set `OLLAMA_HOST` → select model
 3. Or set env: `export OLLAMA_HOST=http://localhost:11434` and `export GOOSE_MODEL=model:tag`
-4. Optionally save a copy to `IDE-model-management/goose/config.yaml` as local reference
+4. Optionally save a copy to `integrations/IDE-model-management/goose/config.yaml` as local reference
 
 ---
 
@@ -294,7 +294,7 @@ Pi supports a single active model but can cycle between configured models with C
 2. Generate `models.json` with Ollama provider and model list (use `ctx` from DB for `contextWindow`)
 3. Generate `settings.json` with `defaultProvider: "ollama"` and primary coding model as `defaultModel`
 4. Write to `~/.pi/agent/models.json` and `~/.pi/agent/settings.json`
-5. Optionally save copies to `IDE-model-management/pi/` as local reference
+5. Optionally save copies to `integrations/IDE-model-management/pi/` as local reference
 
 ---
 
@@ -351,13 +351,13 @@ Map DB columns to Zed's per-model fields: `tools` → `supports_tools`, `vision`
 2. Generate `language_models.ollama.available_models` array (map `ctx` → `max_tokens`, `tools`/`vision`/`reasoning` → `supports_*`)
 3. Set `assistant.default_model` to the primary coding model
 4. Merge into `~/.config/zed/settings.json` (global) or `.zed/settings.json` (project)
-5. Optionally save a copy to `IDE-model-management/zed/settings.json` as local reference
+5. Optionally save a copy to `integrations/IDE-model-management/zed/settings.json` as local reference
 
 ---
 
 ## Adding another app
 
-1. Create `IDE-model-management/<app-name>/` with:
+1. Create `integrations/IDE-model-management/<app-name>/` with:
    - `config-location.md` — where the app loads config from
    - `.gitkeep`
 2. Add a section in this file with:

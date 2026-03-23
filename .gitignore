@@ -66,16 +66,16 @@ model-data/modelfile/*
 model-data/model-lookup.json
 
 # IDE config copies (local references; generated on-demand)
-IDE-model-management/continue/config.yaml
-IDE-model-management/opencode/opencode.json
-IDE-model-management/goose/config.yaml
-IDE-model-management/pi/settings.json
-IDE-model-management/pi/models.json
-IDE-model-management/zed/settings.json
-IDE-model-management/cline/provider-settings.json
+integrations/IDE-model-management/continue/config.yaml
+integrations/IDE-model-management/opencode/opencode.json
+integrations/IDE-model-management/goose/config.yaml
+integrations/IDE-model-management/pi/settings.json
+integrations/IDE-model-management/pi/models.json
+integrations/IDE-model-management/zed/settings.json
+integrations/IDE-model-management/cline/provider-settings.json
 
 # Stack handoff generator output (copy-out artifacts)
-embed-retrieval-stack/out/
+integrations/embed-retrieval-stack/out/
 
 # OpenCode (project-level config is local)
 opencode.json

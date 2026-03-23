@@ -1,4 +1,4 @@
-# Local Model Assessor — Homebrew Bundle (NOT required for embed-retrieval-stack)
+# Local Model Assessor — Homebrew Bundle (NOT required for integrations/embed-retrieval-stack)
 # https://docs.brew.sh/Manpage#bundle-subcommand
 #
 # From the repository root:

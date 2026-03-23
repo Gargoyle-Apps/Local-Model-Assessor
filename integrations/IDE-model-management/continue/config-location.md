@@ -3,5 +3,5 @@
 **Default Continue config:** `~/.continue/config.yaml`
 
 To keep an untracked local copy in this repo folder, run:  
-`cp ~/.continue/config.yaml IDE-model-management/continue/config.yaml`  
-See [IDE-model-management/IDE.md](../IDE.md) for details.
+`cp ~/.continue/config.yaml integrations/IDE-model-management/continue/config.yaml`  
+See [IDE.md](../IDE.md) for details.
