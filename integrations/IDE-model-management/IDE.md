@@ -1,27 +1,18 @@
 # IDE Model Management
 
-This folder holds **setup docs and config references** for keeping IDE agent tools in sync with models in `model-data/model-assessor.db`.
+Docs + config references for IDE agents ↔ `model-data/model-assessor.db`.
 
-**On-demand or auto:** Configs are generated when the user asks, or automatically after profile import if `computer-profile/software-profile.yaml` names a supported app (Continue, OpenCode, Goose, Pi, Zed, Cline, Roo Code). Check the `primary_agent.name`, `embedded_assistant.name`, and `optional_agents[].name` fields against the supported apps below.
+**Generate:** `python3 scripts/generate-ide-config.py` — `provisioned_models` (+ `models`); `--target continue|cline`, `--active-only`, `--dry-run`. Cline/Roo keys sanitize alias (`:` → `-`). **Auto:** after `import-profiles.py` if `software-profile.yaml` names a supported app (`primary_agent`, `embedded_assistant`, `optional_agents`).
 
-**Config generator:** `python3 scripts/generate-ide-config.py` reads provisioned aliases from `provisioned_models` (with `LEFT JOIN` to `models`) and emits IDE configs with role-appropriate timeouts. Use `--target continue` or `--target cline` to limit output, `--active-only` for rows with `is_active=1` only, and `--dry-run` to preview. **Cline/Roo** JSON is keyed by sanitized alias (`:` → `-`) so profiles never collide.
+**Embed + Postgres stack:** [embed-retrieval-stack.md](../embed-retrieval-stack/embed-retrieval-stack.md) · `generate-stack-handoff.py` → `integrations/embed-retrieval-stack/out/` (assessed **embedding** in DB).
 
-**Embedding role + data stack:** For **Postgres + pgvector + Apache AGE** (Docker) and a copy-out handoff tied to your assessed **embedding** model, see **[embed-retrieval-stack/embed-retrieval-stack.md](../embed-retrieval-stack/embed-retrieval-stack.md)** and run `python3 scripts/generate-stack-handoff.py` (outputs under `integrations/embed-retrieval-stack/out/`, gitignored). **Prerequisite:** at least one **assessed** embedding model in the DB (`models` + `role_model.embedding`, provisioned clone preferred) — same as for IDE embed entries. Use that when you want RAG / semantic search infrastructure beyond IDE model entries alone.
-
-**Source of truth:** `model-data/model-assessor.db` (SQLite). Query via `./scripts/query-db.sh`.
-**Hardware context:** `computer-profile/hardware-profile.yaml`
+**DB:** `model-assessor.db` · `./scripts/query-db.sh` · hardware: `computer-profile/hardware-profile.yaml`
 
 ---
 
-## Folder Structure
+## Folder layout
 
-Each supported app has a subfolder here containing:
-
-| File | Tracked? | Purpose |
-|------|----------|---------|
-| `config-location.md` | Yes | Where the app loads config from, format, locations |
-| `.gitkeep` | Yes | Ensures folder exists in repo |
-| Config file (e.g. `config.yaml`, `opencode.json`) | No (gitignored) | Local reference copy of filled-out config |
+Per app: **`config-location.md`** (tracked), **`.gitkeep`**, optional **local config copy** (gitignored).
 
 ---
 

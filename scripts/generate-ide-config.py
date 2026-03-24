@@ -35,7 +35,7 @@ DEFAULT_DB = REPO_ROOT / "model-data" / "model-assessor.db"
 OLLAMA_API_BASE = "http://localhost:11434"
 
 # ---------------------------------------------------------------------------
-# Timeout policy (ms) — see integrations/IDE-model-management/IDE.md § Timeout Policy
+# Timeout policy (ms) — integrations/IDE-model-management/IDE.md "Timeout Policy"
 # ---------------------------------------------------------------------------
 TIMEOUT_SNAPPY_MS = 60_000     # autocomplete, embedding, OCR
 TIMEOUT_DEEP_MS = 300_000      # chat, coding, reasoning, vision, creative, heavy_lifter

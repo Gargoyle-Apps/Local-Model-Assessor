@@ -1,2 +1,1 @@
-# For add-model-from-yaml.py (model assessment flow)
-PyYAML>=6.0
+PyYAML>=6.0  # add-model-from-yaml.py

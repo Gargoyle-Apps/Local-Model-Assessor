@@ -1,15 +1,10 @@
 # Embed + retrieval stack (Postgres + pgvector + Apache AGE)
 
-Docker-based **jumping-off point** for embeddings + vector search + optional property-graph queries in **one** PostgreSQL instance. This is **not** a full app framework — copy **`integrations/embed-retrieval-stack/`** from Local Model Assessor (this folder) and generated handoff files into your application repo when you are ready.
+Docker **jumping-off point** for embeddings + vectors + optional **Apache AGE** graphs in one Postgres — not an app framework. Copy **`integrations/embed-retrieval-stack/`** (this folder) + handoff outputs into your app repo when ready.
 
-**You do not install `psql` on your Mac for this stack.** The Postgres image already includes `psql`. Use **`docker compose exec postgres psql …`** for ad hoc SQL and checks. Apps use a **library driver** (e.g. `psycopg`) and `DATABASE_URL`, not the `psql` CLI.
+**`psql`:** use **`docker compose exec postgres psql …`** only; the image includes the client. Apps use **`DATABASE_URL`** + a driver (e.g. `psycopg`). Host **`libpq`** / [Brewfile](../../Brewfile) is unrelated to this workflow (keg-only; conflicts full PostgreSQL — `brew info libpq`).
 
-**Homebrew `libpq` is not a supported path for this workflow.** After `brew install libpq`, Homebrew prints caveats such as: *libpq is keg-only, which means it was not symlinked into /opt/homebrew, because it conflicts with PostgreSQL.* You must manage `PATH` yourself (`brew info libpq`). This repo ships a [Brewfile](../../Brewfile) only for developers who **already** want `libpq` for other reasons — not as something you should install to follow these docs.
-
-**Prerequisites:**
-
-1. [Docker](https://docs.docker.com/get-docker/) and [Docker Compose v2](https://docs.docker.com/compose/).
-2. **Local Model Assessor (for generated handoff only):** at least **one assessed embedding model** in `model-data/model-assessor.db` — a `models` row plus `role_model` with `role='embedding'` (and preferably a **provisioned** `provisioned_models` entry for `role='embedding'`). **`generate-stack-handoff.py` will exit with an error if none is configured.** The Docker stack itself does not require the SQLite DB; only the generated handoff + `embed_sample.py` do.
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) + [Compose v2](https://docs.docker.com/compose/). **Handoff script** (`generate-stack-handoff.py`) needs an assessed **embedding** in `model-assessor.db` (`models` + `role_model.embedding` / provisioned); the compose stack alone does not need SQLite.
 
 **Version pins:** [versions.lock.yaml](versions.lock.yaml) — do not float `:latest`; update the lock file when you intentionally upgrade.
 
@@ -27,19 +22,15 @@ Builds fail when **PostgreSQL major**, **Apache AGE**, and **pgvector** disagree
 
 ---
 
-## Common use cases (why embeddings + pgvector)
+## Common use cases
 
-1. **“Smart” search (semantic search)** — Keyword search misses paraphrases (“car” vs “automobile”). Embeddings let you query notes or files by *meaning*—e.g. search “feeling burnt out” and surface entries about exhaustion or work stress without exact phrase matches.
+- **Semantic search** — meaning, not keywords.
+- **RAG** — chunk → embed → retrieve → chat; FAQs/support docs.
+- **Multimodal search** — needs **image+text** embedder in LMA; text-only embedders won’t search images.
+- **Recommendations** — nearest neighbors over item vectors.
+- **Dedup / clustering** — vectors for cleanup and coarse grouping.
 
-2. **Chat with your own data (RAG)** — Chunk PDFs, tickets, or diaries, embed each chunk, store vectors, retrieve top matches for a user question, then pass those chunks to a chat model. Enables questions like “What did my accountant say about 2023 taxes?” grounded in *your* documents. The same pattern supports **FAQ / support bots** instead of rigid “press 1” trees when your answers live in docs.
-
-3. **Find media by description (multimodal)** — With **image+text** embedding models, you can search photos by natural language (“dog in snow”, “coffee receipt”) instead of filenames like `IMG_9482.jpg`. **Plain text embedders alone do not do this** — assess and provision a **multimodal** model in Local Model Assessor if you need image search.
-
-4. **“You might also like” (recommendations)** — Represent posts, products, or articles as vectors; nearest neighbors in the database surface conceptually similar items for blogs, shops, or internal wikis without hand-built tag trees.
-
-5. **Dedup, clustering, and light taxonomy** — Near-duplicate docs/emails/attachments often sit close together in vector space—useful for cleanup. Unlabeled piles (bookmarks, recipes, research links) can be **clustered** into coarse topics (“Mexican recipes”, “DIY”) before you manually organize.
-
-**Apache AGE (graphs):** Extensions load side-by-side with pgvector. Graph modeling (Cypher, property graphs) is **optional** for v1; see [Apache AGE](https://github.com/apache/age) when you need graph traversal on top of relational + vector data.
+**AGE:** optional Cypher graphs beside pgvector — [Apache AGE](https://github.com/apache/age).
 
 ---
 
@@ -55,9 +46,9 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-**First boot:** `docker compose up -d` returns as soon as the **container** starts, not when Postgres is **ready**. Init (cluster + `docker-entrypoint-initdb.d` scripts) often takes **15–60 seconds**. If you run `pg_isready` or **`docker compose exec postgres psql`** too soon, you may see `/var/run/postgresql:5432 - no response` (exit code 2 from `pg_isready`) — that is normal; wait and retry. **Do not** rely on a one-liner like `docker compose up -d && docker compose logs postgres && docker compose exec postgres pg_isready …` without a wait: logs can flush before the server is listening.
+**First boot:** `up -d` returns before Postgres listens (often **15–60s** init). Early `pg_isready` / `exec psql` → `no response` or exit 2 is normal — wait, or use `until … pg_isready` (below). Don’t chain `up && … pg_isready` without a wait.
 
-**Init scripts run only on a new data volume.** If you reused an old volume, you may be missing `vector` or the sample `documents` table — `docker compose down` then `docker volume rm embed-retrieval-stack_lma_pgdata`, then `up` again (see Troubleshooting).
+**New volume only** for init scripts. Reused volume missing **`vector`** / **`documents`** → `down` + `docker volume rm embed-retrieval-stack_lma_pgdata` + `up` (see Troubleshooting).
 
 Watch until you see *database system is ready to accept connections*:
 
@@ -166,25 +157,15 @@ docker compose exec postgres pg_isready -U lma -d lma
 
 **First boot** can take **up to ~1–2 minutes** while init scripts run (`docker-entrypoint-initdb.d`). The compose **healthcheck** allows **90s** `start_period` before failed checks count as unhealthy.
 
-**`Restarting (1)` and logs say “18+, these Docker images…” / `/var/lib/postgresql/data (unused mount)`** — Postgres **18+** changed where data lives; the volume must mount at **`/var/lib/postgresql`**, not `/var/lib/postgresql/data` ([docker-library/postgres#1259](https://github.com/docker-library/postgres/pull/1259)). This repo’s `docker-compose.yml` uses the correct path. If you still crash after updating compose, the **old volume** was created with the wrong layout — remove it once (destroys local DB data in that volume):
+**`Restarting (1)` + “18+ … unused mount”** — PG18+ needs volume on **`/var/lib/postgresql`** (this compose is correct); **old wrong-layout volume** must go once. **Also** after bad init / missing `vector`: same reset:
 
 ```bash
 docker compose down
-docker volume rm embed-retrieval-stack_lma_pgdata
+docker volume rm embed-retrieval-stack_lma_pgdata   # adjust: docker volume ls | grep lma
 docker compose up -d --build
 ```
 
-(`docker volume ls | grep lma` if the name differs.)
-
-**Stale or broken data volume** (other init/SQL errors):
-
-```bash
-docker compose down
-docker volume rm embed-retrieval-stack_lma_pgdata
-docker compose up -d --build
-```
-
-**Port already in use** on the host (`5432`):
+**Port in use** (`5432`):
 
 ```bash
 lsof -i :5432
@@ -202,12 +183,4 @@ docker compose up --build
 
 ## Ollama
 
-This stack **does not** run Ollama. Install and run Ollama on the host (or another container) and use the embedding model you selected in Local Model Assessor. `embed_sample.py` defaults to `OLLAMA_HOST=http://127.0.0.1:11434`.
-
----
-
-## Links
-
-- [pgvector](https://github.com/pgvector/pgvector)
-- [Apache AGE](https://age.apache.org/)
-- [Ollama](https://ollama.com)
+Not in this compose — run on host (or elsewhere). `embed_sample.py` defaults to `OLLAMA_HOST=http://127.0.0.1:11434`.
