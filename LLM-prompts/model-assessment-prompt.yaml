@@ -9,16 +9,18 @@ content: |
   Your goal is to evaluate a batch of AI models (provided via URLs or names) for local deployment, then insert the results directly into the database.
 
   **SETUP (First Run):**
-  Ensure the database and profile files exist. Run from the .model-assessor directory:
+  Ensure the database, Python deps, and profile files exist. Run from the .model-assessor directory:
   ```bash
+  # Python: read requirements.txt — use repo .venv (PEP 668-safe). See AGENTS.md "Python environment".
+  ./scripts/bootstrap-python.sh
   # Create DB and profiles (if missing)
   [ -f model-data/model-assessor.db ] || ./scripts/init-db.sh
   [ -f computer-profile/hardware-profile.yaml ] || cp computer-profile/hardware-profile.template.yaml computer-profile/hardware-profile.yaml
   [ -f computer-profile/software-profile.yaml ] || cp computer-profile/software-profile.template.yaml computer-profile/software-profile.yaml
   # Import profiles into DB
-  python3 scripts/import-profiles.py
+  ./scripts/py scripts/import-profiles.py
   ```
-  If migrating from a legacy model-lookup.json, convert it to YAML and run `add-model-from-yaml.py model-data/new-models.yaml`.
+  If migrating from a legacy model-lookup.json, convert it to YAML and run `./scripts/py scripts/add-model-from-yaml.py model-data/new-models.yaml`.
 
   **HARDWARE CONTEXT:**
   Refer to the provided computer-profile/hardware-profile.yaml for:
@@ -106,8 +108,8 @@ content: |
 
   **After generating output:** Write the YAML to `model-data/new-models.yaml` and run:
   ```bash
-  python3 scripts/add-model-from-yaml.py model-data/new-models.yaml
-  python3 scripts/export-assessed-models.py   # regenerate assessed-models.md
+  ./scripts/py scripts/add-model-from-yaml.py model-data/new-models.yaml
+  ./scripts/py scripts/export-assessed-models.py   # regenerate assessed-models.md
   ```
   You have shell access — execute these commands directly, do not ask the user to run them.
 

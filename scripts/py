@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Run repo Python with .venv; syncs from requirements.txt when it changes.
+# Usage (from repo root): ./scripts/py scripts/add-model-from-yaml.py ...
+# See AGENTS.md "Python environment".
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+VENV="$ROOT/.venv"
+REQ="$ROOT/requirements.txt"
+STAMP="$VENV/.lma-reqs-stamp"
+BOOT="$ROOT/scripts/bootstrap-python.sh"
+
+if [[ ! -x "$VENV/bin/python" ]]; then
+  "$BOOT"
+fi
+
+if [[ -f "$REQ" ]] && { [[ ! -f "$STAMP" ]] || [[ "$REQ" -nt "$STAMP" ]]; }; then
+  echo "Local Model Assessor: requirements.txt changed — updating .venv ..." >&2
+  "$VENV/bin/pip" install -r "$REQ"
+  touch "$STAMP"
+fi
+
+exec "$VENV/bin/python" "$@"

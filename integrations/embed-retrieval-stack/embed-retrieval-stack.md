@@ -93,8 +93,8 @@ You can either:
 Also generate a tailored handoff from your assessed models (**requires embedding prerequisite above**):
 
 ```bash
-# From repository root
-python3 scripts/generate-stack-handoff.py
+# From repository root (use ./scripts/py — see AGENTS.md Python environment)
+./scripts/py scripts/generate-stack-handoff.py
 ```
 
 Outputs (gitignored by default) include `STACK_HANDOFF.md` and `embed_sample.py` with your **embedding** alias from `model-assessor.db`. See [AGENTS.md](../../AGENTS.md) task routing.

@@ -10,9 +10,9 @@ role_model fallback). Writes STACK_HANDOFF.md and embed_sample.py for copy-out
 into an application repo.
 
 Usage:
-  python3 scripts/generate-stack-handoff.py
-  python3 scripts/generate-stack-handoff.py --dry-run
-  python3 scripts/generate-stack-handoff.py --output-dir /path/to/out --active-only
+  ./scripts/py scripts/generate-stack-handoff.py
+  ./scripts/py scripts/generate-stack-handoff.py --dry-run
+  ./scripts/py scripts/generate-stack-handoff.py --output-dir /path/to/out --active-only
 
 Env: LMA_DB overrides database path (same as other scripts).
 """

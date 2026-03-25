@@ -3,7 +3,7 @@
 Generate assessed-models.md from model-assessor.db.
 Combines models table + model_docs with static header/template content.
 
-Run from repo root: python scripts/export-assessed-models.py
+Run from repo root: ./scripts/py scripts/export-assessed-models.py
 """
 
 import os

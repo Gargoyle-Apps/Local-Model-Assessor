@@ -1,1 +1,2 @@
-PyYAML>=6.0  # add-model-from-yaml.py
+# Install into repo .venv: ./scripts/bootstrap-python.sh — run Python via ./scripts/py (see AGENTS.md).
+PyYAML>=6.0

@@ -2,7 +2,7 @@
 
 Docs + config references for IDE agents ↔ `model-data/model-assessor.db`.
 
-**Generate:** `python3 scripts/generate-ide-config.py` — `provisioned_models` (+ `models`); `--target continue|cline`, `--active-only`, `--dry-run`. Cline/Roo keys sanitize alias (`:` → `-`). **Auto:** after `import-profiles.py` if `software-profile.yaml` names a supported app (`primary_agent`, `embedded_assistant`, `optional_agents`).
+**Generate:** `./scripts/py scripts/generate-ide-config.py` — `provisioned_models` (+ `models`); `--target continue|cline`, `--active-only`, `--dry-run`. Cline/Roo keys sanitize alias (`:` → `-`). **Auto:** after `import-profiles.py` if `software-profile.yaml` names a supported app (`primary_agent`, `embedded_assistant`, `optional_agents`). Use repo `.venv` via [AGENTS.md](../../AGENTS.md) **Python environment**.
 
 **Embed + Postgres stack:** [embed-retrieval-stack.md](../embed-retrieval-stack/embed-retrieval-stack.md) · `generate-stack-handoff.py` → `integrations/embed-retrieval-stack/out/` (assessed **embedding** in DB).
 
@@ -118,7 +118,7 @@ Autocomplete entries get a shorter timeout:
 
 ### Setup steps (on-demand)
 
-1. Run `python3 scripts/generate-ide-config.py --target continue` (or `--dry-run` to preview)
+1. Run `./scripts/py scripts/generate-ide-config.py --target continue` (or `--dry-run` to preview)
 2. Review the generated `integrations/IDE-model-management/continue/config.yaml`
 3. Copy or merge into `~/.continue/config.yaml`
 4. Restart Continue to pick up changes
@@ -157,7 +157,7 @@ Cline and Roo Code are autonomous agent extensions that read/write files in agen
 
 ### Setup steps (on-demand)
 
-1. Run `python3 scripts/generate-ide-config.py --target cline` (or `--dry-run` to preview)
+1. Run `./scripts/py scripts/generate-ide-config.py --target cline` (or `--dry-run` to preview)
 2. Review the generated `integrations/IDE-model-management/cline/provider-settings.json`
 3. In VS Code, open Cline/Roo settings → API Configuration → import or paste the relevant profile
 4. For Roo Code embedding: verify the embedding model timeout is also adequate

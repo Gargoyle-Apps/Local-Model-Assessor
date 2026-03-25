@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Import hardware-profile.yaml and software-profile.yaml into model-assessor.db.
-Run from repo root: python scripts/import-profiles.py
+Run from repo root: ./scripts/py scripts/import-profiles.py
 
 Reads computer-profile/hardware-profile.yaml and computer-profile/software-profile.yaml
 and stores them in the hardware_profile and software_profile tables.

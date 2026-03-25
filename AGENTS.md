@@ -8,6 +8,23 @@
 
 ---
 
+## Python environment
+
+**Before the YAML assessment/import path** (`model-data/new-models.yaml` → `add-model-from-yaml.py` → `export-assessed-models.py`) or **`generate-ide-config.py`**: read **[requirements.txt](requirements.txt)**. Those scripts need **PyYAML** (and future deps belong in the same file).
+
+**Preferred:** use a **repo-local virtualenv** at **`.venv/`** (gitignored). macOS/Homebrew Python is often **PEP 668** (“externally managed”) and will refuse global `pip install`; the venv avoids that.
+
+1. **First run / after `requirements.txt` changes:** `./scripts/bootstrap-python.sh`
+2. **Run Python tools:** `./scripts/py scripts/<script>.py …` from the repository root.
+
+The **`./scripts/py`** wrapper creates `.venv` if missing and re-runs `pip install -r requirements.txt` when `requirements.txt` is newer than the last sync stamp inside `.venv`.
+
+**Also use `./scripts/py`** for scripts that only need the stdlib (e.g. `import-profiles.py`, `export-assessed-models.py`) so every agent uses the same interpreter.
+
+**Manual alternative:** `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt && source .venv/bin/activate`
+
+---
+
 ## Data Flow
 
 | Script / Prompt | Inputs | Outputs |
@@ -42,7 +59,7 @@ User-supplied **GGUF** (or HF card) **not** in Ollama library: follow **this sec
 - [ ] User has (or will) download the `.gguf` to a known path; base `.mf` references that path.
 - [ ] Choose stable `model_id` for Ollama; set `install` to the exact `ollama create … -f …` from repo root if paths are repo-relative.
 - [ ] Fill assessment YAML including **`provisioning`** aligned with **`by_role`** (same rules as catalog models).
-- [ ] Run `add-model-from-yaml.py` and `export-assessed-models.py`; verify with `ollama list` after user runs base import, then clone `create_command` if needed.
+- [ ] Run `./scripts/py scripts/add-model-from-yaml.py` and `./scripts/py scripts/export-assessed-models.py`; verify with `ollama list` after user runs base import, then clone `create_command` if needed.
 
 ---
 
@@ -50,7 +67,7 @@ User-supplied **GGUF** (or HF card) **not** in Ollama library: follow **this sec
 
 **DB:** `model-data/model-assessor.db` (SQLite). **Data flow:** table above.
 
-**Scripts (flags):** `query-db.sh "SQL"` — always pass SQL string (no args = interactive). `init-db.sh` / `migrate-schema.sh` — empty DB / schema + `provisioned_models`. `add-model-from-yaml.py` — provenance via args or `LMA_ASSESSOR` / `LMA_ASSESSOR_TYPE`. `export-assessed-models.py [path]`, `import-profiles.py [db]`. `generate-ide-config.py --target continue|cline [--active-only] [--dry-run]`. `generate-stack-handoff.py` — needs assessed **embedding** in DB (`role_model` and/or `provisioned_models`); `[--output-dir DIR]`.
+**Scripts (flags):** `query-db.sh "SQL"` — always pass SQL string (no args = interactive). `init-db.sh` / `migrate-schema.sh` — empty DB / schema + `provisioned_models`. **Python:** `./scripts/py scripts/<name>.py` (see **Python environment**). `add-model-from-yaml.py` — provenance via args or `LMA_ASSESSOR` / `LMA_ASSESSOR_TYPE`. `export-assessed-models.py [path]`, `import-profiles.py [db]`. `generate-ide-config.py --target continue|cline [--active-only] [--dry-run]`. `generate-stack-handoff.py` — needs assessed **embedding** in DB (`role_model` and/or `provisioned_models`); `[--output-dir DIR]`.
 
 **Env:** `LMA_DB` → all Python scripts’ DB path. **Discover:** `LLM-prompts/ollama-search.md`.
 
@@ -61,7 +78,7 @@ User-supplied **GGUF** (or HF card) **not** in Ollama library: follow **this sec
 | Type | Files |
 |------|-------|
 | **Tracked** | Templates (`*.template.yaml`), `LLM-prompts/`, scripts, `Brewfile` (optional `libpq` via `brew bundle`), `AGENTS.md`, `integrations/IDE-model-management/`, `integrations/embed-retrieval-stack/` (compose + `embed-retrieval-stack.md` + `versions.lock.yaml`) |
-| **Gitignored** | `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `model-data/new-models.yaml`, `model-data/modelfile/*` (except `.gitkeep`), `.cursorrules`, `.continue/`, `.opencode/`, `opencode.json`, local config copies (`integrations/IDE-model-management/*/config.*`, `integrations/IDE-model-management/cline/provider-settings.json`), `integrations/embed-retrieval-stack/out/`, `ref/` |
+| **Gitignored** | `.venv/`, `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `model-data/new-models.yaml`, `model-data/modelfile/*` (except `.gitkeep`), `.cursorrules`, `.continue/`, `.opencode/`, `opencode.json`, local config copies (`integrations/IDE-model-management/*/config.*`, `integrations/IDE-model-management/cline/provider-settings.json`), `integrations/embed-retrieval-stack/out/`, `ref/` |
 
 Create local files from templates: `cp computer-profile/hardware-profile.template.yaml computer-profile/hardware-profile.yaml` (or use setup in `model-assessment-prompt.yaml`). For assessment output: `cp model-data/new-models.template.yaml model-data/new-models.yaml`.
 
@@ -76,10 +93,10 @@ Create local files from templates: `cp computer-profile/hardware-profile.templat
 | Select a model | Follow `LLM-prompts/model-selector-prompt.yaml`: join `role_model` → `provisioned_models` → `models`, run `ollama list` for drift, recommend alias or print `pull_command` / `create_command`. Read `hardware-profile.yaml` for budget. |
 | Discover new models | Follow `LLM-prompts/ollama-search.md` — fetch Ollama popular, parse, pre-filter, cap at 7, assess via `model-assessment-prompt.yaml` |
 | Get model details | Read `model-data/assessed-models.md` or query `model_docs` |
-| Assess new model | Read `model-assessment-prompt.yaml`, generate YAML to `model-data/new-models.yaml`, run `add-model-from-yaml.py`, then `export-assessed-models.py` |
+| Assess new model | Read `model-assessment-prompt.yaml`, generate YAML to `model-data/new-models.yaml`, run `./scripts/py scripts/add-model-from-yaml.py`, then `./scripts/py scripts/export-assessed-models.py` (after **Python environment**) |
 | Assess HF GGUF (not in Ollama library) | Follow **HF GGUF → Ollama** above, then same scripts. |
 | Install a model | `./scripts/query-db.sh "SELECT install FROM models WHERE model_id='...'"` → run the returned command (may be `ollama pull` or `ollama create -f …` for GGUF bases) |
-| Configure IDE/agent | `generate-ide-config.py --target continue|cline` (+ `IDE.md` timeouts). Other apps: manual from `integrations/IDE-model-management/IDE.md`. Auto after `import-profiles.py` if `software-profile.yaml` names a supported app. |
+| Configure IDE/agent | `./scripts/py scripts/generate-ide-config.py --target continue|cline` (+ `IDE.md` timeouts). Other apps: manual from `integrations/IDE-model-management/IDE.md`. Auto after `import-profiles.py` if `software-profile.yaml` names a supported app. |
 | Postgres + pgvector + AGE + embeddings | Docker + Compose; assessed **embedding** in DB (`models` + `role_model.embedding` / provisioned). Doc: [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md). Compose: `integrations/embed-retrieval-stack/`. Handoff: `generate-stack-handoff.py` → `integrations/embed-retrieval-stack/out/`. Copy stack + `out/*` to app repo. **Version alignment** (upgrades): see that doc + `versions.lock.yaml`. |
 
 **If DB missing:** Run `./scripts/init-db.sh`. **If DB lacks `assessed_at`, provenance columns, or `provisioned_models`:** Run `./scripts/migrate-schema.sh`.
@@ -100,7 +117,7 @@ Content tables (`models`, `role_model`, `constraint_model`, `task_category`, `mo
 | `updated_by_type` | Every write (`local`/`cloud`/`human`) | No (overwritten) |
 
 **How agents provide provenance:**
-- `add-model-from-yaml.py --assessor gpt-oss:20b --assessor-type local`
+- `./scripts/py scripts/add-model-from-yaml.py --assessor gpt-oss:20b --assessor-type local model-data/new-models.yaml`
 - Or env vars: `LMA_ASSESSOR=gpt-oss:20b LMA_ASSESSOR_TYPE=local`
 - Direct SQL: include `created_by`, `created_by_type`, `updated_by`, `updated_by_type` in INSERT
 

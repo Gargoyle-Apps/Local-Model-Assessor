@@ -127,10 +127,10 @@ For each accepted candidate, follow **`LLM-prompts/model-assessment-prompt.yaml`
 
 1. Read `computer-profile/hardware-profile.yaml` (or template)
 2. For each model URL/name, produce YAML output per the prompt. Use `model-data/new-models.template.yaml` as the schema reference; write to `model-data/new-models.yaml` (gitignored).
-3. Run:
+3. Run (after `./scripts/bootstrap-python.sh` if `.venv` is missing — see `AGENTS.md` **Python environment**):
    ```bash
-   python3 scripts/add-model-from-yaml.py model-data/new-models.yaml
-   python3 scripts/export-assessed-models.py
+   ./scripts/py scripts/add-model-from-yaml.py model-data/new-models.yaml
+   ./scripts/py scripts/export-assessed-models.py
    ```
 
 New models get `assessed_at` set automatically when inserted.

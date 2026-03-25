@@ -4,10 +4,10 @@ Insert models from YAML output directly into model-assessor.db.
 Used by LLM-prompts/model-assessment-prompt.yaml: LLM outputs YAML → pipe to this script.
 
 Usage:
-  python scripts/add-model-from-yaml.py model-data/new-models.yaml
-  python scripts/add-model-from-yaml.py --assessor gpt-oss:20b --assessor-type local model-data/new-models.yaml
-  python scripts/add-model-from-yaml.py   # defaults to model-data/new-models.yaml if it exists
-  python scripts/add-model-from-yaml.py < assessment-output.yaml
+  ./scripts/py scripts/add-model-from-yaml.py model-data/new-models.yaml
+  ./scripts/py scripts/add-model-from-yaml.py --assessor gpt-oss:20b --assessor-type local model-data/new-models.yaml
+  ./scripts/py scripts/add-model-from-yaml.py   # defaults to model-data/new-models.yaml if it exists
+  ./scripts/py scripts/add-model-from-yaml.py < assessment-output.yaml
   # Script extracts from ```yaml ... ``` blocks if present
 
 Provenance (optional):
@@ -28,7 +28,13 @@ from typing import Optional
 try:
     import yaml
 except ImportError:
-    print("Error: PyYAML required. Run: pip install pyyaml", file=sys.stderr)
+    print(
+        "Error: PyYAML is required (see requirements.txt).\n"
+        "  ./scripts/bootstrap-python.sh\n"
+        "  ./scripts/py scripts/add-model-from-yaml.py ...\n"
+        "See AGENTS.md → Python environment.",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -488,7 +494,7 @@ def main():
     finally:
         conn.close()
 
-    print("Done. Run: python scripts/export-assessed-models.py  # to update assessed-models.md")
+    print("Done. Run: ./scripts/py scripts/export-assessed-models.py  # to update assessed-models.md")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 # Model assessment output template
-# Copy to model-data/new-models.yaml and fill in. Then: python3 scripts/add-model-from-yaml.py model-data/new-models.yaml
+# Copy to model-data/new-models.yaml and fill in. Then: ./scripts/py scripts/add-model-from-yaml.py model-data/new-models.yaml
 # See LLM-prompts/model-assessment-prompt.yaml, LLM-prompts/ollama-search.md, and AGENTS.md → HF GGUF → Ollama.
 
 models:

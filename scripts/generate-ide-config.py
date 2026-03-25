@@ -6,11 +6,11 @@ Reads provisioned_models + models from model-assessor.db and emits config
 fragments for supported IDEs (Continue, Cline, Roo Code).
 
 Usage:
-  python scripts/generate-ide-config.py                     # all targets
-  python scripts/generate-ide-config.py --target continue    # Continue only
-  python scripts/generate-ide-config.py --target cline       # Cline / Roo only
-  python scripts/generate-ide-config.py --active-only        # skip is_active=0 rows
-  python scripts/generate-ide-config.py --dry-run            # print, don't write
+  ./scripts/py scripts/generate-ide-config.py                     # all targets
+  ./scripts/py scripts/generate-ide-config.py --target continue    # Continue only
+  ./scripts/py scripts/generate-ide-config.py --target cline       # Cline / Roo only
+  ./scripts/py scripts/generate-ide-config.py --active-only        # skip is_active=0 rows
+  ./scripts/py scripts/generate-ide-config.py --dry-run            # print, don't write
 """
 
 from __future__ import annotations
@@ -26,7 +26,13 @@ from typing import Optional
 try:
     import yaml
 except ImportError:
-    print("Error: PyYAML required. Run: pip install pyyaml", file=sys.stderr)
+    print(
+        "Error: PyYAML is required (see requirements.txt).\n"
+        "  ./scripts/bootstrap-python.sh\n"
+        "  ./scripts/py scripts/generate-ide-config.py ...\n"
+        "See AGENTS.md → Python environment.",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
