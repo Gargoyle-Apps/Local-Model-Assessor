@@ -1,24 +1,14 @@
 # Local Model Assessor
 
-A system for selecting, assessing, and configuring local Ollama models — designed for **tool-calling AI agents** (Cursor, Cline, Continue, etc.) running inside IDEs.
+For **tool-calling agents** in IDEs (Cursor, Cline, Continue, …): query SQLite and run repo scripts — not for chat-only LLMs without shell access.
 
-> **Important:** This system assumes your LLM has **shell/tool access** (e.g. a coding agent in VS Code or Cursor). The agent queries the SQLite database and runs scripts directly — no copy-pasting JSON into chat windows. If you're using a plain chat LLM without tool access, this isn't the right tool.
-
-**Prerequisites:**
-- [Ollama](https://ollama.com) installed and running
-- An IDE with a tool-calling AI agent (Cursor, VS Code + Cline/Continue, etc.)
-  - Automated setup: [IDE-model-management/IDE.md](IDE-model-management/IDE.md) — config templates and role mappings for Continue, OpenCode, Goose, Pi, Zed
-- Python 3 + PyYAML (`python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`)
-- For model assessment: a capable local model (e.g. `ollama pull gpt-oss:20b`, 14GB VRAM) or a cloud LLM service
-- Your machine's hardware specs and IDE/agent info — see [Define Your Environment](#3-define-your-environment)
+**Prerequisites:** [Ollama](https://ollama.com) · Python 3 + venv + `pip install -r requirements.txt` · IDE agent · [profiles](#3-define-your-environment) · optional LLM for assessments · **Docker** only for [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md) (`docker compose exec postgres psql …` for checks).
 
 ---
 
 ## Repo vs Local
 
-The repo ships **scripts, schema, and templates** — not pre-assessed models. Your local `model-assessor.db` starts empty. Clone → run `./scripts/init-db.sh` → fill in hardware → run assessments. Your agent queries the DB directly. All data stays local.
-
-See **File Reference** below for what's tracked vs gitignored.
+Ships **scripts, schema, templates** — empty `model-assessor.db` until you init, profile, assess. **`Brewfile`:** optional `brew bundle` → `libpq` (keg-only; see `brew info libpq`); not needed for Docker stack (`docker compose exec`). **Tracked:** templates under `computer-profile/`, `model-data/` (e.g. `*.template.yaml`, `modelfile/.gitkeep`), `scripts/`, `integrations/` (copy-out: IDE + embed stack), `benchmarks/benchmark.template.yaml`. **Gitignored:** profiles, DB, `new-models.yaml`, generated modelfiles, `benchmarks/*.yaml` (except template), `integrations/IDE-model-management/*/config*`, `integrations/embed-retrieval-stack/out/`, `ref/`, `.cursorrules`. Details: [AGENTS.md](AGENTS.md) + `.gitignore`.
 
 ---
 
@@ -47,6 +37,7 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   ├── assessed-models.md            # regenerated from DB (gitignored)
 │   ├── new-models.template.yaml     # schema for assessment output (tracked)
 │   ├── new-models.yaml              # assessment output (gitignored; copy from template)
+│   ├── modelfile/                   # Ollama Modelfiles (.mf); contents gitignored, .gitkeep only
 │   └── .gitkeep
 ├── scripts/
 │   ├── schema.sql
@@ -54,15 +45,25 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   ├── migrate-schema.sh
 │   ├── add-model-from-yaml.py
 │   ├── export-assessed-models.py
+│   ├── generate-ide-config.py       # Continue + Cline/Roo config from DB
+│   ├── generate-stack-handoff.py    # Postgres/pgvector/AGE + embedding handoff
 │   ├── import-profiles.py
 │   └── query-db.sh
-├── IDE-model-management/
-│   ├── IDE.md                       # setup docs, role mappings, config templates
-│   ├── continue/                    # Continue (VS Code)
-│   ├── opencode/                    # OpenCode (CLI/TUI)
-│   ├── goose/                       # Goose (CLI/Desktop)
-│   ├── pi/                          # Pi coding-agent (Terminal)
-│   └── zed/                         # Zed (Editor)
+├── integrations/                    # copy-out kits: IDE configs + Docker data stack
+│   ├── embed-retrieval-stack/       # Postgres + pgvector + Apache AGE
+│   │   ├── embed-retrieval-stack.md
+│   │   ├── versions.lock.yaml
+│   │   ├── docker-compose.yml
+│   │   ├── Dockerfile
+│   │   └── init/
+│   └── IDE-model-management/
+│       ├── IDE.md                   # setup docs, role mappings, timeout policy, templates
+│       ├── continue/                # Continue (VS Code)
+│       ├── cline/                   # Cline / Roo Code (JSON provider settings)
+│       ├── opencode/                # OpenCode (CLI/TUI)
+│       ├── goose/                   # Goose (CLI/Desktop)
+│       ├── pi/                      # Pi coding-agent (Terminal)
+│       └── zed/                     # Zed (Editor)
 ├── benchmarks/
 │   ├── benchmark.template.yaml      # schema for personal benchmarks (tracked)
 │   └── *.yaml                       # your benchmarks (gitignored)
@@ -73,6 +74,7 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   └── ollama-search.md
 ├── AGENTS.md                        # agent rules, data flow, task routing
 ├── requirements.txt
+├── Brewfile                         # optional: brew bundle → libpq
 ├── .gitignore
 └── LICENSE
 ```
@@ -136,7 +138,7 @@ Install the recommended models:
 ollama pull <model:tag>
 ```
 
-Configure your agent's settings file with the recommended models. See [IDE-model-management/IDE.md](IDE-model-management/IDE.md) for app-specific templates.
+Configure your agent's settings file with the recommended models. After provisioned clones exist in the DB, run `python3 scripts/generate-ide-config.py --dry-run` (add `--active-only` to limit to `is_active=1` rows), then merge outputs into your IDE paths — see [integrations/IDE-model-management/IDE.md](integrations/IDE-model-management/IDE.md).
 
 ### 7. Ad-Hoc Selection
 
@@ -148,30 +150,20 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 ---
 
-## Model Hydration
+## Assess new models
 
-### Assess New Models
+1. `LLM-prompts/model-assessment-prompt.yaml` + `hardware-profile.yaml` + URLs (Ollama or HF GGUF — [AGENTS.md](AGENTS.md) **HF GGUF → Ollama**)
+2. LLM → save YAML → `model-data/new-models.yaml`
+3. `python3 scripts/add-model-from-yaml.py model-data/new-models.yaml` then `export-assessed-models.py`
 
-**Canonical flow** (manual or via `ollama-search.md` pipeline):
-
-1. Use `LLM-prompts/model-assessment-prompt.yaml` + `hardware-profile.yaml` + Ollama model URL(s)
-2. Send to `gpt-oss:20b` or a capable cloud LLM
-3. Save YAML output to `model-data/new-models.yaml`
-4. Run:
-   ```bash
-   python3 scripts/add-model-from-yaml.py model-data/new-models.yaml
-   python3 scripts/export-assessed-models.py
-   ```
-
-### Discover New Models from Ollama
-
-Follow **`LLM-prompts/ollama-search.md`** to fetch the [Ollama popular](https://ollama.com/search?o=popular) page, parse, pre-filter (exclude Cloud-only), cap at 7 candidates, and run the assessment flow above. Updates `meta.last_ollama_scan`.
+**Discover:** `LLM-prompts/ollama-search.md` → [Ollama popular](https://ollama.com/search?o=popular), cap 7, same import flow; sets `meta.last_ollama_scan`.
 
 ---
 
-## IDE Model Management
+## IDE + embed stack
 
-[IDE-model-management/IDE.md](IDE-model-management/IDE.md) — setup docs, role mappings, and config templates for Continue, OpenCode, Goose, Pi, Zed. Configs are **on-demand** (generated when you ask); see [AGENTS.md](AGENTS.md) task routing.
+- **IDEs:** [integrations/IDE-model-management/IDE.md](integrations/IDE-model-management/IDE.md) — roles, timeouts, Continue (`~/.continue/config.yaml`) / Cline-Roo (JSON), others; `generate-ide-config.py`; [AGENTS.md](AGENTS.md) routing.
+- **Postgres + pgvector + AGE:** [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md) — pins, compose under `integrations/embed-retrieval-stack/`, use cases, troubleshooting. **Handoff** (`STACK_HANDOFF.md`, `embed_sample.py`): assessed **embedding** in DB → `python3 scripts/generate-stack-handoff.py` → `integrations/embed-retrieval-stack/out/` (gitignored); copy stack + `out/` to your app.
 
 ---
 
@@ -187,7 +179,7 @@ Use cases: have the LLM rate model output, run `ollama run` with a test prompt, 
 
 ## Hardware Classes
 
-Models are categorized by VRAM footprint and performance:
+Models are categorized by VRAM footprint and performance. **Full fields** (budget, `os_headroom_gb`, quantization, concurrency, `context_strategy`, hardware class definitions) live in **`computer-profile/hardware-profile.template.yaml`** — copy to `hardware-profile.yaml` and edit.
 
 | Class | VRAM | Speed | Use Case |
 |-------|------|-------|----------|
@@ -225,6 +217,7 @@ Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `ge
 | `scripts/import-profiles.py` | ✓ | Import hardware/software YAML → DB |
 | `scripts/query-db.sh` | ✓ | Run ad-hoc SQL queries against DB |
 | `scripts/migrate-schema.sh` | ✓ | Add columns to existing DB (e.g. assessed_at) |
+| `scripts/generate-stack-handoff.py` | ✓ | Emit embed-stack handoff from DB |
 | `LLM-prompts/ollama-search.md` | ✓ | Pipeline to discover & assess new models from Ollama popular |
 | `computer-profile/hardware-profile.template.yaml` | ✓ | Template for hardware specs |
 | `computer-profile/software-profile.template.yaml` | ✓ | Template for IDE/agent setup |
@@ -239,9 +232,10 @@ Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `ge
 | `LLM-prompts/model-selector-prompt.yaml` | ✓ | System prompt for model selection |
 | `LLM-prompts/model-assessment-prompt.yaml` | ✓ | System prompt for assessing new models |
 | `AGENTS.md` | ✓ | Agent rules, data flow, task routing |
-| `IDE-model-management/IDE.md` | ✓ | IDE config setup docs, role mappings, config templates |
-| `IDE-model-management/*/config-location.md` | ✓ | Per-app config format and locations (Continue, OpenCode, Goose, Pi, Zed) |
-| `IDE-model-management/*/config.*` | ✗ local | Local reference copies of filled-out configs (gitignored) |
+| `integrations/IDE-model-management/IDE.md` | ✓ | IDE config setup docs, role mappings, config templates |
+| `integrations/IDE-model-management/*/config-location.md` | ✓ | Per-app config format and locations (where present) |
+| `integrations/IDE-model-management/*/config.*` | ✗ local | Local reference copies of filled-out configs (gitignored) |
+| `integrations/embed-retrieval-stack/` | ✓ | Docker stack + docs for Postgres/pgvector/AGE |
 | `benchmarks/benchmark.template.yaml` | ✓ | Schema for personal benchmarks |
 | `benchmarks/*.yaml` | ✗ local | Your benchmark definitions (gitignored) |
 | `ref/` | ✗ local | Local copies of agent configs (gitignored) |

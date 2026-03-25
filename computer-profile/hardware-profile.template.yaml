@@ -10,6 +10,10 @@ system:
 
 vram_budget:
   total_available: 0          # GB - Total VRAM available for Ollama
+  # GB reserved for macOS + your apps — not counted toward Ollama’s effective budget (total_available - this).
+  # Default 4: light workloads (e.g. Ollama + VS Code). Rule of thumb: ~6% of system unified RAM (≈4 GB at 64 GB).
+  # Raise to 8–12 if you run browsers, Docker, video, etc. alongside Ollama.
+  os_headroom_gb: 4
   concurrency_reserve: 0      # GB - Headroom for running Speedster alongside larger models
   kv_cache_estimate: 1        # GB per 4k context @ fp16 (less for quantized KV)
 

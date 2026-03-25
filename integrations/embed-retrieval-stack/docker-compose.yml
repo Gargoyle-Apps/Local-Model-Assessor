@@ -1,0 +1,40 @@
+# Pinned stack: Postgres + Apache AGE + pgvector.
+# Source of truth for tags: versions.lock.yaml
+# Upgrading / API mismatches: embed-retrieval-stack.md "Version alignment" + versions.lock.yaml header URLs.
+#
+# Usage (from this directory):
+#   docker compose --env-file .env up -d --build
+#
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        AGE_IMAGE: apache/age
+        AGE_TAG: release_PG18_1.7.0
+        PGVECTOR_REF: v0.8.2
+    image: lma-stack:pg18-age17-pgvector082
+    container_name: lma-postgres-stack
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lma}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lma_dev_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-lma}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    # PostgreSQL 18+ images require mounting the *parent* dir, not .../data
+    # (pg_ctlcluster-style layout). See https://github.com/docker-library/postgres/pull/1259
+    volumes:
+      - lma_pgdata:/var/lib/postgresql
+    # Use $$ so the *container* expands POSTGRES_* (matches official postgres compose pattern).
+    # start_period: first boot runs init scripts (AGE + vector + schema) and can exceed 25s.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
+
+volumes:
+  lma_pgdata:

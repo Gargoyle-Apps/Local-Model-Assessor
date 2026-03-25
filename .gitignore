@@ -1,29 +1,24 @@
-# Cursor IDE
+# IDE / tooling
 .cursorignore
-
-# Agent/IDE app runtime dirs (generated on-demand)
+.cursorrules
 .continue/
 .opencode/
-
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-._*
-
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# Editors/IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# If Python scripts are added
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Python
 __pycache__/
 *.py[cod]
 *.pyo
@@ -31,48 +26,43 @@ __pycache__/
 venv/
 .venv/
 
-# If Node tooling is added
+# Node (if added)
 node_modules/
 package-lock.json
 
-# Logs and temp files
 *.log
 *.tmp
 *.bak
-
-# Local testing/scratch files
 scratch/
 test/
 local/
-
 ref/
 
 # Personal benchmarks (human-maintained, local)
 benchmarks/*.yaml
 !benchmarks/*.template.yaml
 
-# Cursor rules (user-specific)
-.cursorrules
-
-# Local-only files (gitignored)
+# LMA local data
 computer-profile/hardware-profile.yaml
 computer-profile/software-profile.yaml
 model-data/model-assessor.db
 model-data/assessed-models.md
 model-data/new-models.yaml
 model-data/*.db
-
-# Legacy (if still present locally)
+model-data/modelfile/*
+!model-data/modelfile/.gitkeep
 model-data/model-lookup.json
 
-# IDE config copies (local references; generated on-demand)
-IDE-model-management/continue/config.yaml
-IDE-model-management/opencode/opencode.json
-IDE-model-management/goose/config.yaml
-IDE-model-management/pi/settings.json
-IDE-model-management/pi/models.json
-IDE-model-management/zed/settings.json
+# IDE reference copies (generated on demand)
+integrations/IDE-model-management/continue/config.yaml
+integrations/IDE-model-management/opencode/opencode.json
+integrations/IDE-model-management/goose/config.yaml
+integrations/IDE-model-management/pi/settings.json
+integrations/IDE-model-management/pi/models.json
+integrations/IDE-model-management/zed/settings.json
+integrations/IDE-model-management/cline/provider-settings.json
 
-# OpenCode (project-level config is local)
+integrations/embed-retrieval-stack/out/
+
 opencode.json
 opencode.jsonc

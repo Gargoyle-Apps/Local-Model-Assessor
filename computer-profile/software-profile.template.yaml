@@ -34,7 +34,8 @@ optional_agents:
     description: "Optional secondary coding assistant agent"
     optional: true
 
-# Model Runtime (mandatory) - Required for running local models
+# Model Runtime (mandatory) — Ollama is the supported local stack for assessments, DB, and IDE generator.
+# Optional notes about other tools belong in your local docs; agent orchestration stays in AGENTS.md.
 model_runtime:
   name: "Ollama"
   url: "https://ollama.com"

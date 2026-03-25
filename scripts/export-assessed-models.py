@@ -10,6 +10,7 @@ import os
 import sqlite3
 import sys
 from pathlib import Path
+from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB = REPO_ROOT / "model-data" / "model-assessor.db"
@@ -24,7 +25,7 @@ def _truthy(v):
     return v in (True, 1, "true", "1", "yes")
 
 
-def model_to_spec_table(m: dict, doc: dict | None) -> str:
+def model_to_spec_table(m: dict, doc: Optional[dict]) -> str:
     """Build markdown spec table from model + optional doc overrides."""
     if doc and doc.get("spec_table"):
         return doc["spec_table"]
@@ -63,15 +64,32 @@ def main():
         sys.exit(1)
 
     try:
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
-        c = conn.cursor()
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
 
-        c.execute("SELECT * FROM models ORDER BY vram, model_id")
-        models = [dict(r) for r in c.fetchall()]
+            c.execute("SELECT * FROM models ORDER BY vram, model_id")
+            models = [dict(r) for r in c.fetchall()]
 
-        c.execute("SELECT * FROM model_docs")
-        docs = {r["model_id"]: dict(r) for r in c.fetchall()}
+            c.execute("SELECT * FROM model_docs")
+            docs = {r["model_id"]: dict(r) for r in c.fetchall()}
+
+            provisioned = []
+            c.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='provisioned_models'"
+            )
+            if c.fetchone():
+                c.execute(
+                    """
+                    SELECT pm.alias, pm.base_model_id, pm.role, pm.variant, pm.num_ctx,
+                           pm.temperature, pm.is_active, pm.modelfile_path, pm.create_command,
+                           pm.pull_command, m.class, m.vram, m.tps
+                      FROM provisioned_models pm
+                      LEFT JOIN models m ON m.model_id = pm.base_model_id
+                     ORDER BY pm.role, pm.alias
+                    """
+                )
+                provisioned = [dict(r) for r in c.fetchall()]
     except sqlite3.Error as e:
         print(f"Database error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -134,7 +152,6 @@ For writing and creative tasks, choose based on stage:
         sections[cls].append(m)
 
     body_parts = []
-    subsection_labels = {"Utility": ["Embedding Models", "OCR Models"], "Speedster": ["Speedster Class Models (<8GB)"]}
     for cls in class_order:
         mods = sections.get(cls, [])
         if not mods:
@@ -159,6 +176,36 @@ For writing and creative tasks, choose based on stage:
             block += "---\n\n"
             body_parts.append(block)
 
+    if provisioned:
+        body_parts.append("## Role-tuned provisioned clones (Ollama aliases)\n\n")
+        body_parts.append(
+            "These rows come from `provisioned_models`. "
+            "`is_active` is set after you run `pull_command` / `create_command` and confirm with `ollama list`.\n\n"
+        )
+        body_parts.append(
+            "| Alias | Base model | Role | Variant | num_ctx | Temp | Class | VRAM | t/s | Active |\n"
+        )
+        body_parts.append(
+            "|-------|------------|------|---------|---------|------|-------|------|-----|--------|\n"
+        )
+        for p in provisioned:
+            temp = p.get("temperature")
+            temp_s = "" if temp is None else str(temp)
+            cls = p.get("class") or "—"
+            vram = p.get("vram")
+            vram_s = "" if vram is None else f"{vram}GB"
+            tps = p.get("tps")
+            tps_s = "" if tps is None else str(tps)
+            active = "yes" if p.get("is_active") else "no"
+            body_parts.append(
+                f"| `{p['alias']}` | `{p['base_model_id']}` | {p['role']} | {p['variant']} | "
+                f"{p['num_ctx']} | {temp_s} | {cls} | {vram_s} | {tps_s} | {active} |\n"
+            )
+        body_parts.append(
+            "\n**Build commands (per alias):** query the DB for `pull_command`, "
+            "`create_command`, and `modelfile_path`.\n\n---\n\n"
+        )
+
     footer = """
 ## Role Architecture
 
@@ -174,7 +221,7 @@ Run `sqlite3 model-data/model-assessor.db "SELECT * FROM decision_tree"` for the
 """
 
     output = header + "\n".join(body_parts) + footer
-    md_path.write_text(output)
+    md_path.write_text(output, encoding="utf-8")
     print(f"Exported {len(models)} models to {md_path}")
 
 

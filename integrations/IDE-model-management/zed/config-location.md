@@ -14,5 +14,5 @@
 
 **To keep an untracked local copy in this repo folder:**
 ```bash
-cp ~/.config/zed/settings.json IDE-model-management/zed/settings.json
+cp ~/.config/zed/settings.json integrations/IDE-model-management/zed/settings.json
 ```

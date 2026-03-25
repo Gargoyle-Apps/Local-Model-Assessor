@@ -1,23 +1,18 @@
 # IDE Model Management
 
-This folder holds **setup docs and config references** for keeping IDE agent tools in sync with models in `model-data/model-assessor.db`.
+Docs + config references for IDE agents ↔ `model-data/model-assessor.db`.
 
-**On-demand or auto:** Configs are generated when the user asks, or automatically after profile import if `computer-profile/software-profile.yaml` names a supported app (Continue, OpenCode, Goose, Pi, Zed). Check the `primary_agent.name`, `embedded_assistant.name`, and `optional_agents[].name` fields against the supported apps below.
+**Generate:** `python3 scripts/generate-ide-config.py` — `provisioned_models` (+ `models`); `--target continue|cline`, `--active-only`, `--dry-run`. Cline/Roo keys sanitize alias (`:` → `-`). **Auto:** after `import-profiles.py` if `software-profile.yaml` names a supported app (`primary_agent`, `embedded_assistant`, `optional_agents`).
 
-**Source of truth:** `model-data/model-assessor.db` (SQLite). Query via `./scripts/query-db.sh`.
-**Hardware context:** `computer-profile/hardware-profile.yaml`
+**Embed + Postgres stack:** [embed-retrieval-stack.md](../embed-retrieval-stack/embed-retrieval-stack.md) · `generate-stack-handoff.py` → `integrations/embed-retrieval-stack/out/` (assessed **embedding** in DB).
+
+**DB:** `model-assessor.db` · `./scripts/query-db.sh` · hardware: `computer-profile/hardware-profile.yaml`
 
 ---
 
-## Folder Structure
+## Folder layout
 
-Each supported app has a subfolder here containing:
-
-| File | Tracked? | Purpose |
-|------|----------|---------|
-| `config-location.md` | Yes | Where the app loads config from, format, locations |
-| `.gitkeep` | Yes | Ensures folder exists in repo |
-| Config file (e.g. `config.yaml`, `opencode.json`) | No (gitignored) | Local reference copy of filled-out config |
+Per app: **`config-location.md`** (tracked), **`.gitkeep`**, optional **local config copy** (gitignored).
 
 ---
 
@@ -44,10 +39,27 @@ Query the DB for current assignments:
 | App | Config format | Subfolder |
 |-----|--------------|-----------|
 | Continue | `config.yaml` | [continue/](continue/) |
+| Cline / Roo Code | JSON (provider settings) | [cline/](cline/) |
 | OpenCode | `opencode.json` | [opencode/](opencode/) |
 | Goose | `config.yaml` | [goose/](goose/) |
 | Pi | `settings.json` + `models.json` | [pi/](pi/) |
 | Zed | `settings.json` | [zed/](zed/) |
+
+---
+
+## Timeout Policy
+
+IDEs default to short HTTP timeouts that cause failures when Ollama needs time for cold loads, large context pre-fill, or agentic multi-turn loops. The config generator (`scripts/generate-ide-config.py`) applies these role-based timeouts:
+
+| Role category | Timeout (ms) | Rationale |
+|---------------|-------------|-----------|
+| **Autocomplete / embedding / OCR** | `60000` (60 s) | Snappy roles — if completion takes > 1 min, the user has moved on |
+| **Chat / coding / reasoning / vision / creative / heavy_lifter** | `300000` (5 min) | Deep roles — large context pre-fill and agentic loops need a long leash |
+
+These values map to:
+- **Continue:** `requestOptions.timeout` on each `models[]` entry; `autocompleteOptions.modelTimeout` on autocomplete entries
+- **Cline / Roo Code:** `requestTimeoutMs` in the API provider configuration
+- **Other IDEs:** Apply the same ms values to whatever timeout field the app exposes (see per-app sections)
 
 ---
 
@@ -66,25 +78,89 @@ Query the DB for current assignments:
 | `role='reasoning', variant='primary'` | `roles: [chat, edit]` (no capabilities) |
 | `role='autocomplete', variant='balanced'` | `roles: [autocomplete]` |
 | `role='embedding', variant='primary'` | `roles: [embed]` |
+| `role='ocr', variant='primary'` | `roles: [embed]` (OCR uses the embed role path in Continue) |
 
 ### Config block template
 
+When provisioned aliases exist, use the alias as `model` and `num_ctx` as `contextLength`:
+
 ```yaml
 models:
-  - name: "Display Name"
+  - name: "qwen3:30b_coding_8k (coding)"
     provider: ollama
-    model: "model-name:tag"   # must match model-assessor.db
+    model: qwen3:30b_coding_8k      # provisioned alias from DB
+    apiBase: http://localhost:11434
     roles: [chat, edit, apply]
-    capabilities: [tool_use]  # tool_use and/or image_input; omit if neither
-    contextLength: 32768      # from models.ctx
+    capabilities: [tool_use]
+    defaultCompletionOptions:
+      contextLength: 8192            # from provisioned_models.num_ctx
+    requestOptions:
+      timeout: 300000                # chat/coding → 5 min
+```
+
+Autocomplete entries get a shorter timeout:
+
+```yaml
+  - name: "granite4:3b_autocomplete_8k (autocomplete)"
+    provider: ollama
+    model: granite4:3b_autocomplete_8k
+    apiBase: http://localhost:11434
+    roles: [autocomplete]
+    defaultCompletionOptions:
+      contextLength: 8192
+    requestOptions:
+      timeout: 60000
+    autocompleteOptions:
+      debounceDelay: 250
+      maxPromptTokens: 2048
+      modelTimeout: 60000
 ```
 
 ### Setup steps (on-demand)
 
-1. Query DB for current role assignments
-2. Generate `config.yaml` using the role mapping above
-3. Write to `~/.continue/config.yaml` (user-level)
-4. Optionally save a copy to `IDE-model-management/continue/config.yaml` as local reference
+1. Run `python3 scripts/generate-ide-config.py --target continue` (or `--dry-run` to preview)
+2. Review the generated `integrations/IDE-model-management/continue/config.yaml`
+3. Copy or merge into `~/.continue/config.yaml`
+4. Restart Continue to pick up changes
+
+---
+
+## Cline / Roo Code (VS Code)
+
+**Cline docs:** [Cline — GitHub](https://github.com/cline/cline)
+**Roo Code docs:** [Roo Code — GitHub](https://github.com/RooVetGit/Roo-Code)
+**Config file:** JSON (provider settings) — see [cline/config-location.md](cline/config-location.md)
+**Config location:** Managed through the extension UI; export/import as JSON.
+
+Cline and Roo Code are autonomous agent extensions that read/write files in agentic loops. A timeout mid-loop breaks the entire chain, so chat-tier timeouts (300 s) are critical.
+
+### Role mapping → Cline / Roo
+
+| DB query | Cline/Roo config |
+|----------|-----------------|
+| `role='coding', variant='primary'` | Primary `ollamaModelId` with `requestTimeoutMs: 300000` |
+| `role='autocomplete', variant='…'` | Separate profile or model with `requestTimeoutMs: 60000` |
+| `role='embedding', variant='primary'` | Roo embedding model (if applicable); use Snappy alias + short timeout |
+
+### Config block template
+
+```json
+{
+  "apiConfiguration": {
+    "apiProvider": "ollama",
+    "ollamaModelId": "qwen3:30b_coding_8k",
+    "apiBaseUrl": "http://localhost:11434",
+    "requestTimeoutMs": 300000
+  }
+}
+```
+
+### Setup steps (on-demand)
+
+1. Run `python3 scripts/generate-ide-config.py --target cline` (or `--dry-run` to preview)
+2. Review the generated `integrations/IDE-model-management/cline/provider-settings.json`
+3. In VS Code, open Cline/Roo settings → API Configuration → import or paste the relevant profile
+4. For Roo Code embedding: verify the embedding model timeout is also adequate
 
 ---
 
@@ -134,7 +210,7 @@ OpenCode uses `provider` + `model` at the top level. For Ollama:
 1. Query DB for current role assignments
 2. Generate `opencode.json` using the role mapping above
 3. Write to project root (`opencode.json`) or `~/.config/opencode/opencode.json` (global)
-4. Optionally save a copy to `IDE-model-management/opencode/opencode.json` as local reference
+4. Optionally save a copy to `integrations/IDE-model-management/opencode/opencode.json` as local reference
 
 ---
 
@@ -157,7 +233,7 @@ Goose selects one primary model. It supports lead/worker multi-model configs for
 1. Query DB for the primary coding model
 2. Run `goose configure` → Configure Providers → Ollama → set `OLLAMA_HOST` → select model
 3. Or set env: `export OLLAMA_HOST=http://localhost:11434` and `export GOOSE_MODEL=model:tag`
-4. Optionally save a copy to `IDE-model-management/goose/config.yaml` as local reference
+4. Optionally save a copy to `integrations/IDE-model-management/goose/config.yaml` as local reference
 
 ---
 
@@ -209,7 +285,7 @@ Pi supports a single active model but can cycle between configured models with C
 2. Generate `models.json` with Ollama provider and model list (use `ctx` from DB for `contextWindow`)
 3. Generate `settings.json` with `defaultProvider: "ollama"` and primary coding model as `defaultModel`
 4. Write to `~/.pi/agent/models.json` and `~/.pi/agent/settings.json`
-5. Optionally save copies to `IDE-model-management/pi/` as local reference
+5. Optionally save copies to `integrations/IDE-model-management/pi/` as local reference
 
 ---
 
@@ -266,13 +342,13 @@ Map DB columns to Zed's per-model fields: `tools` → `supports_tools`, `vision`
 2. Generate `language_models.ollama.available_models` array (map `ctx` → `max_tokens`, `tools`/`vision`/`reasoning` → `supports_*`)
 3. Set `assistant.default_model` to the primary coding model
 4. Merge into `~/.config/zed/settings.json` (global) or `.zed/settings.json` (project)
-5. Optionally save a copy to `IDE-model-management/zed/settings.json` as local reference
+5. Optionally save a copy to `integrations/IDE-model-management/zed/settings.json` as local reference
 
 ---
 
 ## Adding another app
 
-1. Create `IDE-model-management/<app-name>/` with:
+1. Create `integrations/IDE-model-management/<app-name>/` with:
    - `config-location.md` — where the app loads config from
    - `.gitkeep`
 2. Add a section in this file with:

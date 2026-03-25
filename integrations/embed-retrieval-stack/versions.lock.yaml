@@ -1,0 +1,32 @@
+# Source of truth for the Docker stack (Postgres + Apache AGE + pgvector).
+# Do not use floating :latest in compose — bump this file when upgrading.
+#
+# Upgrade checklist: match postgres major across base image, AGE release, and
+# postgresql-server-dev-XX in Dockerfile. See embed-retrieval-stack.md "Version alignment".
+#
+# Evergreen reference URLs (verify compatibility before bumping pins):
+#   PostgreSQL release notes (pick your major): https://www.postgresql.org/docs/release/
+#   PostgreSQL version policy: https://www.postgresql.org/support/versioning/
+#   Apache AGE releases: https://github.com/apache/age/releases
+#   Apache AGE Docker tags: https://hub.docker.com/r/apache/age/tags
+#   pgvector releases: https://github.com/pgvector/pgvector/releases
+#   pgvector install / PG support: https://github.com/pgvector/pgvector#installation
+
+postgres_major: 18
+
+# Official Apache AGE image (includes AGE pre-installed; see docker/Dockerfile upstream).
+apache_age_image: apache/age
+apache_age_tag: release_PG18_1.7.0
+
+# pgvector is compiled in this directory's Dockerfile (not in apache/age base).
+pgvector_git_ref: v0.8.2
+
+# Default vector dimension in init/02-schema.sql — MUST match your embedding model output.
+# Examples: nomic-embed-text 768, mxbai-embed-large 1024, embeddinggemma varies — check Ollama/model card.
+default_embedding_dimensions: 768
+
+last_reviewed: "2026-03-23"
+changelog: "pgvector v0.8.2 (PG18 vacuum_delay_point API); AGE release_PG18_1.7.0 base."
+
+# apache/age release_PG18_1.7.0 publishes both (verify on Docker Hub before upgrading).
+architectures_note: "linux/amd64 and linux/arm64 per Docker Hub apache/age tags at last_reviewed."
