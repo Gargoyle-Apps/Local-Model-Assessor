@@ -4,7 +4,7 @@
 
 **Agents:** shell-capable IDEs only — query DB, run scripts; do not ask users to paste data.
 
-**Scope:** **Canonical contract** (data flow, scripts, routing, queries, provenance). [README.md](README.md) = human quick start + tree; does not replace tables below.
+**Scope:** Procedural workflows live in **skills** under [`.skills/_skills/`](.skills/_skills/) (index: [`.skills/_index.md`](.skills/_index.md)). This file is the **spine** — non-negotiable conventions, static reference tables, and pointers. [README.md](README.md) = human quick start + tree.
 
 ---
 
@@ -12,74 +12,18 @@
 
 This repository uses **Path B** from the bundled skills harness: **portable skills** under [`.skills/`](.skills/) (manifest: [`.skills/_index.md`](.skills/_index.md)), **no** tool-specific runtime harness pasted from [`.skills/_harness/*_template.md`](.skills/_harness/) into this tree. Those templates are **reference** for consumers who clone this repo and may run Path A in their own environment.
 
-**Authoring:** Use bundled `skill-template` / `skill-author` and the index when adding skills. Do **not** paste ecosystem harness blocks into this file for this repository. **Not yet:** repo-specific LMA skills beyond the harness defaults — that is a later task.
+**Authoring:** Use bundled `skill-template` / `skill-author` and the index when adding skills. Do **not** paste ecosystem harness blocks into this file for this repository.
 
-**Gate:** Do not create, rename, delete skills under `.skills/_skills/`, change `.skills/_index.md`, or load full `SKILL.md` for skill refactors **unless** the user’s task explicitly includes that work. Reading `.skills/_index.md` to describe the system is fine.
-
----
-
-## Python environment
-
-**Before the YAML assessment/import path** (`model-data/new-models.yaml` → `add-model-from-yaml.py` → `export-assessed-models.py`) or **`generate-ide-config.py`**: read **[requirements.txt](requirements.txt)**. Those scripts need **PyYAML** (and future deps belong in the same file).
-
-**Preferred:** use a **repo-local virtualenv** at **`.venv/`** (gitignored). macOS/Homebrew Python is often **PEP 668** (“externally managed”) and will refuse global `pip install`; the venv avoids that.
-
-1. **First run / after `requirements.txt` changes:** `./scripts/bootstrap-python.sh`
-2. **Run Python tools:** `./scripts/py scripts/<script>.py …` from the repository root.
-
-The **`./scripts/py`** wrapper creates `.venv` if missing and re-runs `pip install -r requirements.txt` when `requirements.txt` is newer than the last sync stamp inside `.venv`.
-
-**Also use `./scripts/py`** for scripts that only need the stdlib (e.g. `import-profiles.py`, `export-assessed-models.py`) so every agent uses the same interpreter.
-
-**Manual alternative:** `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt && source .venv/bin/activate`
+**Gate:** Do not create, rename, delete skills under `.skills/_skills/`, change `.skills/_index.md`, or load full `SKILL.md` for skill refactors **unless** the user's task explicitly includes that work. Reading `.skills/_index.md` to describe the system is fine.
 
 ---
 
-## Data Flow
+## Non-negotiables
 
-| Script / Prompt | Inputs | Outputs |
-|-----------------|--------|---------|
-| `init-db.sh` | `scripts/schema.sql` | `model-data/model-assessor.db` |
-| `import-profiles.py` | `computer-profile/*.yaml` | DB (`hardware_profile`, `software_profile`) |
-| `add-model-from-yaml.py` | `model-data/new-models.yaml` | DB (`models`, `role_model`, `constraint_model`, `model_docs`, `provisioned_models`); writes `model-data/modelfile/*.mf` |
-| `export-assessed-models.py` | DB | `model-data/assessed-models.md` |
-| `generate-ide-config.py` | DB (`provisioned_models`, `models`) | `integrations/IDE-model-management/<app>/` config files with role-appropriate timeouts |
-| `generate-stack-handoff.py` | DB (`provisioned_models` or `role_model` for `embedding`; **requires at least one assessed embedding model** in `models` + assignments) | `integrations/embed-retrieval-stack/out/` (`STACK_HANDOFF.md`, `embed_sample.py`) — copy into app repos |
-| `ollama-search.md` → `model-assessment-prompt.yaml` → `add-model-from-yaml.py` | Ollama popular page, `hardware-profile.yaml` | DB, `assessed-models.md` |
-| **HF GGUF → Ollama** (see below) | User-supplied HF GGUF URL + `hardware-profile.yaml` | Same YAML → DB path; base import via `ollama create`; role clones unchanged |
-
----
-
-## HF GGUF → Ollama (manual import)
-
-User-supplied **GGUF** (or HF card) **not** in Ollama library: follow **this section** (not `ref/TODO.md`). Flow: assess with **`LLM-prompts/model-assessment-prompt.yaml`** → **`model-data/new-models.yaml`** → **`add-model-from-yaml.py`** → **`export-assessed-models.py`**.
-
-### Semantics (already supported by schema + script)
-
-1. **`models.model_id`** — Ollama name you will register for the **base** weights (e.g. `myrepo-model:q4_k_m`). Must match what appears in `ollama list` after the base import.
-2. **`models.url`** — HF model card or direct file link (provenance / human reference).
-3. **`models.install`** — Command(s) to get the **base** into Ollama. For catalog models: `ollama pull tag`. For GGUF: typically **`ollama create <model_id> -f <path-to-base-modelfile>`** after the user (or you) places the `.gguf` on disk. See [Ollama import](https://docs.ollama.com/import) / [Modelfile](https://docs.ollama.com/modelfile).
-4. **Base Modelfile (GGUF only)** — Not generated by `add-model-from-yaml.py`. Create a **separate** file under `model-data/modelfile/` (e.g. `model-data/modelfile/myrepo-model--q4_k_m-base.mf`) with at least `FROM ./relative/or/absolute/path/to/model.gguf`. **Path resolution:** Ollama resolves `FROM` paths relative to the **working directory where you run `ollama create`**, not relative to the Modelfile's location — so use an absolute path or ensure the CWD is correct. Document download location and any `TEMPLATE` / chat-template needs in **`model_docs.caveats`**.
-5. **Provisioned role clones** — `add-model-from-yaml.py` writes clone `.mf` files with `FROM <base model_id>` + `PARAMETER num_ctx`, `temperature`, etc. **`provisioned_models.pull_command`** mirrors **`models.install`** — for GGUF bases that is `ollama create -f …`, not `ollama pull`. Treat the column as **“base install step”** when advising the user.
-6. **Hardware** — Gate VRAM, quant, and context on **`computer-profile/hardware-profile.yaml`** (`vram_budget`, `context_strategy`, heavy-lifter / co-run rules). Do not assume full advertised context from the upstream card.
-
-### GGUF import checklist
-
-- [ ] Read `hardware-profile.yaml`; confirm the GGUF size / quant fits the machine.
-- [ ] User has (or will) download the `.gguf` to a known path; base `.mf` references that path.
-- [ ] Choose stable `model_id` for Ollama; set `install` to the exact `ollama create … -f …` from repo root if paths are repo-relative.
-- [ ] Fill assessment YAML including **`provisioning`** aligned with **`by_role`** (same rules as catalog models).
-- [ ] Run `./scripts/py scripts/add-model-from-yaml.py` and `./scripts/py scripts/export-assessed-models.py`; verify with `ollama list` after user runs base import, then clone `create_command` if needed.
-
----
-
-## Architecture
-
-**DB:** `model-data/model-assessor.db` (SQLite). **Data flow:** table above.
-
-**Scripts (flags):** `query-db.sh "SQL"` — always pass SQL string (no args = interactive). `init-db.sh` / `migrate-schema.sh` — empty DB / schema + `provisioned_models`. **Python:** `./scripts/py scripts/<name>.py` (see **Python environment**). `add-model-from-yaml.py` — provenance via args or `LMA_ASSESSOR` / `LMA_ASSESSOR_TYPE`. `export-assessed-models.py [path]`, `import-profiles.py [db]`. `generate-ide-config.py --target continue|cline [--active-only] [--dry-run]`. `generate-stack-handoff.py` — needs assessed **embedding** in DB (`role_model` and/or `provisioned_models`); `[--output-dir DIR]`.
-
-**Env:** `LMA_DB` → all Python scripts’ DB path. **Discover:** `LLM-prompts/ollama-search.md`.
+- **Python:** Always run scripts via `./scripts/py scripts/<name>.py …` from the repo root. See `lma-python-env` skill for venv details.
+- **DB path:** `LMA_DB` env var overrides the default `model-data/model-assessor.db` for all Python scripts.
+- **Queries:** `./scripts/query-db.sh "SQL"` — always pass SQL as a quoted string argument.
+- **If DB missing:** `./scripts/init-db.sh`. **If columns/tables missing:** `./scripts/migrate-schema.sh`.
 
 ---
 
@@ -92,79 +36,16 @@ User-supplied **GGUF** (or HF card) **not** in Ollama library: follow **this sec
 
 Create local files from templates: `cp computer-profile/hardware-profile.template.yaml computer-profile/hardware-profile.yaml` (or use setup in `model-assessment-prompt.yaml`). For assessment output: `cp model-data/new-models.template.yaml model-data/new-models.yaml`.
 
-**Repo development vs using the repo:** End-user agents rely on this section matching **`.gitignore`** and the real tree. When you change ignore rules, add generated artifacts, or new local-only paths, update **this table** and **README.md** (“Repo vs Local”) together so agents and humans stay aligned.
+**Repo development vs using the repo:** End-user agents rely on this section matching **`.gitignore`** and the real tree. When you change ignore rules, add generated artifacts, or new local-only paths, update **this table** and **README.md** ("Repo vs Local") together so agents and humans stay aligned.
 
 ---
 
-## Task Routing
-
-| User wants to... | Action |
-|------------------|--------|
-| Select a model | Follow `LLM-prompts/model-selector-prompt.yaml`: join `role_model` → `provisioned_models` → `models`, run `ollama list` for drift, recommend alias or print `pull_command` / `create_command`. Read `hardware-profile.yaml` for budget. |
-| Discover new models | Follow `LLM-prompts/ollama-search.md` — fetch Ollama popular, parse, pre-filter, cap at 7, assess via `model-assessment-prompt.yaml` |
-| Get model details | Read `model-data/assessed-models.md` or query `model_docs` |
-| Assess new model | Read `model-assessment-prompt.yaml`, generate YAML to `model-data/new-models.yaml`, run `./scripts/py scripts/add-model-from-yaml.py`, then `./scripts/py scripts/export-assessed-models.py` (after **Python environment**) |
-| Assess HF GGUF (not in Ollama library) | Follow **HF GGUF → Ollama** above, then same scripts. |
-| Install a model | `./scripts/query-db.sh "SELECT install FROM models WHERE model_id='...'"` → run the returned command (may be `ollama pull` or `ollama create -f …` for GGUF bases) |
-| Configure IDE/agent | `./scripts/py scripts/generate-ide-config.py --target continue|cline` (+ `IDE.md` timeouts). Other apps: manual from `integrations/IDE-model-management/IDE.md`. Auto after `import-profiles.py` if `software-profile.yaml` names a supported app. |
-| Postgres + pgvector + AGE + embeddings | Docker + Compose; assessed **embedding** in DB (`models` + `role_model.embedding` / provisioned). Doc: [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md). Compose: `integrations/embed-retrieval-stack/`. Handoff: `generate-stack-handoff.py` → `integrations/embed-retrieval-stack/out/`. Copy stack + `out/*` to app repo. **Version alignment** (upgrades): see that doc + `versions.lock.yaml`. |
-
-**If DB missing:** Run `./scripts/init-db.sh`. **If DB lacks `assessed_at`, provenance columns, or `provisioned_models`:** Run `./scripts/migrate-schema.sh`.
-
----
-
-## Provenance
-
-Content tables (`models`, `role_model`, `constraint_model`, `task_category`, `model_docs`, `provisioned_models`) track who created and last updated each row:
-
-| Column | Set when | Preserved on update? |
-|--------|----------|---------------------|
-| `created_at` | First insert | Yes |
-| `created_by` | First insert (assessor name) | Yes |
-| `created_by_type` | First insert (`local`/`cloud`/`human`) | Yes |
-| `updated_at` | Every write | No (overwritten) |
-| `updated_by` | Every write (assessor name) | No (overwritten) |
-| `updated_by_type` | Every write (`local`/`cloud`/`human`) | No (overwritten) |
-
-**How agents provide provenance:**
-- `./scripts/py scripts/add-model-from-yaml.py --assessor gpt-oss:20b --assessor-type local model-data/new-models.yaml`
-- Or env vars: `LMA_ASSESSOR=gpt-oss:20b LMA_ASSESSOR_TYPE=local`
-- Direct SQL: include `created_by`, `created_by_type`, `updated_by`, `updated_by_type` in INSERT
-
-**Query provenance:**
-```bash
-./scripts/query-db.sh "SELECT model_id, created_at, created_by, created_by_type, updated_at, updated_by FROM models"
-```
-
----
-
-## Key Queries
+## Hardware Budget
 
 ```bash
-./scripts/query-db.sh "SELECT model_id, vram, class, tps FROM models ORDER BY vram"
-./scripts/query-db.sh "SELECT model_id FROM role_model WHERE role='coding' AND variant='primary'"
-./scripts/query-db.sh "SELECT model_id FROM constraint_model WHERE constraint_name='has_vision'"
-./scripts/query-db.sh "SELECT value FROM meta WHERE key='last_ollama_scan'"
-./scripts/query-db.sh "SELECT alias, base_model_id, role, num_ctx, is_active FROM provisioned_models ORDER BY role"
-./scripts/query-db.sh "SELECT chain_text FROM decision_tree WHERE need_key='need_vision'"
-./scripts/query-db.sh "SELECT * FROM rag_pipeline"
-./scripts/query-db.sh "SELECT role_name FROM task_category WHERE category='writing'"
+grep -A5 vram_budget computer-profile/hardware-profile.yaml
 ```
 
-**Hardware budget:** `grep -A5 vram_budget computer-profile/hardware-profile.yaml` (includes `os_headroom_gb`; effective budget ≈ `total_available - os_headroom_gb`)
+Effective budget ≈ `total_available - os_headroom_gb`.
 
-**Co-run rule:** `(model_vram + concurrency_reserve) < total_available` → can co-run. Heavy Lifters (30–48GB) run solo.
-
----
-
-## Response Format (Model Selection)
-
-Prefer a **provisioned alias** when `provisioned_models` has a row for that role (see `model-selector-prompt.yaml`). Fallback when no clone exists:
-
-```markdown
-**Recommended:** `model:tag`
-**Class:** [class] | **VRAM:** XGB | **Speed:** ~X t/s
-**Why:** [reasoning]
-**Alternative:** `backup-model` (reason)
-**Install:** `ollama pull model:tag` (or `ollama create -f …` for GGUF bases)
-```
+**Co-run rule:** `(model_vram + concurrency_reserve) < total_available` → can co-run. Heavy Lifters (30–48 GB) run solo.
