@@ -99,7 +99,7 @@ def resolve_embedding_model(
         "No embedding model found. Prerequisite: assess at least one embedding model — "
         "add it to `models`, set `role_model` with role='embedding', and ideally a "
         "provisioned clone (model-assessment-prompt.yaml → new-models.yaml → "
-        "add-model-from-yaml.py). See integrations/embed-retrieval-stack/embed-retrieval-stack.md and AGENTS.md."
+        "add-model-from-yaml.py). See integrations/embed-retrieval-stack/embed-retrieval-stack.md and lma-embed-stack-handoff skill."
     )
 
 

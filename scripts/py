@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run repo Python with .venv; syncs from requirements.txt when it changes.
 # Usage (from repo root): ./scripts/py scripts/add-model-from-yaml.py ...
-# See AGENTS.md "Python environment".
+# See lma-python-env skill.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"

@@ -30,7 +30,7 @@ except ImportError:
         "Error: PyYAML is required (see requirements.txt).\n"
         "  ./scripts/bootstrap-python.sh\n"
         "  ./scripts/py scripts/generate-ide-config.py ...\n"
-        "See AGENTS.md → Python environment.",
+        "See lma-python-env skill.",
         file=sys.stderr,
     )
     sys.exit(1)

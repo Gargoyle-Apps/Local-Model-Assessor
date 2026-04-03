@@ -52,7 +52,7 @@ content: |
   - If the alias appears in `ollama list` but `is_active = 0` → tell the user the DB is stale; offer to mark active (see SQL below).
   - If `is_active = 1` but the alias is **not** in `ollama list` → warn that the clone may have been removed.
 
-  **Mark clone active (after user confirms build):** set provenance on the row (match `AGENTS.md` — use the acting model or your name and `local` / `cloud` / `human`):
+  **Mark clone active (after user confirms build):** set provenance on the row (see `lma-assess-import-model` skill for provenance rules — use the acting model or your name and `local` / `cloud` / `human`):
   ```bash
   ./scripts/query-db.sh "UPDATE provisioned_models SET is_active = 1, updated_at = datetime('now'), updated_by = 'AGENT_OR_NAME', updated_by_type = 'human' WHERE alias = 'ALIAS_HERE'"
   ```
@@ -97,7 +97,7 @@ content: |
   When **`is_active = 0`** or clone missing from `ollama list`, append **Build this clone:**
   ```markdown
   **Build this clone:**
-  1. `pull_command` / `models.install` (catalog: pull base; GGUF: `ollama create` base per AGENTS.md HF GGUF → Ollama)
+  1. `pull_command` / `models.install` (catalog: pull base; GGUF: `ollama create` base per `lma-hf-gguf-ollama` skill)
   2. Ensure Modelfile exists at `modelfile_path` (contents in DB: `modelfile_content`)
   3. `create_command`
   ```

@@ -1,2 +1,2 @@
-# Install into repo .venv: ./scripts/bootstrap-python.sh — run Python via ./scripts/py (see AGENTS.md).
+# Install into repo .venv: ./scripts/bootstrap-python.sh — run Python via ./scripts/py (see lma-python-env skill).
 PyYAML>=6.0

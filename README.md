@@ -2,7 +2,7 @@
 
 For **tool-calling agents** in IDEs (Cursor, Cline, Continue, …): query SQLite and run repo scripts — not for chat-only LLMs without shell access.
 
-**Prerequisites:** [Ollama](https://ollama.com) · Python 3 · `./scripts/bootstrap-python.sh` (creates gitignored `.venv` from [requirements.txt](requirements.txt)) · run scripts with `./scripts/py` — see [AGENTS.md](AGENTS.md) **Python environment** · IDE agent · [profiles](#3-define-your-environment) · optional LLM for assessments · **Docker** only for [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md) (`docker compose exec postgres psql …` for checks).
+**Prerequisites:** [Ollama](https://ollama.com) · Python 3 · `./scripts/bootstrap-python.sh` (creates gitignored `.venv` from [requirements.txt](requirements.txt)) · run scripts with `./scripts/py` — see `lma-python-env` skill in [`.skills/_index.md`](.skills/_index.md) · IDE agent · [profiles](#3-define-your-environment) · optional LLM for assessments · **Docker** only for [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md) (`docker compose exec postgres psql …` for checks).
 
 ---
 
@@ -72,7 +72,7 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   ├── model-selector-prompt.yaml
 │   └── ollama-search.md
 ├── .skills/                         # skills harness (third-party; see README)
-├── AGENTS.md                        # agent rules, data flow, task routing
+├── AGENTS.md                        # agent spine: non-negotiables, file layout, hardware budget
 ├── requirements.txt             # PyYAML for YAML import scripts; install via bootstrap-python.sh
 ├── Brewfile                         # optional: brew bundle → libpq
 ├── .gitignore
@@ -153,7 +153,7 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 ## Assess new models
 
-1. `LLM-prompts/model-assessment-prompt.yaml` + `hardware-profile.yaml` + URLs (Ollama or HF GGUF — [AGENTS.md](AGENTS.md) **HF GGUF → Ollama**)
+1. `LLM-prompts/model-assessment-prompt.yaml` + `hardware-profile.yaml` + URLs (Ollama or HF GGUF — see `lma-hf-gguf-ollama` skill)
 2. LLM → save YAML → `model-data/new-models.yaml`
 3. `./scripts/py scripts/add-model-from-yaml.py model-data/new-models.yaml` then `./scripts/py scripts/export-assessed-models.py`
 
@@ -163,7 +163,7 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 ## IDE + embed stack
 
-- **IDEs:** [integrations/IDE-model-management/IDE.md](integrations/IDE-model-management/IDE.md) — roles, timeouts, Continue (`~/.continue/config.yaml`) / Cline-Roo (JSON), others; `generate-ide-config.py`; [AGENTS.md](AGENTS.md) routing.
+- **IDEs:** [integrations/IDE-model-management/IDE.md](integrations/IDE-model-management/IDE.md) — roles, timeouts, Continue (`~/.continue/config.yaml`) / Cline-Roo (JSON), others; `generate-ide-config.py`; see `lma-ide-config` skill.
 - **Postgres + pgvector + AGE:** [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md) — pins, compose under `integrations/embed-retrieval-stack/`, use cases, troubleshooting. **Handoff** (`STACK_HANDOFF.md`, `embed_sample.py`): assessed **embedding** in DB → `./scripts/py scripts/generate-stack-handoff.py` → `integrations/embed-retrieval-stack/out/` (gitignored); copy stack + `out/` to your app.
 
 ---

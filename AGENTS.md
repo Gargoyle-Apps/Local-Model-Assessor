@@ -12,7 +12,7 @@
 
 This repository uses **Path B** from the bundled skills harness: **portable skills** under [`.skills/`](.skills/) (manifest: [`.skills/_index.md`](.skills/_index.md)), **no** tool-specific runtime harness pasted from [`.skills/_harness/*_template.md`](.skills/_harness/) into this tree. Those templates are **reference** for consumers who clone this repo and may run Path A in their own environment.
 
-**Authoring:** Use bundled `skill-template` / `skill-author` and the index when adding skills. Do **not** paste ecosystem harness blocks into this file for this repository.
+**Authoring:** Use bundled `skill-template` / `skill-author` and the index when adding skills. Do **not** paste ecosystem harness blocks into this file for this repository. Repo-specific LMA skills are registered in [`.skills/_index.md`](.skills/_index.md) — load the right one by matching user intent to triggers.
 
 **Gate:** Do not create, rename, delete skills under `.skills/_skills/`, change `.skills/_index.md`, or load full `SKILL.md` for skill refactors **unless** the user's task explicitly includes that work. Reading `.skills/_index.md` to describe the system is fine.
 

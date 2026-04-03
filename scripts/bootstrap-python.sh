@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Create/update repo-local .venv and install requirements.txt (PEP 668-safe).
-# Run from repo root or any cwd; idempotent. See AGENTS.md "Python environment".
+# Run from repo root or any cwd; idempotent. See lma-python-env skill.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"

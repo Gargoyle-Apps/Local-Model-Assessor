@@ -1,6 +1,6 @@
 # Model assessment output template
 # Copy to model-data/new-models.yaml and fill in. Then: ./scripts/py scripts/add-model-from-yaml.py model-data/new-models.yaml
-# See LLM-prompts/model-assessment-prompt.yaml, LLM-prompts/ollama-search.md, and AGENTS.md → HF GGUF → Ollama.
+# See LLM-prompts/model-assessment-prompt.yaml, LLM-prompts/ollama-search.md, and lma-hf-gguf-ollama skill.
 
 models:
   # Ollama library example:
@@ -47,7 +47,7 @@ model_docs:
 # =============================================================================
 # HF GGUF import — full example (all top-level keys; uncomment to use):
 # Base Modelfile is separate — create it before running the install command.
-# See AGENTS.md → HF GGUF → Ollama for orchestration rules.
+# See lma-hf-gguf-ollama skill for orchestration rules.
 # =============================================================================
   # my-import:q4:
   #   vram: 8

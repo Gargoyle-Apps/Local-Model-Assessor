@@ -2,7 +2,7 @@
 
 Docs + config references for IDE agents ↔ `model-data/model-assessor.db`.
 
-**Generate:** `./scripts/py scripts/generate-ide-config.py` — `provisioned_models` (+ `models`); `--target continue|cline`, `--active-only`, `--dry-run`. Cline/Roo keys sanitize alias (`:` → `-`). **Auto:** after `import-profiles.py` if `software-profile.yaml` names a supported app (`primary_agent`, `embedded_assistant`, `optional_agents`). Use repo `.venv` via [AGENTS.md](../../AGENTS.md) **Python environment**.
+**Generate:** `./scripts/py scripts/generate-ide-config.py` — `provisioned_models` (+ `models`); `--target continue|cline`, `--active-only`, `--dry-run`. Cline/Roo keys sanitize alias (`:` → `-`). **Auto:** after `import-profiles.py` if `software-profile.yaml` names a supported app (`primary_agent`, `embedded_assistant`, `optional_agents`). Use repo `.venv` via `lma-python-env` skill.
 
 **Embed + Postgres stack:** [embed-retrieval-stack.md](../embed-retrieval-stack/embed-retrieval-stack.md) · `generate-stack-handoff.py` → `integrations/embed-retrieval-stack/out/` (assessed **embedding** in DB).
 
