@@ -1,0 +1,93 @@
+---
+name: lma-db-core
+description: "Init, migrate, and query the LMA SQLite database; data flow map and key queries."
+triggers:
+  - init database
+  - migrate schema
+  - query db
+  - database setup
+  - schema
+  - db missing
+  - migrate
+  - schema error
+  - data flow
+  - key queries
+dependencies: []
+version: "1.0.0"
+---
+
+# LMA Database Core
+
+## When to use this skill
+
+Load when the user needs to initialize, migrate, or query the database; when a script reports a missing DB or column; or when you need to understand the data flow between scripts.
+
+## Instructions
+
+### 1. Database location
+
+- **Path:** `model-data/model-assessor.db` (SQLite).
+- **Env override:** All Python scripts respect `LMA_DB` to locate the DB file.
+
+### 2. Init and migrate
+
+| Command | Purpose |
+|---------|---------|
+| `./scripts/init-db.sh` | Create an empty DB from `scripts/schema.sql`. |
+| `./scripts/migrate-schema.sh` | Apply schema migrations (adds `assessed_at`, provenance columns, `provisioned_models` if missing). |
+
+If a script errors with "no such table" or "no such column," run `./scripts/migrate-schema.sh`.
+
+### 3. Query the database
+
+```bash
+./scripts/query-db.sh "SQL"
+```
+
+Always pass the SQL as a quoted string argument. No args opens an interactive shell (avoid in agent workflows).
+
+### 4. Key queries
+
+```bash
+./scripts/query-db.sh "SELECT model_id, vram, class, tps FROM models ORDER BY vram"
+./scripts/query-db.sh "SELECT model_id FROM role_model WHERE role='coding' AND variant='primary'"
+./scripts/query-db.sh "SELECT model_id FROM constraint_model WHERE constraint_name='has_vision'"
+./scripts/query-db.sh "SELECT value FROM meta WHERE key='last_ollama_scan'"
+./scripts/query-db.sh "SELECT alias, base_model_id, role, num_ctx, is_active FROM provisioned_models ORDER BY role"
+./scripts/query-db.sh "SELECT chain_text FROM decision_tree WHERE need_key='need_vision'"
+./scripts/query-db.sh "SELECT * FROM rag_pipeline"
+./scripts/query-db.sh "SELECT role_name FROM task_category WHERE category='writing'"
+```
+
+### 5. Data flow map
+
+| Script / Prompt | Inputs | Outputs |
+|-----------------|--------|---------|
+| `init-db.sh` | `scripts/schema.sql` | `model-data/model-assessor.db` |
+| `import-profiles.py` | `computer-profile/*.yaml` | DB (`hardware_profile`, `software_profile`) |
+| `add-model-from-yaml.py` | `model-data/new-models.yaml` | DB (`models`, `role_model`, `constraint_model`, `model_docs`, `provisioned_models`); writes `model-data/modelfile/*.mf` |
+| `export-assessed-models.py` | DB | `model-data/assessed-models.md` |
+| `generate-ide-config.py` | DB (`provisioned_models`, `models`) | `integrations/IDE-model-management/<app>/` config files |
+| `generate-stack-handoff.py` | DB (`provisioned_models` or `role_model` for `embedding`) | `integrations/embed-retrieval-stack/out/` |
+| `ollama-search.md` → `model-assessment-prompt.yaml` → `add-model-from-yaml.py` | Ollama popular page, `hardware-profile.yaml` | DB, `assessed-models.md` |
+
+### 6. Architecture one-liners
+
+- **Scripts (flags):** `query-db.sh "SQL"` — always pass SQL string. `init-db.sh` / `migrate-schema.sh` — empty DB / schema migrations.
+- **Python:** `./scripts/py scripts/<name>.py` (see `lma-python-env` skill). `add-model-from-yaml.py` — provenance via args or env. `export-assessed-models.py [path]`. `import-profiles.py [db]`. `generate-ide-config.py --target continue|cline [--active-only] [--dry-run]`. `generate-stack-handoff.py [--output-dir DIR]`.
+- **Env:** `LMA_DB` overrides the DB path for all Python scripts.
+
+### 7. Hardware budget and co-run rule
+
+```bash
+grep -A5 vram_budget computer-profile/hardware-profile.yaml
+```
+
+Effective budget ≈ `total_available - os_headroom_gb`.
+
+**Co-run rule:** `(model_vram + concurrency_reserve) < total_available` → can co-run. Heavy Lifters (30–48 GB) run solo.
+
+## Notes
+
+- The DB file is **gitignored** — never commit it.
+- Schema source of truth is `scripts/schema.sql`; see provenance column comments at the top.
