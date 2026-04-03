@@ -8,7 +8,7 @@ For **tool-calling agents** in IDEs (Cursor, Cline, Continue, …): query SQLite
 
 ## Repo vs Local
 
-Ships **scripts, schema, templates** — empty `model-assessor.db` until you init, profile, assess. **`Brewfile`:** optional `brew bundle` → `libpq` (keg-only; see `brew info libpq`); not needed for Docker stack (`docker compose exec`). **Tracked:** templates under `computer-profile/`, `model-data/` (e.g. `*.template.yaml`, `modelfile/.gitkeep`), `scripts/`, `integrations/` (copy-out: IDE + embed stack). **Gitignored:** profiles, DB, `new-models.yaml`, generated modelfiles, `integrations/IDE-model-management/*/config*`, `integrations/embed-retrieval-stack/out/`, `ref/`, `.cursorrules`. Details: [AGENTS.md](AGENTS.md) + `.gitignore`.
+Ships **scripts, schema, templates** — empty `model-assessor.db` until you init, profile, assess. **`Brewfile`:** optional `brew bundle` → `libpq` (keg-only; see `brew info libpq`); not needed for Docker stack (`docker compose exec`). **Tracked:** templates under `computer-profile/`, `model-data/` (e.g. `*.template.yaml`, `modelfile/.gitkeep`), `scripts/`, `.skills/` (skills harness; see [Skills harness](#skills-harness-third-party)), `integrations/` (copy-out: IDE + embed stack). **Gitignored:** profiles, DB, `new-models.yaml`, generated modelfiles, `integrations/IDE-model-management/*/config*`, `integrations/embed-retrieval-stack/out/`, `ref/`, `.cursorrules`. Details: [AGENTS.md](AGENTS.md) + `.gitignore`.
 
 ---
 
@@ -71,6 +71,7 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   ├── model-assessment-prompt.yaml
 │   ├── model-selector-prompt.yaml
 │   └── ollama-search.md
+├── .skills/                         # skills harness (third-party; see README)
 ├── AGENTS.md                        # agent rules, data flow, task routing
 ├── requirements.txt             # PyYAML for YAML import scripts; install via bootstrap-python.sh
 ├── Brewfile                         # optional: brew bundle → libpq
@@ -167,6 +168,14 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 ---
 
+## Skills harness (third-party)
+
+This repo vendors a **skills harness** under `.skills/` (portable manifest + authoring helpers). Policy is **agnostic / multi-ecosystem** (Path B): see [AGENTS.md](AGENTS.md) **Skills (agnostic / multi-ecosystem)** — we do not merge tool-specific harness templates from `.skills/_harness/` into this project.
+
+**Credit:** The `.skills/` tree is derived from **[skills-harness](https://github.com/gotalab/skills-harness)** (MIT). To propose changes to shared templates, rules, or bundled skills, contribute upstream in that repository.
+
+---
+
 ## Hardware Classes
 
 Models are categorized by VRAM footprint and performance. **Full fields** (budget, `os_headroom_gb`, quantization, concurrency, `context_strategy`, hardware class definitions) live in **`computer-profile/hardware-profile.template.yaml`** — copy to `hardware-profile.yaml` and edit.
@@ -198,4 +207,4 @@ Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `ge
 
 ## License
 
-For personal use. Individual models have their own licenses — check each model's Ollama page.
+[LICENSE](LICENSE) — MIT (ImpureCrumpet; see file for **skills-harness** attribution under `.skills/`). Individual Ollama models have their own licenses — check each model’s page.

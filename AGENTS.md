@@ -8,6 +8,16 @@
 
 ---
 
+## Skills (agnostic / multi-ecosystem)
+
+This repository uses **Path B** from the bundled skills harness: **portable skills** under [`.skills/`](.skills/) (manifest: [`.skills/_index.md`](.skills/_index.md)), **no** tool-specific runtime harness pasted from [`.skills/_harness/*_template.md`](.skills/_harness/) into this tree. Those templates are **reference** for consumers who clone this repo and may run Path A in their own environment.
+
+**Authoring:** Use bundled `skill-template` / `skill-author` and the index when adding skills. Do **not** paste ecosystem harness blocks into this file for this repository. **Not yet:** repo-specific LMA skills beyond the harness defaults — that is a later task.
+
+**Gate:** Do not create, rename, delete skills under `.skills/_skills/`, change `.skills/_index.md`, or load full `SKILL.md` for skill refactors **unless** the user’s task explicitly includes that work. Reading `.skills/_index.md` to describe the system is fine.
+
+---
+
 ## Python environment
 
 **Before the YAML assessment/import path** (`model-data/new-models.yaml` → `add-model-from-yaml.py` → `export-assessed-models.py`) or **`generate-ide-config.py`**: read **[requirements.txt](requirements.txt)**. Those scripts need **PyYAML** (and future deps belong in the same file).
@@ -77,7 +87,7 @@ User-supplied **GGUF** (or HF card) **not** in Ollama library: follow **this sec
 
 | Type | Files |
 |------|-------|
-| **Tracked** | Templates (`*.template.yaml`), `LLM-prompts/`, scripts, `Brewfile` (optional `libpq` via `brew bundle`), `AGENTS.md`, `integrations/IDE-model-management/`, `integrations/embed-retrieval-stack/` (compose + `embed-retrieval-stack.md` + `versions.lock.yaml`) |
+| **Tracked** | Templates (`*.template.yaml`), `LLM-prompts/`, scripts, `Brewfile` (optional `libpq` via `brew bundle`), `AGENTS.md`, `.skills/` (portable skills + `_index.md`; `.skills/_harness/` templates are reference-only here), `integrations/IDE-model-management/`, `integrations/embed-retrieval-stack/` (compose + `embed-retrieval-stack.md` + `versions.lock.yaml`) |
 | **Gitignored** | `.venv/`, `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `model-data/new-models.yaml`, `model-data/modelfile/*` (except `.gitkeep`), `.cursorrules`, `.continue/`, `.opencode/`, `opencode.json`, local config copies (`integrations/IDE-model-management/*/config.*`, `integrations/IDE-model-management/cline/provider-settings.json`), `integrations/embed-retrieval-stack/out/`, `ref/` |
 
 Create local files from templates: `cp computer-profile/hardware-profile.template.yaml computer-profile/hardware-profile.yaml` (or use setup in `model-assessment-prompt.yaml`). For assessment output: `cp model-data/new-models.template.yaml model-data/new-models.yaml`.
