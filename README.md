@@ -176,6 +176,25 @@ This repo vendors a **skills harness** under `.skills/` (portable manifest + aut
 
 ---
 
+## Model Runtimes: Ollama vs MLX LM
+
+**Ollama** is the primary runtime. Use it for any model available in the [Ollama library](https://ollama.com/library) or importable as a GGUF. It provides the HTTP API that IDEs connect to, provisioned clones with role-tuned parameters, and the full assessment/selection/config-generation pipeline. If a model is in Ollama, use Ollama.
+
+**[MLX LM](https://github.com/ml-explore/mlx-lm)** is an optional secondary runtime for Apple Silicon Macs. Use it **only** when a model is not available in Ollama (no GGUF exists) but does exist in MLX safetensors format — typically from the [mlx-community](https://huggingface.co/mlx-community) organization on HuggingFace. MLX models run natively on unified memory via Apple's MLX framework.
+
+When to use MLX LM:
+- The model has **no Ollama/GGUF equivalent** (MLX-only release or conversion)
+- You need **MLX-specific features** (LoRA fine-tuning on Apple Silicon, distributed inference)
+- You want to evaluate an MLX-community quantization that differs from available GGUF quants
+
+When *not* to use MLX LM:
+- The same model is already in Ollama — Ollama gives you provisioned clones, IDE integration, and the full workflow
+- You're on an Intel Mac or non-macOS platform — MLX is Apple Silicon only
+
+The `runtime` column in the DB distinguishes models (`ollama` default, `mlx` for MLX LM). Cloud-only models (e.g. Ollama `model:cloud` tags) are excluded from both runtimes — they are remote API proxies, not local weights. See the `lma-mlx-lm` skill for the full MLX LM workflow.
+
+---
+
 ## Hardware Classes
 
 Models are categorized by VRAM footprint and performance. **Full fields** (budget, `os_headroom_gb`, quantization, concurrency, `context_strategy`, hardware class definitions) live in **`computer-profile/hardware-profile.template.yaml`** — copy to `hardware-profile.yaml` and edit.
@@ -207,4 +226,4 @@ Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `ge
 
 ## License
 
-[LICENSE](LICENSE) — MIT (ImpureCrumpet; see file for **skills-harness** attribution under `.skills/`). Individual Ollama models have their own licenses — check each model’s page.
+[LICENSE](LICENSE) — MIT (ImpureCrumpet; see file for **skills-harness** attribution under `.skills/`). Individual models (Ollama and MLX) have their own licenses — check each model’s page.

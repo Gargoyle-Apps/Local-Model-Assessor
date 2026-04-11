@@ -25,7 +25,7 @@ This repository uses **Path B** from the bundled skills harness: **portable skil
 - **Queries:** `./scripts/query-db.sh "SQL"` — always pass SQL as a quoted string argument.
 - **If DB missing:** `./scripts/init-db.sh`. **If columns/tables missing:** `./scripts/migrate-schema.sh`.
 - **Cloud models excluded:** Never assess, import, or recommend models that exist only as cloud/API proxies (e.g. Ollama `model:cloud` tags). If a model is cloud-only, inform the user and suggest checking [HuggingFace](https://huggingface.co) for a local alternative.
-- **Model runtimes:** Ollama (primary) and MLX LM (optional, Apple Silicon). The `runtime` column in `models` distinguishes them (`ollama` default, `mlx` for MLX LM). See `lma-mlx-lm` skill.
+- **Model runtimes:** Ollama (primary) and MLX LM (optional, Apple Silicon). The `runtime` column in `models` distinguishes them (`ollama` default, `mlx` for MLX LM). Use MLX LM only when a model has no Ollama/GGUF equivalent. See `lma-mlx-lm` skill and README § "Model Runtimes: Ollama vs MLX LM."
 
 ---
 
