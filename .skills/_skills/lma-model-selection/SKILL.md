@@ -25,7 +25,7 @@ version: "1.0.0"
 
 ## When to use this skill
 
-Load when the user asks which model to use for a task, wants model details, or needs to install a model. Covers the full select → recommend → install flow.
+Load when the user asks which model to use for a task, wants model details, or needs to install a model. Covers the full select → recommend → install flow for both Ollama and MLX LM models. Cloud-only models are never recommended.
 
 ## Instructions
 
@@ -85,7 +85,7 @@ Look up the install command and run it:
 ./scripts/query-db.sh "SELECT install FROM models WHERE model_id='...'"
 ```
 
-The returned command may be `ollama pull <tag>` (catalog models) or `ollama create -f …` (GGUF bases).
+The returned command may be `ollama pull <tag>` (catalog models), `ollama create -f …` (GGUF bases), or an `mlx_lm.generate` command (MLX models). Check the `runtime` column to distinguish: `ollama` (default) vs `mlx`.
 
 ## Notes
 

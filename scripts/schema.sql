@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS models (
   tps INTEGER NOT NULL,
   url TEXT,
   install TEXT NOT NULL,
+  runtime TEXT DEFAULT 'ollama',
   vision INTEGER DEFAULT 0,
   tools INTEGER DEFAULT 0,
   reasoning INTEGER DEFAULT 0,

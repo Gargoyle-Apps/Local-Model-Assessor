@@ -2,6 +2,8 @@
 
 A guidance document for tool-calling AI agents to discover new Ollama models worth assessing, pre-filter by hardware/software criteria, and add only models that improve the local fleet.
 
+> **Cloud models are excluded.** Models listed on Ollama as cloud-only (e.g. `model:cloud`, or entries whose only category is `cloud`) are **never** candidates for assessment or import. They are remote API proxies, not local weights. Do not add them to the DB, do not recommend them to the user. If the user asks about a cloud-only model, inform them it is not available for local use and suggest checking [Hugging Face](https://huggingface.co) or similar sources for a locally-runnable equivalent (GGUF, MLX, safetensors).
+
 ---
 
 ## Overview
@@ -10,7 +12,7 @@ A guidance document for tool-calling AI agents to discover new Ollama models wor
 2. **Parse** entries into structured data (template below)
 3. **Pre-filter** using hardware and software profiles (redundant with full assessment, but narrows the funnel)
 4. **Prioritize** models that are new-to-DB or newly updated on Ollama since last scan
-5. **Filter** Cloud-only models — we want local models only
+5. **Exclude** Cloud-only models — they are remote API proxies, not local weights (see note above)
 6. **Cap** at 7 candidate models for full assessment
 7. **Compare** candidates to existing DB models — only assess if they "beat" in size, performance, or unmet need
 8. **Assess** accepted candidates using `LLM-prompts/model-assessment-prompt.yaml` and insert into DB
@@ -56,7 +58,7 @@ Use this JSON shape as a template for what to extract from each Ollama listing. 
 | `tag_count` | 15 | Number of tags |
 | `updated` | `2 months ago` | Relative timestamp from page |
 
-**Cloud-only:** If `categories` is `["cloud"]` or the only category is `cloud` (no vision/tools/embedding/etc.), skip. We want models that run locally.
+**Cloud-only — hard exclusion:** If `categories` is `["cloud"]` or the only category is `cloud` (no vision/tools/embedding/etc.), **skip entirely**. These are remote API proxies, not downloadable weights. Do **not** add them to the DB or present them as candidates. If a model appears only as a cloud variant on Ollama (e.g. `model:cloud`), inform the user and suggest checking [Hugging Face](https://huggingface.co) for a locally-runnable version (GGUF or MLX format).
 
 ---
 
@@ -151,7 +153,7 @@ After completing a scan (whether or not any models were added), update the DB:
 
 - [ ] Fetch `https://ollama.com/search?o=popular`
 - [ ] Parse entries into JSON template (name, url, description, categories, size_variants, pulls, updated)
-- [ ] Exclude Cloud-only models (`categories` = only `cloud`)
+- [ ] Exclude Cloud-only models (`categories` = only `cloud`) — never add to DB; inform user to check HuggingFace for local alternatives
 - [ ] Check `meta.last_ollama_scan` and prioritize new/recently-updated
 - [ ] Pre-filter with hardware/software profiles
 - [ ] Compare to current fleet — only keep candidates that "beat" on size, performance, or need

@@ -1,14 +1,16 @@
 # Model assessment output template
 # Copy to model-data/new-models.yaml and fill in. Then: ./scripts/py scripts/add-model-from-yaml.py model-data/new-models.yaml
-# See LLM-prompts/model-assessment-prompt.yaml, LLM-prompts/ollama-search.md, and lma-hf-gguf-ollama skill.
+# See LLM-prompts/model-assessment-prompt.yaml, LLM-prompts/ollama-search.md, lma-hf-gguf-ollama skill, and lma-mlx-lm skill.
+# Cloud-only models (e.g. Ollama model:cloud) are excluded — only locally-runnable weights qualify.
 
 models:
-  # Ollama library example:
+  # Ollama library example (runtime defaults to "ollama" if omitted):
   model-name:tag:
     vram: 12
     ctx: 32768
     class: Daily Driver
     tps: 40
+    # runtime: ollama  # default — omit for Ollama models
     # Optional (only if true): vision, tools, reasoning, moe, fim, structured, multilingual
     url: https://ollama.com/library/model-name
     install: ollama pull model-name:tag
@@ -70,3 +72,25 @@ model_docs:
   #     description: "Imported GGUF from HF."
   #     best_for: "Coding on local hardware."
   #     caveats: "Download GGUF to e.g. ./weights/model.gguf; base .mf uses FROM ./weights/model.gguf; run install before clone create_command."
+
+# =============================================================================
+# MLX LM model — full example (Apple Silicon only; uncomment to use):
+# No Modelfiles or provisioned clones — MLX models run directly via mlx_lm.
+# See lma-mlx-lm skill for orchestration rules.
+# =============================================================================
+  # mlx-community/SomeModel-4bit:
+  #   vram: 10
+  #   ctx: 32768
+  #   class: Middleweight
+  #   tps: 50
+  #   runtime: mlx
+  #   url: https://huggingface.co/mlx-community/SomeModel-4bit
+  #   install: mlx_lm.generate --model mlx-community/SomeModel-4bit --prompt "test"
+  # by_role:
+  #   coding:
+  #     alternative: mlx-community/SomeModel-4bit
+  # model_docs:
+  #   mlx-community/SomeModel-4bit:
+  #     description: "4-bit MLX model for Apple Silicon."
+  #     best_for: "Coding on macOS with unified memory"
+  #     caveats: "Requires mlx-lm (uv pip install mlx-lm). Apple Silicon only. No Ollama provisioning."

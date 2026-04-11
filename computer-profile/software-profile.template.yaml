@@ -34,10 +34,18 @@ optional_agents:
     description: "Optional secondary coding assistant agent"
     optional: true
 
-# Model Runtime (mandatory) — Ollama is the supported local stack for assessments, DB, and IDE generator.
-# Optional notes about other tools belong in your local docs; agent orchestration stays in AGENTS.md.
+# Model Runtimes
+# Ollama is the primary local stack for assessments, DB, provisioned clones, and IDE config generation.
+# MLX LM is an optional secondary runtime for Apple Silicon Macs — runs MLX-format models natively
+# on unified memory without Ollama. Models from mlx-community on HuggingFace use this runtime.
 model_runtime:
-  name: "Ollama"
-  url: "https://ollama.com"
-  description: "Local model runtime - required for all model operations"
-  mandatory: true
+  - name: "Ollama"
+    url: "https://ollama.com"
+    description: "Primary local model runtime — GGUF models, provisioned clones, IDE config"
+    mandatory: true
+  - name: "MLX LM"
+    url: "https://github.com/ml-explore/mlx-lm"
+    description: "Apple Silicon native runtime for MLX-format models (safetensors); optional"
+    install: "uv pip install mlx-lm"
+    mandatory: false
+    platform: "macOS (Apple Silicon only)"

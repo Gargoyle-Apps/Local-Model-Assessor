@@ -270,6 +270,9 @@ def insert_model(c, model_id: str, m: dict, assessor: str, assessor_type: str) -
     now = _now()
     has_provenance = _has_column(c, "models", "created_at")
 
+    has_runtime = _has_column(c, "models", "runtime")
+    runtime_val = str(m.get("runtime", "ollama")).strip() or "ollama"
+
     base_cols = (
         "model_id, vram, ctx, class, tps, url, install, "
         "vision, tools, reasoning, moe, fim, structured, creative, "
@@ -297,10 +300,16 @@ def insert_model(c, model_id: str, m: dict, assessor: str, assessor_type: str) -
         now,
     )
 
+    if has_runtime:
+        base_cols += ", runtime"
+        base_vals += (runtime_val,)
+
     if has_provenance:
         cols = base_cols + ", created_at, created_by, created_by_type, updated_at, updated_by, updated_by_type"
-        placeholders = ", ".join(["?"] * 25)
-        vals = base_vals + (now, assessor, assessor_type, now, assessor, assessor_type)
+        prov_vals = (now, assessor, assessor_type, now, assessor, assessor_type)
+        vals = base_vals + prov_vals
+        placeholders = ", ".join(["?"] * len(vals))
+        runtime_update = ", runtime=excluded.runtime" if has_runtime else ""
         update_set = (
             "vram=excluded.vram, ctx=excluded.ctx, class=excluded.class, "
             "tps=excluded.tps, url=excluded.url, install=excluded.install, "
@@ -311,6 +320,7 @@ def insert_model(c, model_id: str, m: dict, assessor: str, assessor_type: str) -
             "assessed_at=excluded.assessed_at, "
             "updated_at=excluded.updated_at, updated_by=excluded.updated_by, "
             "updated_by_type=excluded.updated_by_type"
+            + runtime_update
         )
         c.execute(
             f"INSERT INTO models ({cols}) VALUES ({placeholders}) "
@@ -318,7 +328,7 @@ def insert_model(c, model_id: str, m: dict, assessor: str, assessor_type: str) -
             vals,
         )
     else:
-        placeholders = ", ".join(["?"] * 19)
+        placeholders = ", ".join(["?"] * len(base_vals))
         c.execute(
             f"INSERT OR REPLACE INTO models ({base_cols}) VALUES ({placeholders})",
             base_vals,
@@ -449,7 +459,10 @@ def main():
             print(f"Added/updated model: {model_id}")
 
             raw_prov = m.get("provisioning")
-            if raw_prov and prov_table:
+            model_runtime = str(m.get("runtime", "ollama")).strip() or "ollama"
+            if raw_prov and model_runtime != "ollama":
+                print(f"  Skipping Ollama provisioning for {model_id} (runtime={model_runtime})")
+            elif raw_prov and prov_table:
                 entries = raw_prov if isinstance(raw_prov, list) else [raw_prov]
                 install = str(m.get("install", ""))
                 for entry in entries:

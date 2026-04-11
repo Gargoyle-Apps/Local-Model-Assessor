@@ -26,7 +26,9 @@ version: "1.0.0"
 
 ## When to use this skill
 
-Load when the user wants to assess a new model from the Ollama catalog, discover popular models, import a YAML assessment into the DB, or query/set provenance on model records. For HF GGUF models **not** in the Ollama library, load `lma-hf-gguf-ollama` instead (it depends on this skill).
+Load when the user wants to assess a new model from the Ollama catalog, discover popular models, import a YAML assessment into the DB, or query/set provenance on model records. For HF GGUF models **not** in the Ollama library, load `lma-hf-gguf-ollama` instead (it depends on this skill). For MLX-format models on Apple Silicon, load `lma-mlx-lm` instead (it also depends on this skill).
+
+> **Cloud models are excluded.** Never assess or import models that exist only as cloud/API proxies (e.g. Ollama `model:cloud` tags). If a model is cloud-only on Ollama, inform the user and suggest checking [Hugging Face](https://huggingface.co) for a local alternative (GGUF or MLX format).
 
 ## Instructions
 

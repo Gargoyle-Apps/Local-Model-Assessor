@@ -2,7 +2,7 @@
 
 For **tool-calling agents** in IDEs (Cursor, Cline, Continue, …): query SQLite and run repo scripts — not for chat-only LLMs without shell access.
 
-**Prerequisites:** [Ollama](https://ollama.com) · Python 3 · `./scripts/bootstrap-python.sh` (creates gitignored `.venv` from [requirements.txt](requirements.txt)) · run scripts with `./scripts/py` — see `lma-python-env` skill in [`.skills/_index.md`](.skills/_index.md) · IDE agent · [profiles](#3-define-your-environment) · optional LLM for assessments · **Docker** only for [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md) (`docker compose exec postgres psql …` for checks).
+**Prerequisites:** [Ollama](https://ollama.com) · Python 3 · `./scripts/bootstrap-python.sh` (creates gitignored `.venv` from [requirements.txt](requirements.txt)) · run scripts with `./scripts/py` — see `lma-python-env` skill in [`.skills/_index.md`](.skills/_index.md) · IDE agent · [profiles](#3-define-your-environment) · optional LLM for assessments · optional [mlx-lm](https://github.com/ml-explore/mlx-lm) for Apple Silicon MLX models · **Docker** only for [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md) (`docker compose exec postgres psql …` for checks).
 
 ---
 
@@ -153,11 +153,11 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 ## Assess new models
 
-1. `LLM-prompts/model-assessment-prompt.yaml` + `hardware-profile.yaml` + URLs (Ollama or HF GGUF — see `lma-hf-gguf-ollama` skill)
+1. `LLM-prompts/model-assessment-prompt.yaml` + `hardware-profile.yaml` + URLs (Ollama, HF GGUF via `lma-hf-gguf-ollama` skill, or MLX via `lma-mlx-lm` skill)
 2. LLM → save YAML → `model-data/new-models.yaml`
 3. `./scripts/py scripts/add-model-from-yaml.py model-data/new-models.yaml` then `./scripts/py scripts/export-assessed-models.py`
 
-**Discover:** `LLM-prompts/ollama-search.md` → [Ollama popular](https://ollama.com/search?o=popular), cap 7, same import flow; sets `meta.last_ollama_scan`.
+**Discover:** `LLM-prompts/ollama-search.md` → [Ollama popular](https://ollama.com/search?o=popular), cap 7, same import flow; sets `meta.last_ollama_scan`. Cloud-only models are excluded — check [HuggingFace](https://huggingface.co) for local alternatives.
 
 ---
 

@@ -40,6 +40,7 @@ add_provenance() {
 
 echo "Migrating schema..."
 add_col_if_missing "models" "assessed_at" "TEXT"
+add_col_if_missing "models" "runtime" "TEXT DEFAULT 'ollama'"
 
 add_provenance "models"
 add_provenance "role_model"
