@@ -1,5 +1,7 @@
 # Local Model Assessor
 
+**Version 2.1.1** — bump criteria: [AGENTS.md](AGENTS.md#lma-version).
+
 For **tool-calling agents** in IDEs (Cursor, Cline, Continue, …): query SQLite and run repo scripts — not for chat-only LLMs without shell access.
 
 **Prerequisites:** [Ollama](https://ollama.com) · Python 3 · `./scripts/bootstrap-python.sh` (creates gitignored `.venv` from [requirements.txt](requirements.txt)) · run scripts with `./scripts/py` — see `lma-python-env` skill in [`.skills/_index.md`](.skills/_index.md) · IDE agent · [profiles](#3-define-your-environment) · optional LLM for assessments · optional [mlx-lm](https://github.com/ml-explore/mlx-lm) for Apple Silicon MLX models · **Docker** only for [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md) (`docker compose exec postgres psql …` for checks).

@@ -6,6 +6,10 @@
 
 **Scope:** Procedural workflows live in **skills** under [`.skills/_skills/`](.skills/_skills/) (index: [`.skills/_index.md`](.skills/_index.md)). This file is the **spine** — non-negotiable conventions, static reference tables, and pointers. [README.md](README.md) = human quick start + tree.
 
+### LMA version
+
+**`2.1.1`** — bump **MAJOR** for breaking paths, agent-facing contracts, or DB/schema expectations without a clear migration; **MINOR** for additive capability (e.g. new runtime, integration, or skills surface); **PATCH** for fixes and docs-only; keep **README.md** and this heading in sync; prefer non-`x.y.0` patch on intentional release lines.
+
 ---
 
 ## Skills (agnostic / multi-ecosystem)
