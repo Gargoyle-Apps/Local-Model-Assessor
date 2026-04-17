@@ -52,7 +52,7 @@ def _now():
 
 _KNOWN_TABLES = frozenset({
     "models", "role_model", "constraint_model", "task_category",
-    "model_docs", "provisioned_models",
+    "decision_tree", "rag_pipeline", "model_docs", "provisioned_models",
 })
 
 
@@ -72,6 +72,10 @@ def _table_exists(c, name: str) -> bool:
 
 
 def alias_to_modelfile_path(alias: str) -> str:
+    if any(ch in alias for ch in ("/", "\\", "\x00")):
+        raise ValueError(
+            f"Alias {alias!r} contains path-separator or NUL — refusing to build path"
+        )
     return f"model-data/modelfile/{alias.replace(':', '-')}.mf"
 
 
@@ -95,6 +99,11 @@ def build_modelfile_content(
     if system_prompt:
         sp = system_prompt.strip()
         if "\n" in sp:
+            if '"""' in sp:
+                raise ValueError(
+                    "system_prompt contains triple-quotes which would break "
+                    "Modelfile SYSTEM block — remove them before importing"
+                )
             lines.append(f'SYSTEM """\n{sp}\n"""')
         else:
             esc = sp.replace("\\", "\\\\").replace('"', '\\"')
@@ -260,9 +269,14 @@ def upsert_provisioned(
 def load_yaml(content: str) -> dict:
     """Parse YAML, optionally extracting from markdown code block."""
     content = content.strip()
-    match = re.search(r"^```yaml\s*\n(.*?)```", content, re.DOTALL)
-    if match:
-        content = match.group(1).strip()
+    fences = re.findall(r"^```yaml\s*\n(.*?)```", content, re.DOTALL | re.MULTILINE)
+    if fences:
+        if len(fences) > 1:
+            print(
+                f"Warning: found {len(fences)} ```yaml fences; using the first one.",
+                file=sys.stderr,
+            )
+        content = fences[0].strip()
     return yaml.safe_load(content) or {}
 
 
@@ -414,6 +428,58 @@ def insert_doc(c, model_id: str, doc: dict, assessor: str, assessor_type: str) -
         )
 
 
+def insert_task_category(c, category: str, role_name: str, sort_order: int,
+                         assessor: str, assessor_type: str) -> None:
+    now = _now()
+    if _has_column(c, "task_category", "created_at"):
+        c.execute(
+            "INSERT INTO task_category "
+            "(category, role_name, sort_order, created_at, created_by, created_by_type, "
+            " updated_at, updated_by, updated_by_type) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(category, role_name) DO UPDATE SET "
+            "sort_order=excluded.sort_order, "
+            "updated_at=excluded.updated_at, updated_by=excluded.updated_by, "
+            "updated_by_type=excluded.updated_by_type",
+            (category, role_name, sort_order, now, assessor, assessor_type,
+             now, assessor, assessor_type),
+        )
+    else:
+        c.execute(
+            "INSERT OR REPLACE INTO task_category (category, role_name, sort_order) "
+            "VALUES (?, ?, ?)",
+            (category, role_name, sort_order),
+        )
+
+
+def insert_decision_tree(c, need_key: str, chain_text: str) -> None:
+    c.execute(
+        "INSERT INTO decision_tree (need_key, chain_text) VALUES (?, ?) "
+        "ON CONFLICT(need_key) DO UPDATE SET chain_text=excluded.chain_text",
+        (need_key, chain_text),
+    )
+
+
+def insert_rag_pipeline(c, pipeline_name: str, entry: dict) -> None:
+    c.execute(
+        "INSERT INTO rag_pipeline "
+        "(pipeline_name, embedding_model, synthesis_model, generation_model, rules_model, notes) "
+        "VALUES (?, ?, ?, ?, ?, ?) "
+        "ON CONFLICT(pipeline_name) DO UPDATE SET "
+        "embedding_model=excluded.embedding_model, synthesis_model=excluded.synthesis_model, "
+        "generation_model=excluded.generation_model, rules_model=excluded.rules_model, "
+        "notes=excluded.notes",
+        (
+            pipeline_name,
+            entry.get("embedding_model"),
+            entry.get("synthesis_model"),
+            entry.get("generation_model"),
+            entry.get("rules_model"),
+            entry.get("notes"),
+        ),
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="Insert models from YAML into model-assessor.db")
     parser.add_argument("yaml_file", nargs="?", help="Path to YAML file (default: model-data/new-models.yaml or stdin)")
@@ -499,8 +565,30 @@ def main():
                 continue
             insert_doc(c, model_id, doc, assessor, assessor_type)
 
+        if _table_exists(c, "task_category"):
+            for category, roles in (data.get("by_task_category") or {}).items():
+                if str(category).startswith("_"):
+                    continue
+                for i, role_name in enumerate(roles or []):
+                    if role_name and not str(role_name).startswith("_"):
+                        insert_task_category(c, category, str(role_name), i, assessor, assessor_type)
+
+        if _table_exists(c, "decision_tree"):
+            for need_key, chain_text in (data.get("decision_tree") or {}).items():
+                if str(need_key).startswith("_"):
+                    continue
+                if chain_text:
+                    insert_decision_tree(c, need_key, str(chain_text))
+
+        if _table_exists(c, "rag_pipeline"):
+            for pipeline_name, entry in (data.get("rag_pipeline") or {}).items():
+                if str(pipeline_name).startswith("_"):
+                    continue
+                if isinstance(entry, dict):
+                    insert_rag_pipeline(c, pipeline_name, entry)
+
         conn.commit()
-    except (sqlite3.Error, OSError) as e:
+    except (sqlite3.Error, OSError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         conn.rollback()
         sys.exit(1)

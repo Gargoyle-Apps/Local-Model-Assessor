@@ -47,6 +47,35 @@ model_docs:
     caveats: "Known limitations or requirements"
 
 # =============================================================================
+# Optional: task categories, decision tree, RAG pipelines
+# These populate the task_category, decision_tree, and rag_pipeline tables.
+# The selector prompt queries them for routing. Uncomment to use.
+# =============================================================================
+# by_task_category:
+#   writing:
+#     - creative
+#     - generalist
+#   analysis:
+#     - reasoning
+#     - coding
+#   visual:
+#     - vision
+#     - visual_reasoning
+#
+# decision_tree:
+#   need_vision: "vision → visual_reasoning → generalist"
+#   need_reasoning: "reasoning → heavy_lifter → coding"
+#   need_speed: "autocomplete → coding → generalist"
+#
+# rag_pipeline:
+#   default:
+#     embedding_model: "nomic-embed-text:latest"
+#     synthesis_model: null
+#     generation_model: "qwen3:30b"
+#     rules_model: null
+#     notes: "Basic embed-then-generate pipeline"
+
+# =============================================================================
 # HF GGUF import — full example (all top-level keys; uncomment to use):
 # Base Modelfile is separate — create it before running the install command.
 # See lma-hf-gguf-ollama skill for orchestration rules.

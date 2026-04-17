@@ -34,6 +34,10 @@ OLLAMA_DEFAULT = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 DEFAULT_VECTOR_DIM = 768
 
 
+class EmbeddingResolutionError(Exception):
+    """No embedding model could be resolved from the database (CLI maps this to exit 1)."""
+
+
 def _table_exists(conn: sqlite3.Connection, name: str) -> bool:
     c = conn.cursor()
     c.execute(
@@ -45,9 +49,14 @@ def _table_exists(conn: sqlite3.Connection, name: str) -> bool:
 
 def resolve_embedding_model(
     db_path: Path,
-    active_only: bool,
+    active_only: bool = False,
 ) -> dict[str, Any]:
-    """Return dict with alias, base_model_id, source ('provisioned'|'role_model')."""
+    """Return dict with alias, base_model_id, source ('provisioned'|'role_model').
+
+    When *active_only* is True, only an active (is_active=1) provisioned clone
+    qualifies — the role_model fallback is skipped and EmbeddingResolutionError
+    is raised if nothing matches.
+    """
     with sqlite3.connect(str(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
@@ -76,6 +85,12 @@ def resolve_embedding_model(
                     "is_active": row["is_active"],
                 }
 
+        if active_only:
+            raise EmbeddingResolutionError(
+                "No active (is_active=1) embedding provisioned clone found. "
+                "Build the clone in Ollama or omit --active-only."
+            )
+
         c.execute(
             """
             SELECT model_id, variant
@@ -95,7 +110,7 @@ def resolve_embedding_model(
                 "is_active": None,
             }
 
-    raise SystemExit(
+    raise EmbeddingResolutionError(
         "No embedding model found. Prerequisite: assess at least one embedding model — "
         "add it to `models`, set `role_model` with role='embedding', and ideally a "
         "provisioned clone (model-assessment-prompt.yaml → new-models.yaml → "
@@ -180,22 +195,23 @@ def build_embed_sample_py(
         pip install 'psycopg[binary]'
 
         Environment:
-          DATABASE_URL  default postgresql://lma:lma_dev_change_me@localhost:5432/lma
+          DATABASE_URL  (required) e.g. postgresql://lma:SECRET@localhost:5432/lma
           OLLAMA_HOST   default {ollama_host_default}
         """
         from __future__ import annotations
 
         import json
         import os
+        import sys
         import urllib.request
 
         import psycopg
 
         OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "{ollama_host_default}").rstrip("/")
-        DATABASE_URL = os.environ.get(
-            "DATABASE_URL",
-            "postgresql://lma:lma_dev_change_me@localhost:5432/lma",
-        )
+        DATABASE_URL = os.environ.get("DATABASE_URL")
+        if not DATABASE_URL:
+            print("Error: DATABASE_URL env var is required.", file=sys.stderr)
+            sys.exit(1)
         MODEL = "{embedding_alias}"
         EXPECTED_DIM = {vector_dim}
 
@@ -286,38 +302,11 @@ def main() -> None:
         print(f"Error: {db_path} not found. Run init-db.sh first.", file=sys.stderr)
         sys.exit(1)
 
-    if args.active_only:
-        # Still allow role_model if no provisioned? Plan says prefer active provisioned.
-        # For strict active-only, require provisioned_models row with is_active=1.
-        with sqlite3.connect(str(db_path)) as conn:
-            if not _table_exists(conn, "provisioned_models"):
-                print("Error: provisioned_models missing and --active-only set.", file=sys.stderr)
-                sys.exit(1)
-            c = conn.cursor()
-            c.execute(
-                """
-                SELECT alias, base_model_id, is_active FROM provisioned_models
-                 WHERE role = 'embedding' AND is_active = 1
-                 ORDER BY CASE variant WHEN 'primary' THEN 0 ELSE 1 END, alias
-                 LIMIT 1
-                """
-            )
-            row = c.fetchone()
-        if not row:
-            print(
-                "Error: no active (is_active=1) embedding provisioned clone. "
-                "Build the clone in Ollama or omit --active-only.",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        info = {
-            "alias": row[0],
-            "base_model_id": row[1],
-            "source": "provisioned_models",
-            "is_active": row[2],
-        }
-    else:
-        info = resolve_embedding_model(db_path, active_only=False)
+    try:
+        info = resolve_embedding_model(db_path, active_only=args.active_only)
+    except EmbeddingResolutionError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
     md = build_stack_handoff_md(
         embedding_alias=info["alias"],

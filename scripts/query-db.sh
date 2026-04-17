@@ -13,6 +13,11 @@ fi
 
 if [ $# -eq 0 ]; then
   sqlite3 -header -column "$DB"
+elif [ $# -eq 1 ]; then
+  sqlite3 -header -column "$DB" "$1"
 else
-  sqlite3 -header -column "$DB" "$*"
+  echo "Error: pass SQL as a single quoted string." >&2
+  echo "  Good: ./scripts/query-db.sh \"SELECT * FROM models\"" >&2
+  echo "  Bad:  ./scripts/query-db.sh SELECT * FROM models" >&2
+  exit 2
 fi

@@ -4,6 +4,11 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+
+if ! python3 -c 'import sys; exit(0 if sys.version_info >= (3, 9) else 1)' 2>/dev/null; then
+  echo "Error: Python >= 3.9 is required (found $(python3 --version 2>&1 || echo 'none'))." >&2
+  exit 1
+fi
 REQ="$ROOT/requirements.txt"
 VENV="$ROOT/.venv"
 STAMP="$VENV/.lma-reqs-stamp"

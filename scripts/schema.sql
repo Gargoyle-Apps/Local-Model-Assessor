@@ -1,10 +1,19 @@
 -- Local Model Assessor Database Schema
 -- SQLite 3.x — single source of truth for models, profiles, and assessments
 --
--- Provenance columns (on content tables):
+-- Table classification:
+--   CONTENT tables (models, role_model, constraint_model, task_category,
+--     model_docs, provisioned_models) — carry provenance columns.
+--   CONFIG tables (meta, hardware_profile, software_profile) — no provenance.
+--   LOOKUP tables (decision_tree, rag_pipeline) — lightweight, no provenance.
+--
+-- Provenance columns (on CONTENT tables):
 --   created_at / created_by / created_by_type  — set once on first insert, never overwritten
 --   updated_at / updated_by / updated_by_type  — set on every insert or update
 --   created_by_type / updated_by_type: 'local' | 'cloud' | 'human'
+--
+-- Well-known meta keys:
+--   last_ollama_scan  — ISO 8601 timestamp of last ollama-search.md run
 
 -- Meta / config (replaces _meta, recommended_fleet)
 CREATE TABLE IF NOT EXISTS meta (

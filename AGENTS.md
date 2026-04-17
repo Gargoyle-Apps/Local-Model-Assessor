@@ -8,7 +8,7 @@
 
 ### LMA version
 
-**`2.1.1`** — bump **MAJOR** for breaking paths, agent-facing contracts, or DB/schema expectations without a clear migration; **MINOR** for additive capability (e.g. new runtime, integration, or skills surface); **PATCH** for fixes and docs-only; keep **README.md** and this heading in sync; prefer non-`x.y.0` patch on intentional release lines.
+**`2.2.1`** — bump **MAJOR** for breaking paths, agent-facing contracts, or DB/schema expectations without a clear migration; **MINOR** for additive capability (e.g. new runtime, integration, or skills surface); **PATCH** for fixes and docs-only; keep **README.md** and this heading in sync; prefer non-`x.y.0` patch on intentional release lines.
 
 ---
 
@@ -25,9 +25,10 @@ This repository uses **Path B** from the bundled skills harness: **portable skil
 ## Non-negotiables
 
 - **Python:** Always run scripts via `./scripts/py scripts/<name>.py …` from the repo root. See `lma-python-env` skill for venv details.
-- **DB path:** `LMA_DB` env var overrides the default `model-data/model-assessor.db` for all Python scripts.
+- **DB path:** `LMA_DB` env var overrides the default `model-data/model-assessor.db` for Python scripts and `migrate-schema.sh`.
 - **Queries:** `./scripts/query-db.sh "SQL"` — always pass SQL as a quoted string argument.
 - **If DB missing:** `./scripts/init-db.sh`. **If columns/tables missing:** `./scripts/migrate-schema.sh`.
+- **Tests:** `./scripts/py -m pytest tests/ -v` from repo root. Add tests for new helpers and ingestion paths. Dev deps: `pip install -r requirements-dev.txt`.
 - **Cloud models excluded:** Never assess, import, or recommend models that exist only as cloud/API proxies (e.g. Ollama `model:cloud` tags). If a model is cloud-only, inform the user and suggest checking [HuggingFace](https://huggingface.co) for a local alternative.
 - **Model runtimes:** Ollama (primary) and MLX LM (optional, Apple Silicon). The `runtime` column in `models` distinguishes them (`ollama` default, `mlx` for MLX LM). Use MLX LM only when a model has no Ollama/GGUF equivalent. See `lma-mlx-lm` skill and README § "Model Runtimes: Ollama vs MLX LM."
 
@@ -37,8 +38,8 @@ This repository uses **Path B** from the bundled skills harness: **portable skil
 
 | Type | Files |
 |------|-------|
-| **Tracked** | Templates (`*.template.yaml`), `LLM-prompts/`, scripts, `Brewfile` (optional `libpq` via `brew bundle`), `AGENTS.md`, `.skills/` (portable skills + `_index.md`; `.skills/_harness/` templates are reference-only here), `integrations/IDE-model-management/`, `integrations/embed-retrieval-stack/` (compose + `embed-retrieval-stack.md` + `versions.lock.yaml`) |
-| **Gitignored** | `.venv/`, `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `model-data/new-models.yaml`, `model-data/modelfile/*` (except `.gitkeep`), `.cursorrules`, `.continue/`, `.opencode/`, `opencode.json`, local config copies (`integrations/IDE-model-management/*/config.*`, `integrations/IDE-model-management/cline/provider-settings.json`), `integrations/embed-retrieval-stack/out/`, `ref/` |
+| **Tracked** | Templates (`*.template.yaml`), `LLM-prompts/`, scripts, `Brewfile` (optional `libpq` via `brew bundle`), `AGENTS.md`, `.skills/` (portable skills + `_index.md`; `.skills/_harness/` templates are reference-only here), `integrations/IDE-model-management/`, `integrations/embed-retrieval-stack/` (compose + `embed-retrieval-stack.md` + `versions.lock.yaml`), `tests/`, `requirements-dev.txt` |
+| **Gitignored** | `.venv/`, `model-assessor.db`, `hardware-profile.yaml`, `software-profile.yaml`, `assessed-models.md`, `model-data/new-models.yaml`, `model-data/modelfile/*` (except `.gitkeep`), `.cursorrules`, `.continue/`, `.opencode/`, `opencode.json`, local config copies (`integrations/IDE-model-management/*/config.*`, `integrations/IDE-model-management/cline/provider-settings.json`), `integrations/embed-retrieval-stack/out/`, `ref/`, `.pytest_cache/` |
 
 Create local files from templates: `cp computer-profile/hardware-profile.template.yaml computer-profile/hardware-profile.yaml` (or use setup in `model-assessment-prompt.yaml`). For assessment output: `cp model-data/new-models.template.yaml model-data/new-models.yaml`.
 

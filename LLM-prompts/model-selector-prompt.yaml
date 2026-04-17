@@ -74,10 +74,13 @@ content: |
   3. **Get model specs:** `SELECT vram, ctx, tps, class, install FROM models WHERE model_id='model:tag'`
 
   4. **Decision tree:** `SELECT chain_text FROM decision_tree WHERE need_key='need_vision'`
+     *(may be empty if not yet seeded via `by_task_category` / `decision_tree` in the assessment YAML)*
 
   5. **RAG pipelines:** `SELECT * FROM rag_pipeline`
+     *(may be empty if not yet seeded via `rag_pipeline` in the assessment YAML)*
 
   6. **Task categories:** `SELECT role_name FROM task_category WHERE category='writing'`
+     *(may be empty if not yet seeded — fall back to `role_model` queries)*
 
   7. **Model-specific caveats:** `SELECT model_id, caveats FROM model_docs WHERE model_id IN (...) AND caveats IS NOT NULL`
 

@@ -3,10 +3,13 @@
 # and the provisioned_models table if missing.
 # Run from repo root: ./scripts/migrate-schema.sh
 # Safe to run multiple times; skips if column already exists.
+#
+# Env: LMA_DB — optional absolute path to the SQLite file (default:
+#   $REPO_ROOT/model-data/model-assessor.db). Same override as Python scripts.
 
 set -e
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DB_PATH="${REPO_ROOT}/model-data/model-assessor.db"
+DB_PATH="${LMA_DB:-$REPO_ROOT/model-data/model-assessor.db}"
 
 if [ ! -f "$DB_PATH" ]; then
   echo "No database at $DB_PATH — nothing to migrate."

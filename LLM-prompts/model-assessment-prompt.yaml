@@ -116,6 +116,11 @@ content: |
       caveats: "Known limitations or requirements (Ollama version, FIM, context limits, prompt tips)"
   ```
 
+  **Optional top-level blocks** (if applicable to the assessment batch):
+  - `by_task_category` — map task categories to ordered role lists (e.g. `writing: [creative, generalist]`)
+  - `decision_tree` — need_key → fallback chain text (e.g. `need_vision: "vision → visual_reasoning → generalist"`)
+  - `rag_pipeline` — named pipelines with embedding/synthesis/generation/rules model IDs and notes
+
   **Required fields (per model):** vram, ctx, class, tps, url, install
   **Optional:** runtime (default `ollama`; set to `mlx` for MLX LM models)
   **Optional (only if true):** vision, tools, reasoning, moe, fim, structured, creative, multilingual, rag, no_corun, latency

@@ -1,10 +1,10 @@
 # Local Model Assessor
 
-**Version 2.1.1** — bump criteria: [AGENTS.md](AGENTS.md#lma-version).
+**Version 2.2.1** — bump criteria: [AGENTS.md](AGENTS.md#lma-version).
 
 For **tool-calling agents** in IDEs (Cursor, Cline, Continue, …): query SQLite and run repo scripts — not for chat-only LLMs without shell access.
 
-**Prerequisites:** [Ollama](https://ollama.com) · Python 3 · `./scripts/bootstrap-python.sh` (creates gitignored `.venv` from [requirements.txt](requirements.txt)) · run scripts with `./scripts/py` — see `lma-python-env` skill in [`.skills/_index.md`](.skills/_index.md) · IDE agent · [profiles](#3-define-your-environment) · optional LLM for assessments · optional [mlx-lm](https://github.com/ml-explore/mlx-lm) for Apple Silicon MLX models · **Docker** only for [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md) (`docker compose exec postgres psql …` for checks).
+**Prerequisites:** [Ollama](https://ollama.com) · Python 3 · `./scripts/bootstrap-python.sh` (creates gitignored `.venv` from [requirements.txt](requirements.txt)) · run scripts with `./scripts/py` — see [`lma-python-env`](.skills/_skills/lma-python-env/SKILL.md) skill in [`.skills/_index.md`](.skills/_index.md) · IDE agent · [profiles](#3-define-your-environment) · optional LLM for assessments · optional [mlx-lm](https://github.com/ml-explore/mlx-lm) for Apple Silicon MLX models · **Docker** only for [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md) (`docker compose exec postgres psql …` for checks).
 
 ---
 
@@ -88,7 +88,7 @@ cd .model-assessor
 
 # Create empty DB (init-db.sh creates only the database, not profile files)
 ./scripts/init-db.sh
-# Existing DB? Run ./scripts/migrate-schema.sh to add assessed_at and other columns
+# Existing DB? Run ./scripts/migrate-schema.sh to add assessed_at and other columns (same LMA_DB override as Python scripts)
 cp computer-profile/hardware-profile.template.yaml computer-profile/hardware-profile.yaml
 cp computer-profile/software-profile.template.yaml computer-profile/software-profile.yaml
 
@@ -155,7 +155,7 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 ## Assess new models
 
-1. `LLM-prompts/model-assessment-prompt.yaml` + `hardware-profile.yaml` + URLs (Ollama, HF GGUF via `lma-hf-gguf-ollama` skill, or MLX via `lma-mlx-lm` skill)
+1. `LLM-prompts/model-assessment-prompt.yaml` + `hardware-profile.yaml` + URLs (Ollama, HF GGUF via [`lma-hf-gguf-ollama`](.skills/_skills/lma-hf-gguf-ollama/SKILL.md) skill, or MLX via [`lma-mlx-lm`](.skills/_skills/lma-mlx-lm/SKILL.md) skill)
 2. LLM → save YAML → `model-data/new-models.yaml`
 3. `./scripts/py scripts/add-model-from-yaml.py model-data/new-models.yaml` then `./scripts/py scripts/export-assessed-models.py`
 
@@ -165,7 +165,7 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 ## IDE + embed stack
 
-- **IDEs:** [integrations/IDE-model-management/IDE.md](integrations/IDE-model-management/IDE.md) — roles, timeouts, Continue (`~/.continue/config.yaml`) / Cline-Roo (JSON), others; `generate-ide-config.py`; see `lma-ide-config` skill.
+- **IDEs:** [integrations/IDE-model-management/IDE.md](integrations/IDE-model-management/IDE.md) — roles, timeouts, Continue (`~/.continue/config.yaml`) / Cline-Roo (JSON), others; `generate-ide-config.py`; see [`lma-ide-config`](.skills/_skills/lma-ide-config/SKILL.md) skill.
 - **Postgres + pgvector + AGE:** [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md) — pins, compose under `integrations/embed-retrieval-stack/`, use cases, troubleshooting. **Handoff** (`STACK_HANDOFF.md`, `embed_sample.py`): assessed **embedding** in DB → `./scripts/py scripts/generate-stack-handoff.py` → `integrations/embed-retrieval-stack/out/` (gitignored); copy stack + `out/` to your app.
 
 ---
@@ -193,7 +193,7 @@ When *not* to use MLX LM:
 - The same model is already in Ollama — Ollama gives you provisioned clones, IDE integration, and the full workflow
 - You're on an Intel Mac or non-macOS platform — MLX is Apple Silicon only
 
-The `runtime` column in the DB distinguishes models (`ollama` default, `mlx` for MLX LM). Cloud-only models (e.g. Ollama `model:cloud` tags) are excluded from both runtimes — they are remote API proxies, not local weights. See the `lma-mlx-lm` skill for the full MLX LM workflow.
+The `runtime` column in the DB distinguishes models (`ollama` default, `mlx` for MLX LM). Cloud-only models (e.g. Ollama `model:cloud` tags) are excluded from both runtimes — they are remote API proxies, not local weights. See the [`lma-mlx-lm`](.skills/_skills/lma-mlx-lm/SKILL.md) skill for the full MLX LM workflow.
 
 ---
 
@@ -223,6 +223,19 @@ Query `model-assessor.db` for current assignments:
 ```
 
 Example roles: `coding`, `vision`, `reasoning`, `autocomplete`, `embedding`, `generalist`. See `model-data/assessed-models.md` for descriptions.
+
+---
+
+## Tests
+
+```bash
+# Install dev deps (includes pytest + production deps)
+.venv/bin/pip install -r requirements-dev.txt
+# Run tests
+./scripts/py -m pytest tests/ -v
+```
+
+Tests cover schema validity, ingestion helpers, end-to-end YAML→DB round-trips, and migration idempotency.
 
 ---
 
