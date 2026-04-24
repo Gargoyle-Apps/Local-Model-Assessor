@@ -17,5 +17,6 @@ Read the full `SKILL.md` only at that point — never preemptively.
 | lma-model-selection | Select, recommend, or install an Ollama model for a given role or task | select model, which model, recommend model, model for coding, model for writing, best model, model details, model info, assessed models, model docs, install model, pull model, ollama pull, setup model |
 | lma-ide-config | Generate IDE/agent config files from provisioned models in the DB | IDE config, configure IDE, continue config, cline config, generate config, agent config |
 | lma-embed-stack-handoff | Generate embed-retrieval-stack handoff artifacts for app repos (Postgres + pgvector + AGE) | embed stack, pgvector, embeddings, postgres stack, vector database, AGE, graph database, stack handoff |
+| lma-model-prune | Supersede an older model with a newer generation, remove from Ollama, and clean up clones | prune model, supersede model, replace model, remove old model, retire model, model cleanup, drop model |
 
 Add a row here whenever a new skill is added to `.skills/_skills/`.

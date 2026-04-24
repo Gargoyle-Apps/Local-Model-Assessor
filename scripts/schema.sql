@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS models (
   rag INTEGER DEFAULT 0,
   no_corun INTEGER DEFAULT 0,
   latency TEXT,
+  superseded_by TEXT,
   assessed_at TEXT DEFAULT (datetime('now')),
   created_at TEXT DEFAULT (datetime('now')),
   created_by TEXT,

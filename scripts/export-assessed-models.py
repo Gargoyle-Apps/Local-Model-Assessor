@@ -68,7 +68,7 @@ def main():
             conn.row_factory = sqlite3.Row
             c = conn.cursor()
 
-            c.execute("SELECT * FROM models ORDER BY vram, model_id")
+            c.execute("SELECT * FROM models WHERE superseded_by IS NULL ORDER BY vram, model_id")
             models = [dict(r) for r in c.fetchall()]
 
             c.execute("SELECT * FROM model_docs")
@@ -222,7 +222,19 @@ Run `sqlite3 model-data/model-assessor.db "SELECT * FROM decision_tree"` for the
 
     output = header + "\n".join(body_parts) + footer
     md_path.write_text(output, encoding="utf-8")
-    print(f"Exported {len(models)} models to {md_path}")
+    print(f"Exported {len(models)} active models to {md_path}")
+
+    try:
+        with sqlite3.connect(db_path) as conn2:
+            conn2.row_factory = sqlite3.Row
+            sup = conn2.execute(
+                "SELECT model_id, superseded_by FROM models WHERE superseded_by IS NOT NULL ORDER BY model_id"
+            ).fetchall()
+            if sup:
+                print(f"  ({len(sup)} superseded model(s) excluded: "
+                      + ", ".join(f"{r['model_id']} → {r['superseded_by']}" for r in sup) + ")")
+    except sqlite3.Error:
+        pass
 
 
 if __name__ == "__main__":
