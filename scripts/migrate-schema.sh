@@ -45,6 +45,7 @@ echo "Migrating schema..."
 add_col_if_missing "models" "assessed_at" "TEXT"
 add_col_if_missing "models" "runtime" "TEXT DEFAULT 'ollama'"
 add_col_if_missing "models" "superseded_by" "TEXT"
+add_col_if_missing "models" "user_flag_for_deletion" "INTEGER DEFAULT 0"
 
 add_provenance "models"
 add_provenance "role_model"
@@ -62,6 +63,8 @@ CREATE TABLE IF NOT EXISTS provisioned_models (
   num_ctx           INTEGER NOT NULL,
   temperature       REAL,
   num_predict       INTEGER,
+  repeat_penalty    REAL,
+  repeat_last_n     INTEGER,
   system_prompt     TEXT,
   modelfile_content TEXT NOT NULL,
   modelfile_path    TEXT NOT NULL,
@@ -81,5 +84,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_provisioned_base_role_variant
 CREATE INDEX IF NOT EXISTS idx_provisioned_role
   ON provisioned_models(role);
 EOSQL
+
+# Anti-loop sampling columns (added after provisioned_models was first introduced).
+add_col_if_missing "provisioned_models" "repeat_penalty" "REAL"
+add_col_if_missing "provisioned_models" "repeat_last_n" "INTEGER"
+
+# Soft-delete queue: set ONLY on explicit user request via lma-model-prune skill.
+add_col_if_missing "provisioned_models" "user_flag_for_deletion" "INTEGER DEFAULT 0"
 
 echo "Done."

@@ -56,6 +56,33 @@ class TestBuildModelfileContent:
         with pytest.raises(ValueError, match="triple-quotes"):
             mod.build_modelfile_content("m:t", 4096, None, None, sp)
 
+    def test_repeat_penalty_only(self):
+        result = mod.build_modelfile_content(
+            "m:t", 4096, None, None, None, repeat_penalty=1.18
+        )
+        assert "PARAMETER repeat_penalty 1.18" in result
+        assert "PARAMETER repeat_last_n" not in result
+
+    def test_repeat_last_n_only(self):
+        result = mod.build_modelfile_content(
+            "m:t", 4096, None, None, None, repeat_last_n=256
+        )
+        assert "PARAMETER repeat_last_n 256" in result
+        assert "PARAMETER repeat_penalty" not in result
+
+    def test_anti_loop_full(self):
+        result = mod.build_modelfile_content(
+            "gemma:4b", 32768, 0.2, 1536, "You are helpful.",
+            repeat_penalty=1.18, repeat_last_n=256,
+        )
+        lines = result.strip().splitlines()
+        idx_temp = lines.index("PARAMETER temperature 0.2")
+        idx_pred = lines.index("PARAMETER num_predict 1536")
+        idx_pen = lines.index("PARAMETER repeat_penalty 1.18")
+        idx_last = lines.index("PARAMETER repeat_last_n 256")
+        idx_sys = next(i for i, l in enumerate(lines) if l.startswith("SYSTEM"))
+        assert idx_temp < idx_pred < idx_pen < idx_last < idx_sys
+
 
 class TestAliasToModelfilePath:
     def test_happy_path(self):

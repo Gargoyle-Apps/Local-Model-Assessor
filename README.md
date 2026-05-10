@@ -1,6 +1,6 @@
 # Local Model Assessor
 
-**Version 2.2.1** — bump criteria: [AGENTS.md](AGENTS.md#lma-version).
+**Version 2.4.0** — bump criteria: [AGENTS.md](AGENTS.md#lma-version).
 
 For **tool-calling agents** in IDEs (Cursor, Cline, Continue, …): query SQLite and run repo scripts — not for chat-only LLMs without shell access.
 

@@ -26,7 +26,9 @@ models:
         variant: primary
         num_ctx: 8192
         temperature: 0.2
-        # num_predict: 4096        # optional — max tokens to generate
+        # num_predict: 4096        # optional — max tokens to generate (hard cap)
+        # repeat_penalty: 1.18     # optional — anti-loop; reach for this on small (≤4B)
+        # repeat_last_n: 256       #   models that loop at low temperature. Pair both.
         # system_prompt: "..."     # optional — SYSTEM line baked into the Modelfile
 
 by_role:

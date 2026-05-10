@@ -47,6 +47,33 @@ def test_content_tables_have_provenance():
     conn.close()
 
 
+def test_provisioned_models_anti_loop_columns():
+    """provisioned_models must expose repeat_penalty (REAL) and repeat_last_n (INTEGER)."""
+    conn = _fresh_db()
+    c = conn.cursor()
+    c.execute("PRAGMA table_info(provisioned_models)")
+    cols = {row[1]: row[2] for row in c.fetchall()}
+    conn.close()
+    assert "repeat_penalty" in cols
+    assert cols["repeat_penalty"].upper() == "REAL"
+    assert "repeat_last_n" in cols
+    assert cols["repeat_last_n"].upper() == "INTEGER"
+
+
+def test_user_flag_for_deletion_columns():
+    """Soft-delete queue flag must exist on both models and provisioned_models, default 0."""
+    conn = _fresh_db()
+    c = conn.cursor()
+    for table in ("models", "provisioned_models"):
+        c.execute(f"PRAGMA table_info({table})")
+        cols = {row[1]: row for row in c.fetchall()}
+        assert "user_flag_for_deletion" in cols, f"{table} missing user_flag_for_deletion"
+        col = cols["user_flag_for_deletion"]
+        assert col[2].upper() == "INTEGER", f"{table}.user_flag_for_deletion type = {col[2]}"
+        assert col[4] in ("0", 0), f"{table}.user_flag_for_deletion default = {col[4]!r}"
+    conn.close()
+
+
 def test_config_tables_lack_provenance():
     provenance_cols = {"created_by", "created_by_type"}
     conn = _fresh_db()

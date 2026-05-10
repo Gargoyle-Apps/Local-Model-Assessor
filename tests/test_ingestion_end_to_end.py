@@ -41,6 +41,9 @@ models:
         variant: primary
         num_ctx: 8192
         temperature: 0.2
+        num_predict: 1536
+        repeat_penalty: 1.18
+        repeat_last_n: 256
 
 by_role:
   coding:
@@ -142,6 +145,56 @@ def test_decision_tree_inserted(seeded_db):
     assert row is not None
     assert "vision" in row[0]
     conn.close()
+
+
+def test_user_flag_for_deletion_preserved_across_reimport(seeded_db):
+    """Flag is operator-managed; YAML re-import must NOT reset it on either table."""
+    _run_ingestion(seeded_db)
+    conn = sqlite3.connect(str(seeded_db))
+    c = conn.cursor()
+    c.execute(
+        "UPDATE models SET user_flag_for_deletion=1 WHERE model_id='test-model:7b'"
+    )
+    c.execute(
+        "UPDATE provisioned_models SET user_flag_for_deletion=1 "
+        "WHERE alias='test-model:7b_coding_8k'"
+    )
+    conn.commit()
+    conn.close()
+
+    _run_ingestion(seeded_db)
+
+    conn = sqlite3.connect(str(seeded_db))
+    c = conn.cursor()
+    c.execute("SELECT user_flag_for_deletion FROM models WHERE model_id='test-model:7b'")
+    assert c.fetchone()[0] == 1, "models flag must survive re-import"
+    c.execute(
+        "SELECT user_flag_for_deletion FROM provisioned_models "
+        "WHERE alias='test-model:7b_coding_8k'"
+    )
+    assert c.fetchone()[0] == 1, "provisioned_models flag must survive re-import"
+    conn.close()
+
+
+def test_provisioned_anti_loop_columns(seeded_db):
+    """repeat_penalty / repeat_last_n round-trip into provisioned_models and the Modelfile."""
+    _run_ingestion(seeded_db)
+    conn = sqlite3.connect(str(seeded_db))
+    c = conn.cursor()
+    c.execute(
+        "SELECT num_predict, repeat_penalty, repeat_last_n, modelfile_content "
+        "FROM provisioned_models WHERE alias='test-model:7b_coding_8k'"
+    )
+    row = c.fetchone()
+    conn.close()
+    assert row is not None
+    num_predict, repeat_penalty, repeat_last_n, mf = row
+    assert num_predict == 1536
+    assert repeat_penalty == 1.18
+    assert repeat_last_n == 256
+    assert "PARAMETER num_predict 1536" in mf
+    assert "PARAMETER repeat_penalty 1.18" in mf
+    assert "PARAMETER repeat_last_n 256" in mf
 
 
 def test_rag_pipeline_inserted(seeded_db):

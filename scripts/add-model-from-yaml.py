@@ -85,17 +85,28 @@ def build_modelfile_content(
     temperature: Optional[float],
     num_predict: Optional[int],
     system_prompt: Optional[str],
+    repeat_penalty: Optional[float] = None,
+    repeat_last_n: Optional[int] = None,
 ) -> str:
     """Build a deterministic Modelfile body from normalized parameters.
 
     Callers must pass typed values (float/int/str or None); raw strings are
     not re-parsed here.
+
+    `repeat_penalty` / `repeat_last_n` are anti-loop sampling controls. Useful
+    for small models (e.g. Gemma 4B) that degenerate into paragraph-level loops
+    at low temperature. Recommended starting points: repeat_penalty 1.15-1.2,
+    repeat_last_n 256.
     """
     lines = [f"FROM {base_model_id}", f"PARAMETER num_ctx {int(num_ctx)}"]
     if temperature is not None:
         lines.append(f"PARAMETER temperature {float(temperature)}")
     if num_predict is not None:
         lines.append(f"PARAMETER num_predict {int(num_predict)}")
+    if repeat_penalty is not None:
+        lines.append(f"PARAMETER repeat_penalty {float(repeat_penalty)}")
+    if repeat_last_n is not None:
+        lines.append(f"PARAMETER repeat_last_n {int(repeat_last_n)}")
     if system_prompt:
         sp = system_prompt.strip()
         if "\n" in sp:
@@ -152,6 +163,24 @@ def upsert_provisioned(
         except (TypeError, ValueError):
             num_predict = None
 
+    repeat_penalty = entry.get("repeat_penalty")
+    if repeat_penalty == "" or repeat_penalty is None:
+        repeat_penalty = None
+    else:
+        try:
+            repeat_penalty = float(repeat_penalty)
+        except (TypeError, ValueError):
+            repeat_penalty = None
+
+    repeat_last_n = entry.get("repeat_last_n")
+    if repeat_last_n == "" or repeat_last_n is None:
+        repeat_last_n = None
+    else:
+        try:
+            repeat_last_n = int(repeat_last_n)
+        except (TypeError, ValueError):
+            repeat_last_n = None
+
     system_prompt = entry.get("system_prompt")
     if system_prompt is not None:
         system_prompt = str(system_prompt).strip() or None
@@ -159,7 +188,8 @@ def upsert_provisioned(
     pull_command = (install or "").strip()
     modelfile_path = alias_to_modelfile_path(alias)
     modelfile_content = build_modelfile_content(
-        base_model_id, num_ctx, temperature, num_predict, system_prompt
+        base_model_id, num_ctx, temperature, num_predict, system_prompt,
+        repeat_penalty=repeat_penalty, repeat_last_n=repeat_last_n,
     )
     create_command = f"ollama create {alias} -f {modelfile_path}"
     now = _now()
@@ -198,54 +228,121 @@ def upsert_provisioned(
                 file=sys.stderr,
             )
 
-    c.execute(
-        """
-        INSERT INTO provisioned_models (
-          alias, base_model_id, role, variant, num_ctx, temperature, num_predict, system_prompt,
-          modelfile_content, modelfile_path, create_command, pull_command, is_active,
-          created_at, created_by, created_by_type, updated_at, updated_by, updated_by_type
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?)
-        ON CONFLICT(base_model_id, role, variant) DO UPDATE SET
-          alias=excluded.alias,
-          num_ctx=excluded.num_ctx,
-          temperature=excluded.temperature,
-          num_predict=excluded.num_predict,
-          system_prompt=excluded.system_prompt,
-          modelfile_content=excluded.modelfile_content,
-          modelfile_path=excluded.modelfile_path,
-          create_command=excluded.create_command,
-          pull_command=excluded.pull_command,
-          is_active=CASE
-            WHEN excluded.modelfile_content = provisioned_models.modelfile_content
-             AND excluded.alias = provisioned_models.alias
-            THEN provisioned_models.is_active
-            ELSE 0
-          END,
-          updated_at=excluded.updated_at,
-          updated_by=excluded.updated_by,
-          updated_by_type=excluded.updated_by_type
-        """,
-        (
-            alias,
-            base_model_id,
-            role,
-            variant,
-            num_ctx,
-            temperature,
-            num_predict,
-            system_prompt,
-            modelfile_content,
-            modelfile_path,
-            create_command,
-            pull_command,
-            now,
-            assessor,
-            assessor_type,
-            now,
-            assessor,
-            assessor_type,
-        ),
+    has_repeat_params = (
+        _has_column(c, "provisioned_models", "repeat_penalty")
+        and _has_column(c, "provisioned_models", "repeat_last_n")
     )
+    if not has_repeat_params and (repeat_penalty is not None or repeat_last_n is not None):
+        print(
+            "Warning: repeat_penalty/repeat_last_n columns missing from provisioned_models. "
+            "Modelfile will still include the PARAMETER lines, but DB columns will not be "
+            "populated. Run ./scripts/migrate-schema.sh to add them.",
+            file=sys.stderr,
+        )
+
+    if has_repeat_params:
+        c.execute(
+            """
+            INSERT INTO provisioned_models (
+              alias, base_model_id, role, variant, num_ctx, temperature, num_predict,
+              repeat_penalty, repeat_last_n, system_prompt,
+              modelfile_content, modelfile_path, create_command, pull_command, is_active,
+              created_at, created_by, created_by_type, updated_at, updated_by, updated_by_type
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?)
+            ON CONFLICT(base_model_id, role, variant) DO UPDATE SET
+              alias=excluded.alias,
+              num_ctx=excluded.num_ctx,
+              temperature=excluded.temperature,
+              num_predict=excluded.num_predict,
+              repeat_penalty=excluded.repeat_penalty,
+              repeat_last_n=excluded.repeat_last_n,
+              system_prompt=excluded.system_prompt,
+              modelfile_content=excluded.modelfile_content,
+              modelfile_path=excluded.modelfile_path,
+              create_command=excluded.create_command,
+              pull_command=excluded.pull_command,
+              is_active=CASE
+                WHEN excluded.modelfile_content = provisioned_models.modelfile_content
+                 AND excluded.alias = provisioned_models.alias
+                THEN provisioned_models.is_active
+                ELSE 0
+              END,
+              updated_at=excluded.updated_at,
+              updated_by=excluded.updated_by,
+              updated_by_type=excluded.updated_by_type
+            """,
+            (
+                alias,
+                base_model_id,
+                role,
+                variant,
+                num_ctx,
+                temperature,
+                num_predict,
+                repeat_penalty,
+                repeat_last_n,
+                system_prompt,
+                modelfile_content,
+                modelfile_path,
+                create_command,
+                pull_command,
+                now,
+                assessor,
+                assessor_type,
+                now,
+                assessor,
+                assessor_type,
+            ),
+        )
+    else:
+        c.execute(
+            """
+            INSERT INTO provisioned_models (
+              alias, base_model_id, role, variant, num_ctx, temperature, num_predict, system_prompt,
+              modelfile_content, modelfile_path, create_command, pull_command, is_active,
+              created_at, created_by, created_by_type, updated_at, updated_by, updated_by_type
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?)
+            ON CONFLICT(base_model_id, role, variant) DO UPDATE SET
+              alias=excluded.alias,
+              num_ctx=excluded.num_ctx,
+              temperature=excluded.temperature,
+              num_predict=excluded.num_predict,
+              system_prompt=excluded.system_prompt,
+              modelfile_content=excluded.modelfile_content,
+              modelfile_path=excluded.modelfile_path,
+              create_command=excluded.create_command,
+              pull_command=excluded.pull_command,
+              is_active=CASE
+                WHEN excluded.modelfile_content = provisioned_models.modelfile_content
+                 AND excluded.alias = provisioned_models.alias
+                THEN provisioned_models.is_active
+                ELSE 0
+              END,
+              updated_at=excluded.updated_at,
+              updated_by=excluded.updated_by,
+              updated_by_type=excluded.updated_by_type
+            """,
+            (
+                alias,
+                base_model_id,
+                role,
+                variant,
+                num_ctx,
+                temperature,
+                num_predict,
+                system_prompt,
+                modelfile_content,
+                modelfile_path,
+                create_command,
+                pull_command,
+                now,
+                assessor,
+                assessor_type,
+                now,
+                assessor,
+                assessor_type,
+            ),
+        )
 
     out_path = REPO_ROOT / modelfile_path
     out_path.parent.mkdir(parents=True, exist_ok=True)

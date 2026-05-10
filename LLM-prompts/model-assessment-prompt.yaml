@@ -37,10 +37,11 @@ content: |
   **PROVISIONED CLONES (required per assigned role):**
   For every canonical role this model fills (`by_role`), add one `provisioning` list entry so role-tuned Ollama aliases can be built with safe `num_ctx` (follow rules below).
   - **Alias naming:** `<base_model_id>_<role>_<ctx_shorthand>` where ctx_shorthand is `num_ctx/1024` + `k` (e.g. 8192 → `8k`). Example: `qwen3:30b_coding_8k`.
-  - **YAML shape (slim):** only `alias`, `role`, `variant` (default `primary`), `num_ctx`, optional `temperature`, `num_predict`, `system_prompt`. Do **not** put Modelfile bodies, file paths, or shell commands in YAML — `add-model-from-yaml.py` derives those.
+  - **YAML shape (slim):** only `alias`, `role`, `variant` (default `primary`), `num_ctx`, optional `temperature`, `num_predict`, `repeat_penalty`, `repeat_last_n`, `system_prompt`. Do **not** put Modelfile bodies, file paths, or shell commands in YAML — `add-model-from-yaml.py` derives those.
   - **Variant alignment (critical):** Each provisioning entry's `role` + `variant` must **exactly** match a `by_role` assignment you create for the same model. A mismatch (e.g. `variant: primary` in provisioning but `with_tools` under `by_role`) causes the selector prompt's LEFT JOIN to find no clone for that role.
   - **Memory / context rules:** Effective Ollama budget ≈ `total_available - os_headroom_gb` using the profile’s `os_headroom_gb` (template default is a conservative 4 GB for light IDE + Ollama; ~6% of unified RAM is a reasonable floor, e.g. 4 GB at 64 GB — increase for heavy multitasking). Never rely on the model’s advertised full context for local use. Snappy roles (`coding`, `autocomplete`, `formatting`): `num_ctx` 4096–8192. Deep roles (`reasoning`, `creative`, `heavy_lifter` with large inputs): up to 32768 only if weights + KV at that context fit the budget (~1 GB per 4k @ fp16 for rough KV estimate).
   - **Temperature:** coding / logic 0.1–0.3; creative / writing 0.7–0.8.
+  - **Anti-loop sampling (optional):** Small models (≤ ~4B), especially Gemma-family vision/medical specialists, can degenerate into paragraph-level loops at low temperature (`temperature 0.1–0.3`). When you assign such a model, set `repeat_penalty: 1.15–1.2` (start at `1.18`), `repeat_last_n: 256`, and a hard `num_predict` cap (e.g. `1536–2048`). Don't set these on larger or already-stable models — `repeat_penalty > 1.1` can suppress legitimate repeated phrasing (e.g. "no acute findings" across sections).
 
   **CANONICAL ROLES:**
   - `autocomplete`: Fast inline code/text completion
@@ -99,7 +100,9 @@ content: |
           variant: primary
           num_ctx: 8192
           temperature: 0.2
-          # num_predict: 4096   # optional
+          # num_predict: 4096       # optional — hard token cap
+          # repeat_penalty: 1.18    # optional — anti-loop, only for small/loop-prone models
+          # repeat_last_n: 256      # optional — pair with repeat_penalty
           # system_prompt: "Short role-specific system line for the Modelfile"
   by_role:
     role_name:
