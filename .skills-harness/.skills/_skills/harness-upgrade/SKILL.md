@@ -9,7 +9,7 @@ triggers:
   - enable IDE symlinks
   - update skills system
 dependencies: []
-version: "1.1.0"
+version: "1.1.1"
 ---
 
 # Harness Upgrade
@@ -90,6 +90,6 @@ Skills stay in `.skills/_skills/` regardless of IDE — the same files, just dif
 | `link.sh` added | Creates symlinks from `.agents/skills/` or `.claude/skills/` into `.skills/_skills/` for native IDE auto-discovery |
 | Templates updated | Each SETUP now includes a "Native discovery" step calling `link.sh` |
 | New templates | `ROO_template.md` (Roo Code), `OPENCODE_template.md` (OpenCode) |
-| `check.sh` updated | Validates symlink integrity when symlink directories exist |
+| `check.sh` updated | Validates native discovery dirs mirror `_skills/` when present; `check.sh --link` runs `link.sh` to repair |
 | `skill-author` updated | Reminds authors to re-run `link.sh` after adding skills |
 | Frontmatter | `name` + `description` documented as [agentskills.io](https://agentskills.io/specification)-compatible; harness extensions (`triggers`, `dependencies`, `version`) unchanged |

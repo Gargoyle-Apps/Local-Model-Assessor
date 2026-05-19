@@ -7,15 +7,32 @@ set -euo pipefail
 #   3. Each SKILL.md has required frontmatter fields
 #   4. Each SKILL.md name field matches its directory name
 #   5. Rules blocks in all templates match the canonical _rules.md
-#   6. Symlinks in .agents/skills/ and .claude/skills/ are valid (if present)
+#   6. Native discovery dirs (.agents/skills/, .claude/skills/) mirror _skills/ when present
 #   7. kit_version in _meta.yml matches newest CHANGELOG release, README, and AGENTS_skills.md
+#
+# Options:
+#   --quiet              Suppress success footer
+#   --link               Run link.sh for each existing native discovery dir, then validate
+#   SKILLS_AUTO_LINK=1   Same as --link
 
 QUIET=false
+AUTO_LINK=false
 for arg in "$@"; do
   case "$arg" in
     --quiet) QUIET=true ;;
+    --link)  AUTO_LINK=true ;;
+    -h|--help)
+      echo "Usage: $(basename "$0") [--quiet] [--link]" >&2
+      echo "  --link  Sync .agents/skills/ and .claude/skills/ via link.sh when those dirs exist" >&2
+      exit 0
+      ;;
+    -*)
+      echo "Unknown option: $arg" >&2
+      exit 1
+      ;;
   esac
 done
+[[ "${SKILLS_AUTO_LINK:-}" == "1" ]] && AUTO_LINK=true
 
 # Resolve the script's own location WITHOUT following symlinks, so subtree-vendored
 # installs (where .skills/_harness/ is a symlink into .skills-harness/.skills/_harness/)
@@ -178,29 +195,95 @@ else
   warn "_rules.md not found; skipping Rules sync check"
 fi
 
-# --- 6: Symlink validation (optional) ---
+# --- 6: Native discovery symlink completeness (optional) ---
 
-for symdir in ".agents/skills" ".claude/skills"; do
+native_symdirs=(".agents/skills" ".claude/skills")
+
+# Skill names managed by the harness (mirrors link.sh: skip _-prefixed dirs).
+skill_names=()
+if [[ -d "$SKILLS_DIR" ]]; then
+  for skill_dir in "$SKILLS_DIR"/*/; do
+    [[ -d "$skill_dir" ]] || continue
+    name="$(basename "$skill_dir")"
+    case "$name" in
+      _*) continue ;;
+    esac
+    [[ -f "$skill_dir/SKILL.md" ]] || continue
+    skill_names+=("$name")
+  done
+fi
+
+# Relative path from <symdir>/ to .skills/_skills (same climb logic as link.sh).
+native_expected_skills_base() {
+  local symdir_rel="$1"
+  local rel_prefix="" tmp="$symdir_rel" parent
+  while [[ "$tmp" != "." && -n "$tmp" ]]; do
+    rel_prefix="../$rel_prefix"
+    parent="$(dirname "$tmp")"
+    [[ "$parent" == "$tmp" ]] && break
+    tmp="$parent"
+  done
+  printf '%s' "${rel_prefix}.skills/_skills"
+}
+
+if $AUTO_LINK; then
+  for symdir in "${native_symdirs[@]}"; do
+    symdir_abs="$REPO_ROOT/$symdir"
+    [[ ! -d "$symdir_abs" ]] && continue
+    $QUIET || echo "Syncing native discovery: $symdir"
+    "$HARNESS_DIR/link.sh" "$symdir"
+  done
+fi
+
+for symdir in "${native_symdirs[@]}"; do
   symdir_abs="$REPO_ROOT/$symdir"
   [[ ! -d "$symdir_abs" ]] && continue
 
+  rel_skills="$(native_expected_skills_base "$symdir")"
+
+  for name in "${skill_names[@]}"; do
+    link_path="$symdir_abs/$name"
+    expected="${rel_skills}/${name}"
+
+    if [[ ! -e "$link_path" && ! -L "$link_path" ]]; then
+      err "$symdir/$name missing (expected symlink -> $expected). Run: .skills/_harness/link.sh $symdir  (or: check.sh --link)"
+      continue
+    fi
+
+    if [[ ! -L "$link_path" ]]; then
+      warn "$symdir/$name is not a symlink (expected -> $expected)"
+      continue
+    fi
+
+    actual="$(readlink "$link_path")"
+    if [[ "$actual" != "$expected" ]]; then
+      err "$symdir/$name points to '$actual' but should be '$expected'. Run: .skills/_harness/link.sh $symdir  (or: check.sh --link)"
+      continue
+    fi
+
+    if [[ ! -d "$link_path" ]]; then
+      err "$symdir/$name is a broken symlink (target: $actual)"
+      continue
+    fi
+
+    if [[ ! -f "$link_path/SKILL.md" ]]; then
+      warn "$symdir/$name symlink target has no SKILL.md"
+    fi
+  done
+
   for link in "$symdir_abs"/*/; do
-    # Guard: skip unexpanded glob when directory is empty (bash has no nullglob by default)
     [[ ! -e "${link%/}" && ! -L "${link%/}" ]] && continue
     name="$(basename "${link%/}")"
-
-    if [[ ! -L "${link%/}" ]]; then
-      warn "$symdir/$name is not a symlink"
-      continue
-    fi
-
-    if [[ ! -d "${link%/}" ]]; then
-      err "$symdir/$name is a broken symlink (target: $(readlink "${link%/}"))"
-      continue
-    fi
-
-    if [[ ! -f "${link%/}/SKILL.md" ]]; then
-      warn "$symdir/$name symlink target has no SKILL.md"
+    found=false
+    for skill_name in "${skill_names[@]}"; do
+      [[ "$skill_name" == "$name" ]] && found=true && break
+    done
+    if ! $found; then
+      if [[ -L "${link%/}" ]] && [[ ! -d "${link%/}" ]]; then
+        err "$symdir/$name is a dangling symlink (target: $(readlink "${link%/}")). Run: .skills/_harness/link.sh $symdir  (or: check.sh --link)"
+      else
+        warn "$symdir/$name has no matching _skills/$name/ (extra entry or non-harness skill)"
+      fi
     fi
   done
 done

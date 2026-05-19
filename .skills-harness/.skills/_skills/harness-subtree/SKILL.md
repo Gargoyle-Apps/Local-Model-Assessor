@@ -12,7 +12,7 @@ triggers:
   - migrate manual install to subtree
   - convert harness install to subtree
 dependencies: []
-version: "1.5.1"
+version: "1.5.2"
 ---
 
 # Harness Subtree
@@ -265,6 +265,8 @@ The standard fix when adopting the official upstream:
 
    ```bash
    .skills/_harness/link.sh .agents/skills    # or .claude/skills
+   # or sync every existing native dir and validate in one step:
+   .skills/_harness/check.sh --link
    ```
 
 9. **Validate:**
