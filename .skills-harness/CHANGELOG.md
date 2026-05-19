@@ -5,19 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.2] - 2026-05-18
-
-### Added
-
-- **`check.sh` — native discovery completeness.** When `.agents/skills/` or `.claude/skills/` exist, validates that every harness skill under `_skills/` has a symlink with the correct relative target; reports missing, wrong-target, and dangling symlinks.
-- **`check.sh --link` / `SKILLS_AUTO_LINK=1`:** runs `link.sh` on each existing native discovery directory (idempotent), then validates. Does not create native dirs that were never set up.
-
-### Changed
-
-- **`harness-subtree` v1.5.2** — migration validate step documents `check.sh --link` as an alternative to manual `link.sh`.
-- **`harness-upgrade` v1.1.1** — documents `check.sh --link` / completeness validation in the 0.4.0 changes table.
-- **`skill-author` v1.5.3** — step 8 mentions `check.sh --link` for syncing native discovery dirs.
-
 ## [1.0.1] - 2026-05-02
 
 Discoverability fix for [issue #4](https://github.com/Gargoyle-Apps/skills-harness/issues/4): legacy manual installs whose `.skills/_meta.yml` `repo_url` points at an old fork (e.g. `gotalab/skills-harness`, which now 404s) hit the canonical-URL guard during migration, and the previous error didn't make clear that **`--remote-url https://github.com/Gargoyle-Apps/skills-harness`** is the **normal** fix when adopting the official upstream — not an exotic override.
