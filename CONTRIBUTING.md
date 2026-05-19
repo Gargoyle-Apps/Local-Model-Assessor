@@ -44,6 +44,8 @@ There is no automated CI. Use the validation script and manual smoke testing:
   - Every `SKILL.md` has required frontmatter fields
   - Frontmatter `name` matches directory name
   - Rules blocks in all templates match `_rules.md`
+  - When `.agents/skills/` or `.claude/skills/` exist, every harness skill in `_skills/` has a correct symlink there (and dangling extras are reported)
+  - Use **`check.sh --link`** or **`SKILLS_AUTO_LINK=1`** to run `link.sh` on existing native dirs before validating (idempotent repair after new kit skills or subtree pull)
 
 - **Manual smoke test** (before a release):
   1. Create a fresh temp directory; copy `AGENTS_skills.md` and `.skills/` into it.
@@ -94,8 +96,9 @@ Both `check.sh` and `link.sh` derive paths from their own location. If your repo
 | `SKILLS_INDEX` | check | `../_index.md` relative to harness |
 | `SKILLS_RULES` | check | `_rules.md` in harness dir |
 | `SKILLS_CHECK_KIT_SURFACES` | check | auto: `0` if `.skills-harness/` exists at repo root or `_meta.yml` has `role: consumer`; otherwise `1`. Set explicitly to override. |
+| `SKILLS_AUTO_LINK` | check | `0` (default). Set to `1` to run `link.sh` on existing `.agents/skills/` and `.claude/skills/` before validating (same as `--link`). |
 
-`check.sh` also accepts `--quiet` to suppress the success footer (useful in CI/hooks).
+`check.sh` also accepts `--quiet` (suppress success footer) and `--link` (sync native discovery symlinks when those directories already exist).
 
 ## Symlink helper (`link.sh`)
 

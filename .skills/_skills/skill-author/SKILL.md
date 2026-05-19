@@ -8,7 +8,7 @@ triggers:
   - add a skill
 dependencies:
   - skill-template
-version: "1.5.2"
+version: "1.5.3"
 ---
 
 # Skill Author
@@ -97,7 +97,7 @@ That makes the override explicit and machine-readable for the audit, instead of 
 5. Choose triggers carefully — these are what cause the skill to be loaded
 6. Run `.skills/_harness/build-index.sh --write` to regenerate `.skills/_index.md` from frontmatter — the index is the source of truth at runtime and must always be in sync with `.skills/_skills/`
 7. If this skill depends on another, list it in `dependencies`
-8. If native discovery symlinks are configured, re-run `.skills/_harness/link.sh` with the appropriate target (e.g. `.agents/skills`) to include the new skill
+8. If native discovery symlinks are configured, re-run `.skills/_harness/link.sh` with the appropriate target (e.g. `.agents/skills`), or `.skills/_harness/check.sh --link` to sync all existing native dirs and validate
 9. Run `.skills/_harness/check.sh` to validate index and frontmatter consistency (if your environment supports script execution)
 
 ## Renaming or deleting a skill
