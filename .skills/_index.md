@@ -1,6 +1,6 @@
 # Skills Index
 
-Kit version: see `.skills/_meta.yml` (optional metadata only). Vendored kit: `.skills-harness/` (git subtree); kit rows below point at symlinked skills.
+Kit version: see `.skills/_meta.yml` (optional metadata only). Vendored kit: `.skills-harness/` (git subtree @ **v1.1.2**); kit rows below point at symlinked skills.
 
 Load a skill only when the task clearly requires it.
 Read the full `SKILL.md` only at that point — never preemptively.
