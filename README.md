@@ -10,7 +10,7 @@ For **tool-calling agents** in IDEs (Cursor, Cline, Continue, …): query SQLite
 
 ## Repo vs Local
 
-Ships **scripts, schema, templates** — empty `model-assessor.db` until you init, profile, assess. **`Brewfile`:** optional `brew bundle` → `libpq` (keg-only; see `brew info libpq`); not needed for Docker stack (`docker compose exec`). **Tracked:** templates under `computer-profile/`, `model-data/` (e.g. `*.template.yaml`, `modelfile/.gitkeep`), `scripts/`, `.skills/` (skills harness; see [Skills harness](#skills-harness-third-party)), `integrations/` (copy-out: IDE + embed stack). **Gitignored:** profiles, DB, `new-models.yaml`, generated modelfiles, `integrations/IDE-model-management/*/config*`, `integrations/embed-retrieval-stack/out/`, `ref/`, `.cursorrules`. Details: [AGENTS.md](AGENTS.md) + `.gitignore`.
+Ships **scripts, schema, templates** — empty `model-assessor.db` until you init, profile, assess. **`Brewfile`:** optional `brew bundle` → `libpq` (keg-only; see `brew info libpq`); not needed for Docker stack (`docker compose exec`). **Tracked:** templates under `computer-profile/`, `model-data/` (e.g. `*.template.yaml`, `modelfile/.gitkeep`), `scripts/`, `.skills/` + `.skills-harness/` (skills harness; see [Skills harness](#skills-harness-third-party)), `integrations/` (copy-out: IDE + embed stack). **Gitignored:** profiles, DB, `new-models.yaml`, generated modelfiles, `integrations/IDE-model-management/*/config*`, `integrations/embed-retrieval-stack/out/`, `ref/`, `.cursorrules`. Details: [AGENTS.md](AGENTS.md) + `.gitignore`.
 
 ---
 
@@ -172,9 +172,14 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 ## Skills harness (third-party)
 
-This repo vendors a **skills harness** under `.skills/` (portable manifest + authoring helpers). Policy is **agnostic / multi-ecosystem** (Path B): see [AGENTS.md](AGENTS.md) **Skills (agnostic / multi-ecosystem)** — we do not merge tool-specific harness templates from `.skills/_harness/` into this project.
+The kit is vendored as a **git subtree** at [`.skills-harness/`](.skills-harness/) ([Gargoyle-Apps/skills-harness](https://github.com/Gargoyle-Apps/skills-harness), MIT, currently **v1.0.2**). Runtime layout:
 
-**Credit:** The `.skills/` tree is derived from **[skills-harness](https://github.com/gotalab/skills-harness)** (MIT). To propose changes to shared templates, rules, or bundled skills, contribute upstream in that repository.
+- **`.skills-harness/`** — upstream kit (updated with `git subtree pull`; do not hand-edit)
+- **`.skills/`** — consumer tree: symlinked kit `_harness/` and bundled skills; **real directories** for repo-specific `lma-*` skills under `.skills/_skills/`
+
+Policy is **agnostic / multi-ecosystem** (Path B): see [AGENTS.md](AGENTS.md) **Skills (agnostic / multi-ecosystem)** — we do not merge tool-specific harness templates from `.skills/_harness/` into this project.
+
+**Update kit:** `git fetch skills-harness && git subtree pull --prefix=.skills-harness skills-harness <tag> --squash`, then run `.skills/_harness/migrate-to-subtree.sh --skip-subtree --reconcile --apply` (see **harness-subtree** skill). **Credit:** shared templates and kit skills — contribute upstream; LMA skills stay in this repo.
 
 ---
 
