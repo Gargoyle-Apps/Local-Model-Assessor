@@ -246,4 +246,4 @@ Tests cover schema validity, ingestion helpers, end-to-end YAML→DB round-trips
 
 ## License
 
-[LICENSE](LICENSE) — MIT (ImpureCrumpet; see file for **skills-harness** attribution under `.skills/`). Individual models (Ollama and MLX) have their own licenses — check each model’s page.
+[LICENSE](LICENSE) — MIT (ImpureCrumpet; see file for **skills-harness** attribution under `.skills-harness/`). Individual models (Ollama and MLX) have their own licenses — check each model’s page.
