@@ -44,6 +44,7 @@ There is no automated CI. Use the validation script and manual smoke testing:
   - Every `SKILL.md` has required frontmatter fields
   - Frontmatter `name` matches directory name
   - Rules blocks in all templates match `_rules.md`
+  - When `.skills-harness/` exists or `consumer_skills_dir:` is declared, `_skills/<name>/` directory symlinks point at the expected kit or consumer targets (and `check.sh` prints `directory symlink → <target> ✓` on success — do not use `readlink` on inner `SKILL.md` paths; see **harness-subtree**)
   - When `.agents/skills/` or `.claude/skills/` exist, every harness skill in `_skills/` has a correct symlink there (and dangling extras are reported)
   - Use **`check.sh --link`** or **`SKILLS_AUTO_LINK=1`** to run `link.sh` on existing native dirs before validating (idempotent repair after new kit skills or subtree pull)
 

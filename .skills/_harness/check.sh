@@ -7,8 +7,9 @@ set -euo pipefail
 #   3. Each SKILL.md has required frontmatter fields
 #   4. Each SKILL.md name field matches its directory name
 #   5. Rules blocks in all templates match the canonical _rules.md
-#   6. Native discovery dirs (.agents/skills/, .claude/skills/) mirror _skills/ when present
-#   7. kit_version in _meta.yml matches newest CHANGELOG release, README, and AGENTS_skills.md
+#   6. _skills/<name>/ entry topology (directory symlinks for kit/consumer shims) when applicable
+#   7. Native discovery dirs (.agents/skills/, .claude/skills/) mirror _skills/ when present
+#   8. kit_version in _meta.yml matches newest CHANGELOG release, README, and AGENTS_skills.md
 #
 # Options:
 #   --quiet              Suppress success footer
@@ -195,10 +196,6 @@ else
   warn "_rules.md not found; skipping Rules sync check"
 fi
 
-# --- 6: Native discovery symlink completeness (optional) ---
-
-native_symdirs=(".agents/skills" ".claude/skills")
-
 # Skill names managed by the harness (mirrors link.sh: skip _-prefixed dirs).
 skill_names=()
 if [[ -d "$SKILLS_DIR" ]]; then
@@ -212,6 +209,90 @@ if [[ -d "$SKILLS_DIR" ]]; then
     skill_names+=("$name")
   done
 fi
+
+# --- 6: _skills/ entry topology (directory symlinks) ---
+# When the kit is subtree-vendored or consumer_skills_dir is declared, kit skills and
+# consumer shims are directory symlinks. Inner files (SKILL.md) look like regular files;
+# verify sync here, not with readlink on inner paths. See gh issue #5.
+
+SUBTREE_PREFIX=".skills-harness"
+SUBTREE_SKILLS_DIR="$REPO_ROOT/$SUBTREE_PREFIX/.skills/_skills"
+HAS_SUBTREE=false
+[[ -d "$SUBTREE_SKILLS_DIR" ]] && HAS_SUBTREE=true
+
+CONSUMER_SKILLS_DIR=""
+TOPO_META_FILE="$(dirname "$HARNESS_DIR")/_meta.yml"
+if [[ -f "$TOPO_META_FILE" ]]; then
+  raw_csd="$(grep -E '^consumer_skills_dir:' "$TOPO_META_FILE" | head -1 | sed 's/^consumer_skills_dir://' || true)"
+  raw_csd="$(trim "$raw_csd")"
+  raw_csd="${raw_csd#\"}"
+  raw_csd="${raw_csd%\"}"
+  CONSUMER_SKILLS_DIR="$raw_csd"
+fi
+
+kit_skill_names=()
+if $HAS_SUBTREE; then
+  for kit_dir in "$SUBTREE_SKILLS_DIR"/*/; do
+    [[ -d "$kit_dir" ]] || continue
+    kit_skill_names+=("$(basename "$kit_dir")")
+  done
+fi
+
+is_kit_skill_name() {
+  local name="$1" k
+  for k in "${kit_skill_names[@]}"; do
+    [[ "$k" == "$name" ]] && return 0
+  done
+  return 1
+}
+
+if $HAS_SUBTREE || [[ -n "$CONSUMER_SKILLS_DIR" ]]; then
+  for name in "${skill_names[@]}"; do
+    entry_path="$SKILLS_DIR/$name"
+    expected=""
+
+    if is_kit_skill_name "$name"; then
+      expected="../../$SUBTREE_PREFIX/.skills/_skills/$name"
+    elif [[ -n "$CONSUMER_SKILLS_DIR" ]] && [[ -f "$REPO_ROOT/$CONSUMER_SKILLS_DIR/$name/SKILL.md" ]]; then
+      expected="../../$CONSUMER_SKILLS_DIR/$name"
+    fi
+
+    if [[ -L "$entry_path" ]]; then
+      if [[ ! -d "$entry_path" ]]; then
+        err "_skills/$name is a broken directory symlink (target: $(readlink "$entry_path"))"
+        continue
+      fi
+
+      actual="$(readlink "$entry_path")"
+      if [[ -n "$expected" ]]; then
+        if [[ "$actual" != "$expected" ]]; then
+          err "_skills/$name points to '$actual' but should be '$expected'"
+          continue
+        fi
+        $QUIET || echo "_skills/$name: directory symlink → $actual ✓"
+      else
+        warn "_skills/$name is a directory symlink (→ $actual) but no expected target for this layout"
+      fi
+      continue
+    fi
+
+    if [[ ! -d "$entry_path" ]]; then
+      continue
+    fi
+
+    if [[ -n "$expected" ]]; then
+      if is_kit_skill_name "$name"; then
+        warn "_skills/$name is a real directory; expected directory symlink → $expected"
+      else
+        warn "_skills/$name is a real directory; expected directory symlink → $expected (run: migrate-to-subtree.sh --symlink-consumer-skills)"
+      fi
+    fi
+  done
+fi
+
+# --- 7: Native discovery symlink completeness (optional) ---
+
+native_symdirs=(".agents/skills" ".claude/skills")
 
 # Relative path from <symdir>/ to .skills/_skills (same climb logic as link.sh).
 native_expected_skills_base() {
@@ -288,7 +369,7 @@ for symdir in "${native_symdirs[@]}"; do
   done
 done
 
-# --- 7: Kit version surfaces (_meta.yml, CHANGELOG, README, AGENTS_skills.md) ---
+# --- 8: Kit version surfaces (_meta.yml, CHANGELOG, README, AGENTS_skills.md) ---
 
 META_FILE="$(dirname "$HARNESS_DIR")/_meta.yml"
 CHANGELOG_FILE="$REPO_ROOT/CHANGELOG.md"

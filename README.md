@@ -105,7 +105,7 @@ The kit is vendored as-is into `.skills-harness/`. The consumer's runtime tree u
 │   ├── _harness            → symlink → ../.skills-harness/.skills/_harness
 │   ├── _skills/
 │   │   ├── <kit-skill>     → symlinks → ../../.skills-harness/.skills/_skills/<name>
-│   │   └── <prefix>-<own>/ ← real consumer-owned skill dirs
+│   │   └── <prefix>-<own>/ → symlink to consumer_skills_dir when declared; else real dir
 │   ├── _index.md           ← consumer-owned (kit rows + own rows)
 │   └── _meta.yml           ← consumer-owned, mirrors vendored kit_version
 └── AGENTS.md               ← Path A harness or Path B policy
@@ -163,7 +163,7 @@ Because the kit can be updated mid-project with a single command, **per-skill `v
 
 ## Validation
 
-Run `.skills/_harness/check.sh` to verify index/directory consistency, frontmatter, template sync, and native-discovery symlink completeness (when `.agents/skills/` or `.claude/skills/` exist). After adding kit skills or a subtree pull, run **`check.sh --link`** to sync those dirs via `link.sh`, then validate.
+Run `.skills/_harness/check.sh` to verify index/directory consistency, frontmatter, template sync, `_skills/` directory-symlink topology (subtree or `consumer_skills_dir` installs), and native-discovery symlink completeness (when `.agents/skills/` or `.claude/skills/` exist). After adding kit skills or a subtree pull, run **`check.sh --link`** to sync those dirs via `link.sh`, then validate.
 
 The kit-version surface checks (CHANGELOG/README/AGENTS_skills.md must agree on `kit_version`) only make sense in this upstream repo. **Consumer repos auto-skip them** when either `.skills-harness/` exists at the repo root (subtree install) or `.skills/_meta.yml` declares `role: consumer`. Override with `SKILLS_CHECK_KIT_SURFACES=1` (force checks) or `SKILLS_CHECK_KIT_SURFACES=0` (suppress) when the auto-detect gets it wrong. See [CONTRIBUTING.md — Environment overrides](CONTRIBUTING.md#environment-overrides) for the full list.
 
