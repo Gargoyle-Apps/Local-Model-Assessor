@@ -54,7 +54,7 @@ After install, the consumer repo looks like this:
 │   │   ├── harness-upgrade → symlink → ../../.skills-harness/.skills/_skills/harness-upgrade
 │   │   ├── kit-release     → symlink → ../../.skills-harness/.skills/_skills/kit-release
 │   │   ├── harness-subtree → symlink → ../../.skills-harness/.skills/_skills/harness-subtree
-│   │   └── <prefix>-<your-skill>/   ← real consumer-authored skill dirs
+│   │   └── <prefix>-<your-skill>/   ← symlink → ../../<consumer_skills_dir>/<name> when declared; else real dir
 │   ├── _index.md           ← consumer-owned: kit rows + your rows
 │   └── _meta.yml           ← consumer-owned: pin to vendored kit_version
 └── AGENTS.md               ← Path A harness or Path B policy; see AGENTS_skills.md
@@ -116,7 +116,7 @@ The split is deliberate: kit-owned files live under `.skills-harness/` (overwrit
    .skills/_harness/check.sh
    ```
 
-   This should pass. The kit version assertion compares `.skills/_meta.yml` (consumer copy) against the consumer's root `README.md` and `CHANGELOG.md` if they exist; if your consumer repo doesn't surface kit version in those files, set `SKILLS_CHECK_KIT_SURFACES=0` to skip that check.
+   This should pass. On subtree or `consumer_skills_dir` installs, `check.sh` also prints each `_skills/<name>/` directory symlink and target (`directory symlink → … ✓`) — use that to confirm sync, not `readlink` on inner `SKILL.md` paths. The kit version assertion compares `.skills/_meta.yml` (consumer copy) against the consumer's root `README.md` and `CHANGELOG.md` if they exist; if your consumer repo doesn't surface kit version in those files, set `SKILLS_CHECK_KIT_SURFACES=0` to skip that check.
 
 ## Updating the vendored kit
 
@@ -294,7 +294,8 @@ Tags follow the kit's semver (see upstream `CHANGELOG.md` and `_meta.yml`).
 ## Notes and gotchas
 
 - **Do not edit files inside `.skills-harness/`.** Local edits are silently overwritten on the next `git subtree pull`. Contribute changes upstream instead, or use Path B and override behaviour in your own consumer-owned skills.
-- **Consumer skills always live outside the subtree** (real directories under `.skills/_skills/<prefix>-<name>/`). Apply the prefix convention from `skill-author`.
+- **Consumer skills live outside the subtree.** Bodies sit in real directories under `.skills/_skills/<prefix>-<name>/` (traditional layout) or under `consumer_skills_dir:` (e.g. `.cursor/skills/<name>/`) with `.skills/_skills/<name>/` as a directory symlink shim. Apply the prefix convention from `skill-author`.
+- **Directory symlinks — inner files look like plain files (gh issue #5).** Kit skills and `consumer_skills_dir` shims link the **directory** `_skills/<name>/`, not individual files. `SKILL.md` inside therefore shows as a regular file (`-rw-r--r--`); `readlink` on it is empty and `test -L` is false even when fully in sync. To verify wiring, run **`check.sh`** (prints `directory symlink → <target> ✓` per entry) or `readlink .skills/_skills/<name>` on the **directory** itself — not on inner paths.
 - **`AGENTS_skills.md` is ephemeral.** It is copied from `.skills-harness/AGENTS_skills.md` only during bootstrap and removed afterwards. It will reappear in `.skills-harness/` after each pull — that's fine; do not copy it back to root unless you are re-bootstrapping.
 - **`check.sh` works through symlinks.** No env-var overrides are needed for the symlinked layout above. Use `SKILLS_*` env vars only if you choose a non-symlink layout (e.g. running scripts directly out of `.skills-harness/`).
 - **Kit-bundled skill IDs stay unprefixed** (`skill-author`, `harness-upgrade`, etc.). Your own skills are prefixed per `skill-author`'s naming convention. The two coexist in `.skills/_index.md`.
