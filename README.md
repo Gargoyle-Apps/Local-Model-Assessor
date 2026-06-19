@@ -177,6 +177,8 @@ The kit is vendored as a **git subtree** at [`.skills-harness/`](.skills-harness
 - **`.skills-harness/`** — upstream kit (updated with `git subtree pull`; do not hand-edit)
 - **`.skills/`** — consumer tree: symlinked kit `_harness/` and bundled skills; **real directories** for repo-specific `lma-*` skills under `.skills/_skills/`
 
+**Validate layout:** `.skills/_harness/check.sh` prints directory-symlink topology for kit skills (e.g. `_skills/skill-author: directory symlink → … ✓`). Kit skills are linked at the **directory** level — inner `SKILL.md` files look like regular files; use `check.sh` or `readlink .skills/_skills/<name>`, not `readlink` on inner paths.
+
 Policy is **agnostic / multi-ecosystem** (Path B): see [AGENTS.md](AGENTS.md) **Skills (agnostic / multi-ecosystem)** — we do not merge tool-specific harness templates from `.skills/_harness/` into this project.
 
 **Update kit:** `git fetch skills-harness && git subtree pull --prefix=.skills-harness skills-harness <tag> --squash`, then run `.skills/_harness/migrate-to-subtree.sh --skip-subtree --reconcile --apply` (see **harness-subtree** skill). **Credit:** shared templates and kit skills — contribute upstream; LMA skills stay in this repo.
