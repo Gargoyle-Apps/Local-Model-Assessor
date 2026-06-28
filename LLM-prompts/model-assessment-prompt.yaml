@@ -134,6 +134,10 @@ content: |
   ./scripts/py scripts/add-model-from-yaml.py model-data/new-models.yaml
   ./scripts/py scripts/export-assessed-models.py   # regenerate assessed-models.md
   ```
+  After the base model and any provisioned clones are in Ollama (`ollama list`), run:
+  ```bash
+  ./scripts/py scripts/sweep-ide-config.py   # sync is_active + regenerate IDE configs (lma-ide-config skill)
+  ```
   You have shell access — execute these commands directly, do not ask the user to run them.
 
   ---

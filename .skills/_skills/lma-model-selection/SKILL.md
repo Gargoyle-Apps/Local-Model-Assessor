@@ -18,7 +18,8 @@ triggers:
   - setup model
 dependencies:
   - lma-db-core
-version: "1.0.0"
+  - lma-ide-config
+version: "1.1.0"
 ---
 
 # LMA Model Selection
@@ -86,6 +87,14 @@ Look up the install command and run it:
 ```
 
 The returned command may be `ollama pull <tag>` (catalog models), `ollama create -f …` (GGUF bases), or an `mlx_lm.generate` command (MLX models). Check the `runtime` column to distinguish: `ollama` (default) vs `mlx`.
+
+After installing a base model and any provisioned clones (`create_command` from `provisioned_models`), sweep IDE config:
+
+```bash
+./scripts/py scripts/sweep-ide-config.py
+```
+
+Skip the sweep for MLX-only installs (`runtime=mlx`) — `sweep-ide-config.py` covers Ollama provisioned clones only.
 
 ## Notes
 

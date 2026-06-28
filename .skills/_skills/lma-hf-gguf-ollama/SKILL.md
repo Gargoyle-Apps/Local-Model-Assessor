@@ -10,7 +10,8 @@ triggers:
   - custom model
 dependencies:
   - lma-assess-import-model
-version: "1.0.0"
+  - lma-ide-config
+version: "1.1.0"
 ---
 
 # LMA HF GGUF → Ollama
@@ -75,6 +76,11 @@ Follow the standard assessment flow from `lma-assess-import-model`:
 1. User runs the base import: the `install` command from the YAML (e.g. `ollama create myrepo-model:q4_k_m -f model-data/modelfile/myrepo-model--q4_k_m-base.mf`).
 2. Confirm with `ollama list`.
 3. Run provisioned role clone `create_command` values if needed.
+4. Sweep IDE config:
+
+```bash
+./scripts/py scripts/sweep-ide-config.py
+```
 
 ### Checklist
 
@@ -84,6 +90,7 @@ Follow the standard assessment flow from `lma-assess-import-model`:
 - [ ] Assessment YAML filled including `provisioning` aligned with `by_role`.
 - [ ] Ran `add-model-from-yaml.py` and `export-assessed-models.py`.
 - [ ] Verified with `ollama list` after base import; ran clone `create_command` if needed.
+- [ ] Ran `sweep-ide-config.py` after Ollama inventory matches the DB.
 
 ## Notes
 

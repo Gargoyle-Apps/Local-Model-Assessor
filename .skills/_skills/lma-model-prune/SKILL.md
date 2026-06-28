@@ -16,7 +16,8 @@ triggers:
   - deletion candidates
 dependencies:
   - lma-db-core
-version: "1.1.0"
+  - lma-ide-config
+version: "1.2.0"
 ---
 
 # LMA Model Prune
@@ -142,10 +143,11 @@ Delete `.mf` files for superseded clones from `model-data/modelfile/`:
 rm model-data/modelfile/<old-alias-pattern>*.mf
 ```
 
-### 7. Regenerate exports
+### 7. Regenerate exports and sweep IDE config
 
 ```bash
 ./scripts/py scripts/export-assessed-models.py
+./scripts/py scripts/sweep-ide-config.py
 ```
 
 The export now prints a summary line listing superseded models that were excluded.
@@ -159,6 +161,7 @@ The export now prints a summary line listing superseded models that were exclude
 - [ ] `ollama rm` run for the base model tag.
 - [ ] Stale `.mf` files deleted from `model-data/modelfile/`.
 - [ ] `assessed-models.md` regenerated; superseded models excluded.
+- [ ] IDE config swept (`sweep-ide-config.py`).
 
 ---
 
@@ -283,10 +286,11 @@ Two options, surface both to the user:
 rm -f model-data/modelfile/<base-pattern>*.mf
 ```
 
-### 4. Regenerate the report
+### 4. Regenerate the report and sweep IDE config
 
 ```bash
 ./scripts/py scripts/export-assessed-models.py
+./scripts/py scripts/sweep-ide-config.py
 ```
 
 ### Cleanup checklist
@@ -298,6 +302,7 @@ rm -f model-data/modelfile/<base-pattern>*.mf
 - [ ] `models` row either retained-with-flag-cleared or hard-deleted, per user choice.
 - [ ] Stale `.mf` files removed from `model-data/modelfile/`.
 - [ ] `assessed-models.md` regenerated.
+- [ ] IDE config swept (`sweep-ide-config.py`).
 
 ---
 

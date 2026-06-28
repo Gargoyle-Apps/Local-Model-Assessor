@@ -19,7 +19,8 @@ triggers:
 dependencies:
   - lma-python-env
   - lma-db-core
-version: "1.0.0"
+  - lma-ide-config
+version: "1.1.0"
 ---
 
 # LMA Assess & Import Model
@@ -76,7 +77,25 @@ This writes to: `models`, `role_model`, `constraint_model`, `model_docs`, `provi
 
 Generates `model-data/assessed-models.md` (or a custom path).
 
-### 6. Provenance
+### 6. Build clones in Ollama (when provisioning)
+
+For each new or updated `provisioning` row, run the base `install` command (if needed), then each clone `create_command` from the DB or Modelfile path. Confirm with `ollama list`.
+
+```bash
+./scripts/query-db.sh "SELECT alias, create_command, pull_command FROM provisioned_models WHERE base_model_id='<model_id>'"
+```
+
+### 7. IDE config sweep (mandatory)
+
+After imports and whenever clones are built or removed, run the sweep (`lma-ide-config` skill):
+
+```bash
+./scripts/py scripts/sweep-ide-config.py
+```
+
+Run again if clones were only defined in the DB in step 4 but not yet created in Ollama in step 6.
+
+### 8. Provenance
 
 Content tables track who created and last updated each row:
 
@@ -113,3 +132,4 @@ Via direct SQL (if inserting manually): include `created_by`, `created_by_type`,
 - `model-data/new-models.yaml` and `model-data/modelfile/*` are gitignored.
 - `assessed-models.md` is also gitignored — it's a generated artifact.
 - Discovery via `ollama-search.md` and assessment via `model-assessment-prompt.yaml` are LLM prompt files — reference them, don't duplicate their content.
+- End every add/import flow with `./scripts/py scripts/sweep-ide-config.py` once Ollama reflects the new inventory.

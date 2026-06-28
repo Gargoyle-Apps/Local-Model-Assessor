@@ -50,6 +50,7 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   ├── add-model-from-yaml.py
 │   ├── export-assessed-models.py
 │   ├── generate-ide-config.py       # Continue + Cline/Roo config from DB
+│   ├── sweep-ide-config.py          # Sync is_active, regenerate + deploy IDE configs
 │   ├── generate-stack-handoff.py    # Postgres/pgvector/AGE + embedding handoff
 │   ├── import-profiles.py
 │   └── query-db.sh
@@ -141,7 +142,7 @@ Install the recommended models:
 ollama pull <model:tag>
 ```
 
-Configure your agent's settings file with the recommended models. After provisioned clones exist in the DB, run `./scripts/py scripts/generate-ide-config.py --dry-run` (add `--active-only` to limit to `is_active=1` rows), then merge outputs into your IDE paths — see [integrations/IDE-model-management/IDE.md](integrations/IDE-model-management/IDE.md).
+Configure your agent's settings file with the recommended models. After provisioned clones exist in Ollama, run `./scripts/py scripts/sweep-ide-config.py` (or `generate-ide-config.py --dry-run` to preview only) — see [integrations/IDE-model-management/IDE.md](integrations/IDE-model-management/IDE.md) and [`lma-ide-config`](.skills/_skills/lma-ide-config/SKILL.md).
 
 ### 7. Ad-Hoc Selection
 
@@ -165,7 +166,7 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 ## IDE + embed stack
 
-- **IDEs:** [integrations/IDE-model-management/IDE.md](integrations/IDE-model-management/IDE.md) — roles, timeouts, Continue (`~/.continue/config.yaml`) / Cline-Roo (JSON), others; `generate-ide-config.py`; see [`lma-ide-config`](.skills/_skills/lma-ide-config/SKILL.md) skill.
+- **IDEs:** [integrations/IDE-model-management/IDE.md](integrations/IDE-model-management/IDE.md) — roles, timeouts, Continue (`~/.continue/config.yaml`) / Cline-Roo (JSON), others; `sweep-ide-config.py` / `generate-ide-config.py`; see [`lma-ide-config`](.skills/_skills/lma-ide-config/SKILL.md) skill.
 - **Postgres + pgvector + AGE:** [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md) — pins, compose under `integrations/embed-retrieval-stack/`, use cases, troubleshooting. **Handoff** (`STACK_HANDOFF.md`, `embed_sample.py`): assessed **embedding** in DB → `./scripts/py scripts/generate-stack-handoff.py` → `integrations/embed-retrieval-stack/out/` (gitignored); copy stack + `out/` to your app.
 
 ---

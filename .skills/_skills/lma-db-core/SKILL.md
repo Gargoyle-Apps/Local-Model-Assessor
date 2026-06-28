@@ -13,7 +13,7 @@ triggers:
   - data flow
   - key queries
 dependencies: []
-version: "1.0.0"
+version: "1.1.0"
 ---
 
 # LMA Database Core
@@ -68,13 +68,14 @@ Always pass the SQL as a quoted string argument. No args opens an interactive sh
 | `add-model-from-yaml.py` | `model-data/new-models.yaml` | DB (`models`, `role_model`, `constraint_model`, `model_docs`, `provisioned_models`); writes `model-data/modelfile/*.mf` |
 | `export-assessed-models.py` | DB | `model-data/assessed-models.md` |
 | `generate-ide-config.py` | DB (`provisioned_models`, `models`) | `integrations/IDE-model-management/<app>/` config files |
+| `sweep-ide-config.py` | DB + `ollama list` + `software-profile.yaml` | Sync `is_active`, regenerate IDE configs, deploy Continue to `~/.continue/config.yaml` |
 | `generate-stack-handoff.py` | DB (`provisioned_models` or `role_model` for `embedding`) | `integrations/embed-retrieval-stack/out/` |
 | `ollama-search.md` → `model-assessment-prompt.yaml` → `add-model-from-yaml.py` | Ollama popular page, `hardware-profile.yaml` | DB, `assessed-models.md` |
 
 ### 6. Architecture one-liners
 
 - **Scripts (flags):** `query-db.sh "SQL"` — always pass SQL string. `init-db.sh` / `migrate-schema.sh` — empty DB / schema migrations.
-- **Python:** `./scripts/py scripts/<name>.py` (see `lma-python-env` skill). `add-model-from-yaml.py` — provenance via args or env. `export-assessed-models.py [path]`. `import-profiles.py [db]`. `generate-ide-config.py --target continue|cline [--active-only] [--dry-run]`. `generate-stack-handoff.py [--output-dir DIR]`.
+- **Python:** `./scripts/py scripts/<name>.py` (see `lma-python-env` skill). `add-model-from-yaml.py` — provenance via args or env. `export-assessed-models.py [path]`. `import-profiles.py [db]`. `generate-ide-config.py --target continue|cline [--active-only] [--dry-run]`. `sweep-ide-config.py` — run after model add/remove or clone create (see `lma-ide-config` skill). `generate-stack-handoff.py [--output-dir DIR]`.
 - **Env:** `LMA_DB` overrides the DB path for all Python scripts.
 
 ### 7. Hardware budget and co-run rule

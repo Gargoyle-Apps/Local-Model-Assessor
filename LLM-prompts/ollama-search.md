@@ -134,6 +134,10 @@ For each accepted candidate, follow **`LLM-prompts/model-assessment-prompt.yaml`
    ./scripts/py scripts/add-model-from-yaml.py model-data/new-models.yaml
    ./scripts/py scripts/export-assessed-models.py
    ```
+4. After clones are built in Ollama, sweep IDE config (`lma-ide-config` skill):
+   ```bash
+   ./scripts/py scripts/sweep-ide-config.py
+   ```
 
 New models get `assessed_at` set automatically when inserted.
 
@@ -159,7 +163,7 @@ After completing a scan (whether or not any models were added), update the DB:
 - [ ] Compare to current fleet — only keep candidates that "beat" on size, performance, or need
 - [ ] Cap at 7 candidates
 - [ ] If none qualify: return explanation and stop
-- [ ] Otherwise: assess each via `LLM-prompts/model-assessment-prompt.yaml`, run `add-model-from-yaml.py`, `export-assessed-models.py`
+- [ ] Otherwise: assess each via `LLM-prompts/model-assessment-prompt.yaml`, run `add-model-from-yaml.py`, `export-assessed-models.py`, then `sweep-ide-config.py` after Ollama inventory is current
 - [ ] Update `meta.last_ollama_scan` with `datetime('now')`
 
 ---
