@@ -126,7 +126,11 @@ content: |
 
   **Required fields (per model):** vram, ctx, class, tps, url, install
   **Optional:** runtime (default `ollama`; set to `mlx` for MLX LM models)
-  **Optional (only if true):** vision, tools, reasoning, moe, fim, structured, creative, multilingual, rag, no_corun, latency
+  **Optional boolean flags (emit only when `true`):** vision, tools, reasoning, moe, fim, structured, multilingual, rag, no_corun
+    - `fim`: set `true` for any code model with fill-in-middle / autocomplete support — do NOT leave it off code models.
+  **Optional valued fields (emit whenever assessed — these are NOT booleans, never gate on "true"):**
+    - `creative`: one of `draft` | `quality` | `polish` (writing tier; see selector prompt).
+    - `latency`: text tier for interactive responsiveness, e.g. `low` | `medium` | `high`.
   **Provisioning (required when the model is assigned any `by_role` entry):** `provisioning` list as above — at least one row per `(role, variant)` you assign for that `model_id`.
 
   **After generating output:** Write the YAML to `model-data/new-models.yaml` and run:

@@ -11,7 +11,11 @@ models:
     class: Daily Driver
     tps: 40
     # runtime: ollama  # default — omit for Ollama models
-    # Optional (only if true): vision, tools, reasoning, moe, fim, structured, multilingual
+    # Optional boolean flags (add only when true): vision, tools, reasoning, moe, fim, structured, multilingual, rag, no_corun
+    #   fim: true        # REQUIRED-ish for code models — set true if it does fill-in-middle / autocomplete
+    # Optional valued fields (NOT booleans — set the value whenever assessed):
+    #   creative: quality # one of: draft | quality | polish
+    #   latency: low      # interactive responsiveness tier, e.g. low | medium | high
     url: https://ollama.com/library/model-name
     install: ollama pull model-name:tag
 
