@@ -11,7 +11,7 @@ triggers:
 dependencies:
   - lma-assess-import-model
   - lma-ide-config
-version: "1.1.0"
+version: "1.2.0"
 ---
 
 # LMA HF GGUF → Ollama
@@ -21,6 +21,14 @@ version: "1.1.0"
 Load when the user has a **GGUF file** (or HF model card) for a model that is **not** in the Ollama library and wants to import it into the LMA assessment workflow.
 
 ## Instructions
+
+### 0. Discovery (optional)
+
+If the user has no GGUF path or HF repo yet, load **`lma-hf-mcp`** when **`hf-mcp-server`** is connected — **Model Search** + **Hub Repository Details** for quant picks, README/chat-template hints, download targets.
+
+**MCP offline:** follow `lma-hf-mcp` fallbacks (`WebFetch` model card, [huggingface.co/models](https://huggingface.co/models) search, or ask user for URL/path). Suggest MCP connect once per [integrations/mcp/huggingface-mcp.md](../../../integrations/mcp/huggingface-mcp.md); do not block import.
+
+Skip if user already supplied a URL or local `.gguf` path.
 
 ### 1. Pre-flight: hardware check
 

@@ -11,7 +11,7 @@ triggers:
   - safetensors model
 dependencies:
   - lma-assess-import-model
-version: "1.0.0"
+version: "1.1.0"
 ---
 
 # LMA MLX LM
@@ -27,6 +27,14 @@ Load when the user wants to run, assess, or import an **MLX-format model** (typi
 - Sufficient **unified memory** for the quantized model size (check `hardware-profile.yaml`)
 
 ## Instructions
+
+### 0. Discovery (optional)
+
+If the user has no `mlx-community/…` pick yet, load **`lma-hf-mcp`** when **`hf-mcp-server`** is connected — search Hub for `mlx-community/<model>` and quant suffixes (`-4bit`, `-6bit`, `-8bit`).
+
+**MCP offline:** browse [huggingface.co/mlx-community](https://huggingface.co/mlx-community), `WebFetch` a repo card, or ask user for repo ID — see `lma-hf-mcp` fallbacks. Suggest MCP connect once per [integrations/mcp/huggingface-mcp.md](../../../integrations/mcp/huggingface-mcp.md); do not block assess/import.
+
+Skip if user already named a repo ID.
 
 ### 1. Pre-flight: hardware check
 

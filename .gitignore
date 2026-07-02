@@ -61,5 +61,8 @@ integrations/IDE-model-management/cline/provider-settings.json
 
 integrations/embed-retrieval-stack/out/
 
+integrations/mcp/scout/*
+!integrations/mcp/scout/.gitkeep
+
 opencode.json
 opencode.jsonc

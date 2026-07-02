@@ -10,7 +10,7 @@ For **tool-calling agents** in IDEs (Cursor, Cline, Continue, …): query SQLite
 
 ## Repo vs Local
 
-Ships **scripts, schema, templates** — empty `model-assessor.db` until you init, profile, assess. **`Brewfile`:** optional `brew bundle` → `libpq` (keg-only; see `brew info libpq`); not needed for Docker stack (`docker compose exec`). **Tracked:** templates under `computer-profile/`, `model-data/` (e.g. `*.template.yaml`, `modelfile/.gitkeep`), `scripts/`, `.skills/` + `.skills-harness/` (skills harness; see [Skills harness](#skills-harness-third-party)), `integrations/` (copy-out: IDE + embed stack). **Gitignored:** profiles, DB, `new-models.yaml`, generated modelfiles, `integrations/IDE-model-management/*/config*`, `integrations/embed-retrieval-stack/out/`, `ref/`, `.cursorrules`. Details: [AGENTS.md](AGENTS.md) + `.gitignore`.
+Ships **scripts, schema, templates** — empty `model-assessor.db` until you init, profile, assess. **`Brewfile`:** optional `brew bundle` → `libpq` (keg-only; see `brew info libpq`); not needed for Docker stack (`docker compose exec`). **Tracked:** templates under `computer-profile/`, `model-data/` (e.g. `*.template.yaml`, `modelfile/.gitkeep`), `scripts/`, `.skills/` + `.skills-harness/` (skills harness; see [Skills harness](#skills-harness-third-party)), `integrations/` (copy-out: IDE + embed stack + `mcp/scout/.gitkeep`). **Gitignored:** profiles, DB, `new-models.yaml`, generated modelfiles, `integrations/mcp/scout/*` (scout notes), `integrations/IDE-model-management/*/config*`, `integrations/embed-retrieval-stack/out/`, `ref/`, `.cursorrules`. Details: [AGENTS.md](AGENTS.md) + `.gitignore`.
 
 ---
 
@@ -69,6 +69,9 @@ cp -r /path/to/local-model-assessor .model-assessor
 │       ├── goose/                   # Goose (CLI/Desktop)
 │       ├── pi/                      # Pi coding-agent (Terminal)
 │       └── zed/                     # Zed (Editor)
+│   └── mcp/
+│       ├── huggingface-mcp.md       # HF MCP setup + scout folder
+│       └── scout/                   # local discovery notes (gitignored except .gitkeep)
 ├── ref/                             # local agent config copies (gitignored)
 ├── LLM-prompts/
 │   ├── model-assessment-prompt.yaml
@@ -168,6 +171,7 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 - **IDEs:** [integrations/IDE-model-management/IDE.md](integrations/IDE-model-management/IDE.md) — roles, timeouts, Continue (`~/.continue/config.yaml`) / Cline-Roo (JSON), others; `sweep-ide-config.py` / `generate-ide-config.py`; see [`lma-ide-config`](.skills/_skills/lma-ide-config/SKILL.md) skill.
 - **Postgres + pgvector + AGE:** [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md) — pins, compose under `integrations/embed-retrieval-stack/`, use cases, troubleshooting. **Handoff** (`STACK_HANDOFF.md`, `embed_sample.py`): assessed **embedding** in DB → `./scripts/py scripts/generate-stack-handoff.py` → `integrations/embed-retrieval-stack/out/` (gitignored); copy stack + `out/` to your app.
+- **Hugging Face MCP:** [integrations/mcp/huggingface-mcp.md](integrations/mcp/huggingface-mcp.md) — Hub search + docs from Cursor (`hf-mcp-server`); scout notes in `integrations/mcp/scout/` (gitignored); configure tools at [huggingface.co/settings/mcp](https://huggingface.co/settings/mcp).
 
 ---
 

@@ -20,7 +20,7 @@ dependencies:
   - lma-python-env
   - lma-db-core
   - lma-ide-config
-version: "1.1.0"
+version: "1.2.0"
 ---
 
 # LMA Assess & Import Model
@@ -35,7 +35,9 @@ Load when the user wants to assess a new model from the Ollama catalog, discover
 
 ### 1. Discover new models (optional starting point)
 
-Follow `LLM-prompts/ollama-search.md`:
+**HF Hub (optional):** If `hf-mcp-server` is connected, load **`lma-hf-mcp`** to search models, read READMEs, or find GGUF/MLX alternatives (especially when Ollama only lists `:cloud` tags). **If not connected:** same skill's fallback table (web/`WebFetch`/user URL) — suggest MCP setup once, then continue with `ollama-search.md` or manual discovery. Skip Hub search entirely if the user already named a model or URL.
+
+**Ollama catalog:** Follow `LLM-prompts/ollama-search.md`:
 1. Fetch the Ollama popular models page.
 2. Parse and pre-filter against existing DB models.
 3. Cap at 7 candidates.
