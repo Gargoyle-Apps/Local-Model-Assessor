@@ -44,10 +44,11 @@ case "$(uname -s)" in
 esac
 
 if $CLEAN && [ -d "$TARGET_ABS" ]; then
-  for item in "$TARGET_ABS"/*/; do
-    [ ! -L "${item%/}" ] && continue
-    rm -f "${item%/}"
-    echo "  removed  $TARGET_REL/$(basename "${item%/}")"
+  for item in "$TARGET_ABS"/*; do
+    [ -e "$item" ] || [ -L "$item" ] || continue
+    [ ! -L "$item" ] && continue
+    rm -f "$item"
+    echo "  removed  $TARGET_REL/$(basename "$item")"
   done
 fi
 
@@ -107,12 +108,13 @@ for skill_dir in "$SKILLS_DIR"/*/; do
 done
 
 # Prune dangling symlinks (targets that no longer exist)
-for item in "$TARGET_ABS"/*/; do
-  [ ! -L "${item%/}" ] && continue
-  if [ ! -d "${item%/}" ]; then
-    link_target="$(readlink "${item%/}")"
-    echo "  pruned  $TARGET_REL/$(basename "${item%/}") (dangling -> $link_target)"
-    rm -f "${item%/}"
+for item in "$TARGET_ABS"/*; do
+  [ -e "$item" ] || [ -L "$item" ] || continue
+  [ ! -L "$item" ] && continue
+  if [ ! -e "$item" ]; then
+    link_target="$(readlink "$item")"
+    echo "  pruned  $TARGET_REL/$(basename "$item") (dangling -> $link_target)"
+    rm -f "$item"
     pruned=$((pruned + 1))
   fi
 done

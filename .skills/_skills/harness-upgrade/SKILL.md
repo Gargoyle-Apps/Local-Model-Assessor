@@ -1,6 +1,6 @@
 ---
 name: harness-upgrade
-description: "Upgrade a skills-harness installation to the latest version with native IDE discovery."
+description: "Upgrade a skills-harness install to the latest version with native IDE discovery."
 triggers:
   - upgrade harness
   - update harness
@@ -9,7 +9,7 @@ triggers:
   - enable IDE symlinks
   - update skills system
 dependencies: []
-version: "1.1.1"
+version: "1.1.2"
 ---
 
 # Harness Upgrade
@@ -22,7 +22,7 @@ Load when upgrading a repo's skills-harness from an older version (pre-0.4.0) to
 
 ## Prerequisites
 
-- The repo has `.skills/` with a working harness (Path A or B completed, `AGENTS_skills.md` removed).
+- The repo has `.skills/` with a working harness (Single-Tool or Tool-Neutral setup completed, `AGENTS_skills.md` removed).
 - You know which IDE the repo targets (or which cross-agent discovery path to use).
 
 ## Upgrade steps

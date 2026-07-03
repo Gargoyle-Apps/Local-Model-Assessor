@@ -1,6 +1,6 @@
 ---
 name: skill-template
-description: "Canonical SKILL.md format with authoring notes and refactor guide."
+description: "Canonical SKILL.md format, authoring notes, refactor guide."
 triggers:
   - new skill
   - skill format
