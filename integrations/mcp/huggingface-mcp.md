@@ -12,7 +12,7 @@ Connect Cursor (or any MCP client) to the [Hugging Face Hub MCP server](https://
 
 ## Cursor setup (this repo)
 
-This workspace ships a **project-level** config at [`.cursor/mcp.json`](../../.cursor/mcp.json):
+Create a **project-level** config at [`.cursor/mcp.json`](../../.cursor/mcp.json) (local; not tracked — copy the block below):
 
 ```json
 {
@@ -28,7 +28,7 @@ The `?login` query starts browser OAuth on first connect (HF session must be log
 
 ### Activate
 
-1. Ensure `.cursor/mcp.json` exists (tracked on the `mcp` branch).
+1. Create `.cursor/mcp.json` in the repo root (snippet above) or use `~/.cursor/mcp.json` for all projects.
 2. **Reload Cursor** — Command Palette → *Developer: Reload Window*, or restart Cursor.
 3. Open **Cursor Settings → MCP** (or the MCP panel). Confirm **hf-mcp-server** / Hugging Face is listed and connected.
 4. If auth fails, open [settings/mcp](https://huggingface.co/settings/mcp) while logged in and retry; complete any browser login prompt.
