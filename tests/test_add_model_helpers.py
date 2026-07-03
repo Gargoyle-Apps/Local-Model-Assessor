@@ -124,3 +124,4 @@ class TestLoadYaml:
         assert "first:tag" in result["models"]
         assert "second:tag" not in result.get("models", {})
         assert "2" in buf.getvalue()
+        assert buf.getvalue().count("```yaml") >= 1

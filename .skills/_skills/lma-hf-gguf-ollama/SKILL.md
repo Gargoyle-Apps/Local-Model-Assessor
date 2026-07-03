@@ -24,9 +24,9 @@ Load when the user has a **GGUF file** (or HF model card) for a model that is **
 
 ### 0. Discovery (optional)
 
-If the user has no GGUF path or HF repo yet, load **`lma-hf-mcp`** when **`hf-mcp-server`** is connected — **Model Search** + **Hub Repository Details** for quant picks, README/chat-template hints, download targets.
+If the user has no GGUF path or HF repo yet, load **`lma-hf-mcp`** — REST (`hf-hub-api.py models --search …`) for shortlists, then MCP **`hub_repo_search`** + **`hub_repo_details`** for quant picks and README/chat-template hints. **Do not use `hf_hub_query`.**
 
-**MCP offline:** follow `lma-hf-mcp` fallbacks (`WebFetch` model card, [huggingface.co/models](https://huggingface.co/models) search, or ask user for URL/path). Suggest MCP connect once per [integrations/mcp/huggingface-mcp.md](../../../integrations/mcp/huggingface-mcp.md); do not block import.
+**MCP offline:** REST script + `lma-hf-mcp` fallbacks (`WebFetch`, [huggingface.co/models](https://huggingface.co/models), user URL) — see [integrations/mcp/hf-hub-api.md](../../../integrations/mcp/hf-hub-api.md); do not block import.
 
 Skip if user already supplied a URL or local `.gguf` path.
 

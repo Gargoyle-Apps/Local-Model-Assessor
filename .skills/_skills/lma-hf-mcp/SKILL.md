@@ -1,6 +1,6 @@
 ---
 name: lma-hf-mcp
-description: "Use the Hugging Face MCP server for Hub discovery during LMA assess/import when the client is connected."
+description: "Hub discovery via REST API + HF MCP (hybrid); avoid hf_hub_query."
 triggers:
   - huggingface mcp
   - hf mcp
@@ -10,98 +10,109 @@ triggers:
   - find gguf
   - mlx-community search
   - hugging face search
+  - hf collections
+  - mlx-community collections
 dependencies: []
-version: "1.2.0"
+version: "1.3.0"
 ---
 
-# LMA Hugging Face MCP
+# LMA Hugging Face MCP + Hub REST API
 
 ## When to use this skill
 
-Load when you need to **discover** Hub resources before or during LMA assessment — model/GGUF/MLX candidates, README metadata, HF library docs, datasets, or papers. Prefer MCP when **`hf-mcp-server`** is connected; otherwise use the fallbacks below and **do not block** the workflow.
+Load when you need to **discover** Hub resources before or during LMA assessment — model/GGUF/MLX candidates, **collections**, README metadata, HF library docs, datasets, or papers.
 
-**Not a dependency** of import skills — optional accelerator.
+**Mandatory hybrid:** use **Hub REST** for lists/counts/pagination, then **HF MCP** for selective drill-down. MCP alone is unreliable for bulk Hub queries.
 
-> **Cloud models excluded.** MCP may surface API/inference-only models. Only pursue **local weights** (GGUF, safetensors/MLX, downloadable artifacts). After discovery, continue with `lma-assess-import-model`, `lma-hf-gguf-ollama`, or `lma-mlx-lm` as appropriate.
+> **Cloud models excluded.** Only pursue **local weights** (GGUF, safetensors/MLX). After discovery → `lma-assess-import-model`, `lma-hf-gguf-ollama`, or `lma-mlx-lm`.
 
-**Setup (humans):** [integrations/mcp/huggingface-mcp.md](../../../integrations/mcp/huggingface-mcp.md) · enable tools at [huggingface.co/settings/mcp](https://huggingface.co/settings/mcp).
+**Docs:** [integrations/mcp/hf-hub-api.md](../../../integrations/mcp/hf-hub-api.md) (REST + gap) · [integrations/mcp/huggingface-mcp.md](../../../integrations/mcp/huggingface-mcp.md) (MCP setup) · [huggingface.co/settings/mcp](https://huggingface.co/settings/mcp).
+
+## Non-negotiable: REST + MCP hybrid
+
+| Layer | Tool | Use for |
+|-------|------|---------|
+| **REST** | `./scripts/py scripts/hf-hub-api.py` | Collection lists/counts, org model indexes, pagination, `--json` for scout |
+| **MCP** | `hub_repo_details`, `hub_repo_search`, `hf_doc_search` | Single-repo README/license, targeted search, HF docs |
+| **MCP probe** | `hf_whoami` | Auth + transport check only |
+
+### Do **not** use `hf_hub_query`
+
+Known gap (Jul 2026): hangs 8–10+ minutes or `MCP -32001` timeout even with explicit `limit` / `scan_limit` / `max_pages`. The same data via REST returns in **&lt;1s**. **Never** route collections, counts, or bulk discovery through `hf_hub_query` until HF fixes it. Log findings in scout notes; see [hf-hub-api.md](../../../integrations/mcp/hf-hub-api.md).
+
+**Without MCP:** REST script + `WebFetch` + user URL — do not block assess/import.
 
 ## Instructions
 
-### 1. Confirm MCP is usable
+### 1. Confirm MCP is usable (optional accelerator)
 
-Try an HF MCP tool call, or infer from session context (e.g. `hf-mcp-server` in Cursor Settings → MCP).
+```bash
+./scripts/py scripts/hf-hub-api.py health
+```
 
-**If connected:** continue with §2–§3.
+MCP: call `hf_whoami`. If connected, continue hybrid workflow. If `hf_whoami` works but a prior `hf_hub_query` hung, **that is expected** — switch to REST, not transport troubleshooting.
 
-**If not connected — graceful fallback (do not stop the task):**
+**If not connected — graceful fallback:**
 
-1. **Suggest connect (once per task, brief):** Add `hf-mcp-server` per [integrations/mcp/huggingface-mcp.md](../../../integrations/mcp/huggingface-mcp.md) (`~/.cursor/mcp.json` or project `.cursor/mcp.json`), enable tools at [huggingface.co/settings/mcp](https://huggingface.co/settings/mcp), reload Cursor. Speeds Hub search and README lookup from the IDE.
-2. **Proceed without MCP** using the best available path:
+1. Suggest connect once: [huggingface-mcp.md](../../../integrations/mcp/huggingface-mcp.md), reload Cursor.
+2. Proceed with REST script and table below.
 
-| Need | Fallback |
-|------|----------|
-| Ollama catalog model | `LLM-prompts/ollama-search.md` or [ollama.com/library](https://ollama.com/library) |
-| GGUF / HF repo | User-supplied URL; [huggingface.co/models](https://huggingface.co/models) search; `WebFetch` on model card URL |
-| MLX conversion | [huggingface.co/mlx-community](https://huggingface.co/mlx-community) browse/search; user repo ID |
-| README / license / template | `WebFetch` `https://huggingface.co/<org>/<repo>` |
-| HF library how-to | [huggingface.co/docs](https://huggingface.co/docs) or targeted web search |
-| Stuck | Ask user for model card URL or local `.gguf` path |
+| Need | Primary | Fallback |
+|------|---------|------------|
+| Collections / org lists | `hf-hub-api.py collections` | `WebFetch` collection page; user snapshot |
+| Org model index | `hf-hub-api.py models --author …` | [huggingface.co/models](https://huggingface.co/models) |
+| Ollama catalog | `LLM-prompts/ollama-search.md` | [ollama.com/library](https://ollama.com/library) |
+| GGUF / HF repo | REST search + MCP `hub_repo_details` | `WebFetch` model card; user URL |
+| MLX conversion | REST `mlx-community` + MCP `hub_repo_search` | Browse [mlx-community](https://huggingface.co/mlx-community) |
+| HF library how-to | MCP `hf_doc_search` | [huggingface.co/docs](https://huggingface.co/docs) |
 
-Never fail or refuse assessment/import solely because MCP is offline.
+### 2. Pick the right tool (routing)
 
-Do **not** assume MCP works from repo files alone — connection is per-machine.
-
-### 2. Pick the right tool
-
-| LMA phase | MCP tool | Example ask |
-|-----------|----------|-------------|
-| Cloud-only Ollama tag → local alt | **Model Search** | "GGUF quants for &lt;model&gt; suitable for Ollama import" |
-| MLX path (no Ollama/GGUF) | **Model Search** | "mlx-community &lt;model&gt; 4-bit Apple Silicon" |
-| README, license, arch hints | **Hub Repository Details** | Enable README inclusion on HF settings when offered |
-| Quant / PEFT / transformers how-to | **Documentation Semantic Search** | "How do I quantize for GGUF?" / "PEFT LoRA adapters" |
-| Benchmark / eval notes | **Dataset Search** | "code generation benchmark datasets" |
-| Capability research | **Papers Semantic Search** | "MoE code model architecture" |
-| Extra community tools | **Spaces Semantic Search** | Optional; not core LMA loop |
+| LMA phase | Layer | Tool / command |
+|-----------|-------|----------------|
+| Collection count / recent lists | **REST** | `hf-hub-api.py collections --owner mlx-community --recent 10` |
+| mlx-community (or org) model index | **REST** | `hf-hub-api.py models --author mlx-community --limit 20` |
+| Cloud-only Ollama → local alt | **MCP** | `hub_repo_search` — "GGUF quants for &lt;model&gt; Ollama" |
+| MLX path (no Ollama/GGUF) | **REST** then **MCP** | REST index → `hub_repo_details` on 1–3 candidates |
+| README, license, arch hints | **MCP** | `hub_repo_details` (`include_readme` when needed) |
+| Quant / PEFT / transformers | **MCP** | `hf_doc_search` |
+| Benchmark / eval notes | **MCP** | `hub_repo_search` (datasets) or `paper_search` |
+| Auth / transport probe | **MCP** | `hf_whoami` |
+| ~~Broad Hub navigator~~ | ~~MCP~~ | ~~`hf_hub_query`~~ — **avoid** |
 
 ### 3. Discovery → assess handoff
 
-After MCP returns a **local-runnable** candidate:
+After REST shortlist + MCP drill-down on **local-runnable** candidates:
 
 | Candidate type | Next skill |
 |----------------|------------|
-| In Ollama library | `lma-assess-import-model` (assess + `ollama pull`) |
+| In Ollama library | `lma-assess-import-model` |
 | GGUF not in Ollama | `lma-hf-gguf-ollama` |
 | MLX safetensors (`mlx-community/…`) | `lma-mlx-lm` |
 
-Pass forward: repo ID, quant tag, README notes (chat template, license), download size estimate. Still run live checks (`ollama show`, benchmarks, capability probes) — MCP does not replace assessment.
+Gate on `computer-profile/hardware-profile.yaml` VRAM budget before assess. MCP does not replace live benchmarks.
 
-**Optional scout notes:** For multi-candidate discovery, write summaries to `integrations/mcp/scout/` (gitignored). Example: `scout/qwen3-gguf-candidates.md`. Folder tracked, contents local — see [huggingface-mcp.md](../../../integrations/mcp/huggingface-mcp.md) § Scout folder. Skip for trivial one-shot lookups.
+**Scout notes:** `integrations/mcp/scout/` — log REST totals, MCP repo picks, VRAM fit. Example: `scout/mlx-community-collections.md`.
 
-### 4. What MCP does **not** do
+### 4. What this stack does **not** do
 
-- Write to `model-assessor.db` — use `add-model-from-yaml.py`
-- Replace `computer-profile/hardware-profile.yaml` VRAM gating
-- Measure `tps`, `moe`, `structured`, `fim` — live Ollama/runtime tests still required
-- Configure IDEs — `lma-ide-config` / `sweep-ide-config.py` after import
-
-### 5. Example prompts (agent → MCP)
-
-- "Search Hugging Face for Qwen3 GGUF files with Q4_K_M quant for local Ollama import."
-- "Find mlx-community conversions of DeepSeek-R1 for Apple Silicon; prefer 4-bit."
-- "Get README and license for `unsloth/Qwen3-30B-GGUF`."
-- "How does transformers handle chat templates for custom models?" (documentation search)
+- Write to `model-assessor.db` — `add-model-from-yaml.py`
+- Replace hardware VRAM gating
+- Measure `tps`, `moe`, `structured`, `fim` — live runtime tests required
 
 ## Checklist
 
-- [ ] MCP connected, **or** fallback path chosen and user nudged once to connect (optional)
+- [ ] REST `health` or MCP `hf_whoami` OK (or fallback chosen)
+- [ ] Lists/counts via **REST**, not `hf_hub_query`
+- [ ] MCP used only for selective drill-down (`hub_repo_*`, `hf_doc_*`)
 - [ ] Result is local weights, not cloud/API-only
-- [ ] Candidate fits hardware budget (check profile before assess)
-- [ ] Handed off to correct import skill with repo URL + quant
-- [ ] Live assessment / benchmarks still planned
-- [ ] Multi-candidate scout written to `integrations/mcp/scout/` when useful (optional)
+- [ ] Candidate fits hardware budget
+- [ ] Handed off to correct import skill
+- [ ] Scout written when multi-candidate (optional)
 
-## Notes
+## Example agent flow (mlx-community collections)
 
-- HF MCP is experimental; tool names and settings may change — [HF MCP docs](https://huggingface.co/docs/hub/en/agents-mcp).
-- Config lives in client MCP settings (`~/.cursor/mcp.json` or project `.cursor/mcp.json`), not in LMA scripts.
+1. `./scripts/py scripts/hf-hub-api.py collections --owner mlx-community --recent 10 --json`
+2. Pick 1–2 collections matching task (code, vision, etc.)
+3. MCP `hub_repo_details` on specific `mlx-community/Model-4bit` repos
+4. VRAM check → assess → `new-models.yaml` (`runtime: mlx`)

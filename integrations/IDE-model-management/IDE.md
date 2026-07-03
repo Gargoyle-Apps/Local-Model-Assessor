@@ -119,8 +119,8 @@ Autocomplete entries get a shorter timeout:
 ### Setup steps (on-demand)
 
 1. Run `./scripts/py scripts/sweep-ide-config.py` (or `generate-ide-config.py --target continue` with `--dry-run` to preview only)
-2. Review the generated `integrations/IDE-model-management/continue/config.yaml`
-3. If you used `generate-ide-config.py` alone, copy or merge into `~/.continue/config.yaml` (`sweep-ide-config.py` does this automatically)
+2. Review the generated `integrations/IDE-model-management/continue/generated/config.yaml`
+3. `sweep-ide-config.py` merges LMA-managed model entries into `~/.continue/config.yaml` (backs up first, preserves your other keys and custom models). To preview without writing, use `generate-ide-config.py --target continue --dry-run`.
 4. Restart Continue to pick up changes
 
 ---

@@ -154,6 +154,7 @@ def _continue_model_entry(row: dict) -> dict:
         "model": row["alias"],
         "apiBase": OLLAMA_API_BASE,
         "roles": mapping["roles"],
+        "lmaManaged": True,
     }
 
     caps = _continue_capabilities(row)
@@ -184,7 +185,9 @@ def build_continue_config(rows: list[dict]) -> dict:
 
 
 def write_continue_config(config: dict, dry_run: bool = False) -> Optional[Path]:
-    out_path = REPO_ROOT / "integrations" / "IDE-model-management" / "continue" / "config.yaml"
+    out_path = (
+        REPO_ROOT / "integrations" / "IDE-model-management" / "continue" / "generated" / "config.yaml"
+    )
     text = yaml.dump(config, default_flow_style=False, sort_keys=False, allow_unicode=True)
     if dry_run:
         print(f"--- Continue config.yaml (would write to {out_path}) ---")
@@ -226,7 +229,9 @@ def build_cline_config(rows: list[dict]) -> dict:
 
 
 def write_cline_config(config: dict, dry_run: bool = False) -> Optional[Path]:
-    out_path = REPO_ROOT / "integrations" / "IDE-model-management" / "cline" / "provider-settings.json"
+    out_path = (
+        REPO_ROOT / "integrations" / "IDE-model-management" / "cline" / "generated" / "provider-settings.json"
+    )
     text = json.dumps(config, indent=2, ensure_ascii=False) + "\n"
     if dry_run:
         print(f"--- Cline/Roo provider-settings.json (would write to {out_path}) ---")

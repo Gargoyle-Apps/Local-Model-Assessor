@@ -19,10 +19,10 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-lma}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lma_dev_change_me}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-lma}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     # PostgreSQL 18+ images require mounting the *parent* dir, not .../data
     # (pg_ctlcluster-style layout). See https://github.com/docker-library/postgres/pull/1259
     volumes:

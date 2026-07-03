@@ -36,7 +36,7 @@ Two distinct cleanup paths share this skill:
 - **`models.superseded_by`** — stores the `model_id` of the replacement. `NULL` = active; non-NULL = superseded.
 - **`models.user_flag_for_deletion`** — `INTEGER 0/1`. Set by the user; **does not** hide the model from selection, export, or IDE config (still usable until you actually clean it up). It is purely a queue marker.
 - **`provisioned_models.user_flag_for_deletion`** — same semantics, applied to clones. When the user flags a base model, also flag all of its clones unless they specify otherwise.
-- Superseded models are excluded from `export-assessed-models.py` output, from role selection queries, and from `generate-ide-config.py` when `--active-only` is used. **Flagged-only** models (no supersede) are NOT excluded — they still show up everywhere until deletion is processed.
+- **`superseded_by` is honored automatically only in `export-assessed-models.py`** (superseded rows are omitted from the markdown export). Role selection queries and `generate-ide-config.py` do **not** filter on `superseded_by` unless you complete the prune steps in §A.3/§A.4 (repoint roles, regenerate IDE config). **Flagged-only** models (no supersede) are NOT excluded anywhere until deletion is processed in §C.
 - Rows are never `DELETE`d from `models` — provenance, assessment history, and class/role data are preserved by setting `superseded_by` or by leaving the (now-orphan) row in place after deletion. `provisioned_models` rows for a deleted base may be hard-deleted only as part of §C.
 - The `user_flag_for_deletion` flag is preserved across YAML re-imports (`add-model-from-yaml.py` UPSERT does not touch it) — confirmed by `tests/test_ingestion_end_to_end.py::test_user_flag_for_deletion_preserved_across_reimport`.
 

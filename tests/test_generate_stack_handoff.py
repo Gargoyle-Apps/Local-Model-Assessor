@@ -74,3 +74,46 @@ def test_active_only_raises_without_active_provisioned(db_with_embedding_role):
     """--active-only requires is_active=1 provisioned_models row; role_model is not used."""
     with pytest.raises(mod.EmbeddingResolutionError, match="No active"):
         mod.resolve_embedding_model(db_with_embedding_role, active_only=True)
+
+
+def test_build_embed_sample_py_escapes_alias():
+    py = mod.build_embed_sample_py(
+        embedding_alias='evil" + print("pwned") + "',
+        ollama_host="http://127.0.0.1:11434",
+        vector_dim=768,
+    )
+    assert 'evil" + print("pwned") + "' not in py
+    assert "MODEL = " in py
+    assert "EXPECTED_DIM = 768" in py
+
+
+def test_resolve_prefers_role_model_over_inactive_provisioned(tmp_path):
+    db_path = tmp_path / "embed.db"
+    conn = sqlite3.connect(str(db_path))
+    conn.executescript(SCHEMA_SQL.read_text())
+    conn.execute(
+        "INSERT INTO models (model_id, vram, ctx, class, tps, url, install) "
+        "VALUES ('nomic-embed-text:latest', 1, 8192, 'Utility', 100, 'https://example.com', "
+        "'ollama pull nomic-embed-text:latest')"
+    )
+    conn.execute(
+        "INSERT INTO role_model (role, variant, model_id) "
+        "VALUES ('embedding', 'primary', 'nomic-embed-text:latest')"
+    )
+    conn.execute(
+        """INSERT INTO provisioned_models (
+          alias, base_model_id, role, variant, num_ctx, modelfile_content, modelfile_path,
+          create_command, pull_command, is_active
+        ) VALUES (
+          'nomic-embed-text:latest_embed', 'nomic-embed-text:latest', 'embedding', 'primary', 8192,
+          'FROM nomic-embed-text:latest', 'model-data/modelfile/x.mf',
+          'ollama create nomic-embed-text:latest_embed -f model-data/modelfile/x.mf',
+          'ollama pull nomic-embed-text:latest', 0
+        )"""
+    )
+    conn.commit()
+    conn.close()
+
+    info = mod.resolve_embedding_model(db_path, active_only=False)
+    assert info["source"] == "role_model"
+    assert info["alias"] == "nomic-embed-text:latest"

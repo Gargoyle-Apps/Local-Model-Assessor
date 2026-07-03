@@ -1,6 +1,6 @@
 # Local Model Assessor
 
-**Version 2.4.0** — bump criteria: [AGENTS.md](AGENTS.md#lma-version).
+**Version 2.5.0** — bump criteria: [AGENTS.md](AGENTS.md#lma-version).
 
 For **tool-calling agents** in IDEs (Cursor, Cline, Continue, …): query SQLite and run repo scripts — not for chat-only LLMs without shell access.
 
@@ -10,7 +10,7 @@ For **tool-calling agents** in IDEs (Cursor, Cline, Continue, …): query SQLite
 
 ## Repo vs Local
 
-Ships **scripts, schema, templates** — empty `model-assessor.db` until you init, profile, assess. **`Brewfile`:** optional `brew bundle` → `libpq` (keg-only; see `brew info libpq`); not needed for Docker stack (`docker compose exec`). **Tracked:** templates under `computer-profile/`, `model-data/` (e.g. `*.template.yaml`, `modelfile/.gitkeep`), `scripts/`, `.skills/` + `.skills-harness/` (skills harness; see [Skills harness](#skills-harness-third-party)), `integrations/` (copy-out: IDE + embed stack + `mcp/scout/.gitkeep`). **Gitignored:** profiles, DB, `new-models.yaml`, generated modelfiles, `integrations/mcp/scout/*` (scout notes), `integrations/IDE-model-management/*/config*`, `integrations/embed-retrieval-stack/out/`, `ref/`, `.cursorrules`. Details: [AGENTS.md](AGENTS.md) + `.gitignore`.
+Ships **scripts, schema, templates** — empty `model-assessor.db` until you init, profile, assess. **`Brewfile`:** optional `brew bundle` → `libpq` (keg-only; see `brew info libpq`); not needed for Docker stack (`docker compose exec`). **Tracked:** templates under `computer-profile/`, `model-data/` (e.g. `*.template.yaml`, `modelfile/.gitkeep`), `scripts/`, `.skills/` + `.skills-harness/` (skills harness; see [Skills harness](#skills-harness-third-party)), `integrations/` (copy-out: IDE + embed stack + `mcp/scout/.gitkeep`). **Gitignored:** profiles, DB, `new-models.yaml`, `model-data/model-lookup.json`, generated modelfiles, `integrations/mcp/scout/*` (scout notes), local IDE copies (`integrations/IDE-model-management/*/generated/*`, `continue/config.yaml`, `cline/provider-settings.json`, `opencode/opencode.json`, `opencode.json`, `opencode.jsonc`, `pi/*.json`, `zed/settings.json`), `integrations/embed-retrieval-stack/out/`, `ref/`, `.cursorrules`. Details: [AGENTS.md](AGENTS.md) + `.gitignore`.
 
 ---
 
@@ -60,16 +60,18 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   │   ├── versions.lock.yaml
 │   │   ├── docker-compose.yml
 │   │   ├── Dockerfile
+│   │   ├── .env.example
 │   │   └── init/
-│   └── IDE-model-management/
-│       ├── IDE.md                   # setup docs, role mappings, timeout policy, templates
-│       ├── continue/                # Continue (VS Code)
-│       ├── cline/                   # Cline / Roo Code (JSON provider settings)
-│       ├── opencode/                # OpenCode (CLI/TUI)
-│       ├── goose/                   # Goose (CLI/Desktop)
-│       ├── pi/                      # Pi coding-agent (Terminal)
-│       └── zed/                     # Zed (Editor)
+│   ├── IDE-model-management/
+│   │   ├── IDE.md                   # setup docs, role mappings, timeout policy, templates
+│   │   ├── continue/                # Continue (VS Code)
+│   │   ├── cline/                   # Cline / Roo Code (JSON provider settings)
+│   │   ├── opencode/                # OpenCode (CLI/TUI)
+│   │   ├── goose/                   # Goose (CLI/Desktop)
+│   │   ├── pi/                      # Pi coding-agent (Terminal)
+│   │   └── zed/                     # Zed (Editor)
 │   └── mcp/
+│       ├── hf-hub-api.md            # REST + MCP hybrid; hf_hub_query gap
 │       ├── huggingface-mcp.md       # HF MCP setup + scout folder
 │       └── scout/                   # local discovery notes (gitignored except .gitkeep)
 ├── ref/                             # local agent config copies (gitignored)
@@ -77,9 +79,12 @@ cp -r /path/to/local-model-assessor .model-assessor
 │   ├── model-assessment-prompt.yaml
 │   ├── model-selector-prompt.yaml
 │   └── ollama-search.md
-├── .skills/                         # skills harness (third-party; see README)
+├── .skills/                         # portable consumer skills + `_index.md`
+├── .skills-harness/                 # vendored third-party skills kit (git subtree)
+├── tests/                           # pytest suite
 ├── AGENTS.md                        # agent spine: non-negotiables, file layout, hardware budget
-├── requirements.txt             # PyYAML for YAML import scripts; install via bootstrap-python.sh
+├── requirements.txt                 # PyYAML for YAML import scripts; install via bootstrap-python.sh
+├── requirements-dev.txt             # pytest and dev tooling
 ├── Brewfile                         # optional: brew bundle → libpq
 ├── .gitignore
 └── LICENSE
@@ -171,7 +176,7 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 - **IDEs:** [integrations/IDE-model-management/IDE.md](integrations/IDE-model-management/IDE.md) — roles, timeouts, Continue (`~/.continue/config.yaml`) / Cline-Roo (JSON), others; `sweep-ide-config.py` / `generate-ide-config.py`; see [`lma-ide-config`](.skills/_skills/lma-ide-config/SKILL.md) skill.
 - **Postgres + pgvector + AGE:** [integrations/embed-retrieval-stack/embed-retrieval-stack.md](integrations/embed-retrieval-stack/embed-retrieval-stack.md) — pins, compose under `integrations/embed-retrieval-stack/`, use cases, troubleshooting. **Handoff** (`STACK_HANDOFF.md`, `embed_sample.py`): assessed **embedding** in DB → `./scripts/py scripts/generate-stack-handoff.py` → `integrations/embed-retrieval-stack/out/` (gitignored); copy stack + `out/` to your app.
-- **Hugging Face MCP:** [integrations/mcp/huggingface-mcp.md](integrations/mcp/huggingface-mcp.md) — Hub search + docs from Cursor (`hf-mcp-server`); scout notes in `integrations/mcp/scout/` (gitignored); configure tools at [huggingface.co/settings/mcp](https://huggingface.co/settings/mcp).
+- **Hugging Face Hub:** [integrations/mcp/hf-hub-api.md](integrations/mcp/hf-hub-api.md) — **REST + MCP hybrid** (`hf-hub-api.py` for lists/collections; MCP for drill-down; **avoid `hf_hub_query`**). MCP setup: [integrations/mcp/huggingface-mcp.md](integrations/mcp/huggingface-mcp.md); scout notes in `integrations/mcp/scout/` (gitignored).
 
 ---
 

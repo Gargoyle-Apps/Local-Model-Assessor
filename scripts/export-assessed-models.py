@@ -18,7 +18,13 @@ DEFAULT_MD = REPO_ROOT / "model-data" / "assessed-models.md"
 
 
 def build_spec_row(label: str, value: str) -> str:
-    return f"| {label} | {value} |"
+    safe_label = label.replace("|", "\\|")
+    safe_value = value.replace("|", "\\|")
+    return f"| {safe_label} | {safe_value} |"
+
+
+def _md_escape_inline(text: str) -> str:
+    return str(text).replace("|", "\\|").replace("`", "\\`")
 
 
 def _truthy(v):
@@ -137,7 +143,8 @@ For writing and creative tasks, choose based on stage:
             creative_tiers.append((ct, m["model_id"], m["tps"]))
     if creative_tiers:
         for ct, mid, tps in creative_tiers[:6]:
-            header += f"| 🎨 **{ct.capitalize()}** | {mid} | ~{tps} t/s | See model entry |\n"
+            ct_label = str(ct).capitalize() if isinstance(ct, str) else str(ct)
+            header += f"| 🎨 **{ct_label}** | `{_md_escape_inline(mid)}` | ~{tps} t/s | See model entry |\n"
     else:
         header += "| Draft | (your draft model) | ~50 t/s | Brainstorming, iteration |\n"
         header += "| Quality | (your quality model) | ~25 t/s | Substantive drafts |\n"
@@ -145,34 +152,46 @@ For writing and creative tasks, choose based on stage:
     header += "\n---\n\n"
 
     sections = {cls: [] for cls in class_order}
+    other_models: list = []
     for m in models:
         cls = m.get("class") or "Other"
-        if cls not in sections:
-            sections[cls] = []
-        sections[cls].append(m)
+        if cls in sections:
+            sections[cls].append(m)
+        else:
+            other_models.append(m)
+    if other_models:
+        sections.setdefault("Other", []).extend(other_models)
 
     body_parts = []
-    for cls in class_order:
+    rendered_count = 0
+    section_order = class_order + (["Other"] if other_models else [])
+    for cls in section_order:
         mods = sections.get(cls, [])
         if not mods:
             continue
         body_parts.append(f"## {cls} Class Models\n")
         for m in mods:
+            rendered_count += 1
             doc = docs.get(m["model_id"])
             spec_table = model_to_spec_table(m, doc)
             desc = (doc and doc.get("description")) or ""
             best_for = (doc and doc.get("best_for")) or ""
             caveats = (doc and doc.get("caveats")) or ""
             creative = (doc and doc.get("creative_tier")) or m.get("creative")
-            creative_row = f"\n{build_spec_row('Creative', creative + ' tier')}\n" if creative else ""
+            if creative is not None and not isinstance(creative, str):
+                creative = str(creative)
+            creative_row = (
+                f"\n{build_spec_row('Creative', creative + ' tier')}\n" if creative else ""
+            )
 
-            block = f"### {m['model_id']}\n{spec_table}{creative_row}\n\n"
+            model_heading = _md_escape_inline(m["model_id"])
+            block = f"### `{model_heading}`\n{spec_table}{creative_row}\n\n"
             if desc:
-                block += f"{desc}\n\n"
+                block += f"{_md_escape_inline(desc)}\n\n"
             if best_for:
-                block += f"**Best for:** {best_for}\n\n"
+                block += f"**Best for:** {_md_escape_inline(best_for)}\n\n"
             if caveats:
-                block += f"**Caveats:** {caveats}\n\n"
+                block += f"**Caveats:** {_md_escape_inline(caveats)}\n\n"
             block += "---\n\n"
             body_parts.append(block)
 
@@ -198,7 +217,7 @@ For writing and creative tasks, choose based on stage:
             tps_s = "" if tps is None else str(tps)
             active = "yes" if p.get("is_active") else "no"
             body_parts.append(
-                f"| `{p['alias']}` | `{p['base_model_id']}` | {p['role']} | {p['variant']} | "
+                f"| `{_md_escape_inline(p['alias'])}` | `{_md_escape_inline(p['base_model_id'])}` | {p['role']} | {p['variant']} | "
                 f"{p['num_ctx']} | {temp_s} | {cls} | {vram_s} | {tps_s} | {active} |\n"
             )
         body_parts.append(
@@ -222,7 +241,7 @@ Run `sqlite3 model-data/model-assessor.db "SELECT * FROM decision_tree"` for the
 
     output = header + "\n".join(body_parts) + footer
     md_path.write_text(output, encoding="utf-8")
-    print(f"Exported {len(models)} active models to {md_path}")
+    print(f"Exported {rendered_count} active models to {md_path}")
 
     try:
         with sqlite3.connect(db_path) as conn2:

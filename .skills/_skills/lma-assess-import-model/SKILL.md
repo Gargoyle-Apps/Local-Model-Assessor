@@ -35,7 +35,7 @@ Load when the user wants to assess a new model from the Ollama catalog, discover
 
 ### 1. Discover new models (optional starting point)
 
-**HF Hub (optional):** If `hf-mcp-server` is connected, load **`lma-hf-mcp`** to search models, read READMEs, or find GGUF/MLX alternatives (especially when Ollama only lists `:cloud` tags). **If not connected:** same skill's fallback table (web/`WebFetch`/user URL) — suggest MCP setup once, then continue with `ollama-search.md` or manual discovery. Skip Hub search entirely if the user already named a model or URL.
+**HF Hub (optional):** Load **`lma-hf-mcp`** for discovery — **REST** (`hf-hub-api.py`) for lists/counts, **MCP** (`hub_repo_details`, `hub_repo_search`) for drill-down; **avoid `hf_hub_query`**. If MCP offline: REST script + fallbacks in that skill. Skip Hub search if the user already named a model or URL.
 
 **Ollama catalog:** Follow `LLM-prompts/ollama-search.md`:
 1. Fetch the Ollama popular models page.

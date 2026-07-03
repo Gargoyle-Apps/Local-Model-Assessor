@@ -20,6 +20,7 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -46,8 +47,8 @@ DEPLOY_PATHS = {
 }
 
 GENERATED_PATHS = {
-    "continue": REPO_ROOT / "integrations" / "IDE-model-management" / "continue" / "config.yaml",
-    "cline": REPO_ROOT / "integrations" / "IDE-model-management" / "cline" / "provider-settings.json",
+    "continue": REPO_ROOT / "integrations" / "IDE-model-management" / "continue" / "generated" / "config.yaml",
+    "cline": REPO_ROOT / "integrations" / "IDE-model-management" / "cline" / "generated" / "provider-settings.json",
 }
 
 
@@ -63,7 +64,11 @@ def _read_software_profile() -> dict:
     src = SOFTWARE if SOFTWARE.exists() else SOFTWARE_TEMPLATE
     if not src.exists():
         return {}
-    return yaml.safe_load(src.read_text(encoding="utf-8")) or {}
+    try:
+        return yaml.safe_load(src.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        print(f"Warning: could not read software profile ({exc}); using all targets.", file=sys.stderr)
+        return {}
 
 
 def _agent_names(profile: dict) -> list[str]:
@@ -97,6 +102,14 @@ def detect_targets(profile: dict, explicit: Optional[list[str]] = None) -> list[
     return list(SUPPORTED_TARGETS)
 
 
+def _normalize_ollama_tag(tag: str) -> str:
+    tag = tag.strip()
+    if ":" not in tag:
+        return f"{tag}:latest"
+    name, _, rev = tag.partition(":")
+    return f"{name}:{rev or 'latest'}"
+
+
 def ollama_aliases() -> Optional[set[str]]:
     try:
         result = subprocess.run(
@@ -119,13 +132,18 @@ def ollama_aliases() -> Optional[set[str]]:
     for line in result.stdout.strip().splitlines()[1:]:
         line = line.strip()
         if line:
-            aliases.add(line.split()[0])
+            aliases.add(_normalize_ollama_tag(line.split()[0]))
     return aliases
 
 
-def sync_provisioned_active(db_path: Path, dry_run: bool = False) -> tuple[int, int]:
+def sync_provisioned_active(
+    db_path: Path,
+    dry_run: bool = False,
+    installed: Optional[set[str]] = None,
+) -> tuple[int, int]:
     """Set is_active from ollama list: 1 when alias is installed, 0 when missing."""
-    installed = ollama_aliases()
+    if installed is None:
+        installed = ollama_aliases()
     if installed is None:
         return 0, 0
 
@@ -140,7 +158,7 @@ def sync_provisioned_active(db_path: Path, dry_run: bool = False) -> tuple[int, 
         rows = list(c.fetchall())
         for row in rows:
             alias = row["alias"]
-            want = 1 if alias in installed else 0
+            want = 1 if _normalize_ollama_tag(alias) in installed else 0
             if row["is_active"] == want:
                 continue
             if dry_run:
@@ -176,11 +194,34 @@ def generate_target(
     return writer(config, dry_run=dry_run)
 
 
-def deploy_target(target: str, dry_run: bool = False) -> bool:
-    src = GENERATED_PATHS[target]
+def merge_continue_config(existing: dict, generated: dict) -> dict:
+    """Preserve user keys and non-LMA models; replace LMA-managed model entries."""
+    lma_models = generated.get("models") or []
+    if not lma_models:
+        return existing
+
+    lma_aliases = {m.get("model") for m in lma_models if m.get("model")}
+    kept_user_models = []
+    for m in existing.get("models") or []:
+        if m.get("lmaManaged"):
+            continue
+        if m.get("model") in lma_aliases:
+            continue
+        kept_user_models.append(m)
+
+    merged = dict(existing)
+    merged["models"] = kept_user_models + lma_models
+    for key, val in generated.items():
+        if key != "models":
+            merged.setdefault(key, val)
+    return merged
+
+
+def deploy_target(target: str, src: Path, dry_run: bool = False) -> bool:
     if not src.exists():
         print(f"Warning: generated file missing for {target}: {src}", file=sys.stderr)
         return False
+
     dest = DEPLOY_PATHS.get(target)
     if dest is None:
         print(
@@ -188,12 +229,40 @@ def deploy_target(target: str, dry_run: bool = False) -> bool:
             "Import via the extension UI — see integrations/IDE-model-management/cline/config-location.md",
         )
         return True
+
+    try:
+        generated = yaml.safe_load(src.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        print(f"Warning: could not read generated config {src}: {exc}", file=sys.stderr)
+        return False
+
+    if not generated.get("models"):
+        print(f"Warning: generated {target} config has no models; skipping deploy.", file=sys.stderr)
+        return False
+
     if dry_run:
-        print(f"  would deploy {src} -> {dest}")
+        print(f"  would deploy {src} -> {dest} (merge, backup first)")
         return True
+
     dest.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(src, dest)
-    print(f"Deployed {target} config to {dest}")
+    if dest.exists():
+        stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        backup = dest.with_name(f"config.yaml.bak.{stamp}")
+        shutil.copy2(dest, backup)
+        print(f"Backed up existing config to {backup}")
+        try:
+            existing = yaml.safe_load(dest.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError):
+            existing = {}
+    else:
+        existing = {}
+
+    merged = merge_continue_config(existing, generated)
+    dest.write_text(
+        yaml.dump(merged, default_flow_style=False, sort_keys=False, allow_unicode=True),
+        encoding="utf-8",
+    )
+    print(f"Deployed {target} config to {dest} (merged, LMA models updated)")
     return True
 
 
@@ -233,26 +302,32 @@ def main():
         else:
             print(f"No agent names in software-profile; generating all targets: {', '.join(targets)}")
 
+    installed_aliases: Optional[set[str]] = None
     if not args.no_sync:
         print("Syncing provisioned_models.is_active from ollama list...")
-        activated, deactivated = sync_provisioned_active(db_path, dry_run=args.dry_run)
+        installed_aliases = ollama_aliases()
+        activated, deactivated = sync_provisioned_active(
+            db_path, dry_run=args.dry_run, installed=installed_aliases
+        )
         if activated or deactivated:
             print(f"  activated: {activated}, deactivated: {deactivated}")
-        elif ollama_aliases() is not None:
+        elif installed_aliases is not None:
             print("  no is_active changes needed")
 
     gen_mod = _load_generate_module()
+    generated_this_run: dict[str, Optional[Path]] = {}
     for target in targets:
         path = generate_target(gen_mod, db_path, target, active_only, args.dry_run)
+        generated_this_run[target] = path
         if path:
             print(f"Wrote {gen_mod.TARGETS[target][0]} config to {path}")
-        elif args.dry_run:
-            generate_target(gen_mod, db_path, target, active_only, dry_run=True)
 
     if not args.no_deploy:
         for target in targets:
-            if args.dry_run or GENERATED_PATHS[target].exists():
-                deploy_target(target, dry_run=args.dry_run)
+            src = generated_this_run.get(target)
+            if src is None:
+                continue
+            deploy_target(target, src, dry_run=args.dry_run)
 
     if not args.dry_run and not args.no_deploy and "continue" in targets:
         print("Restart Continue or reload VS Code to pick up config changes.")

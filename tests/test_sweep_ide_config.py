@@ -44,3 +44,33 @@ class TestDetectTargets:
     def test_fallback_all_when_unrecognized(self):
         profile = {"primary_agent": {"name": "Your Primary Agent"}}
         assert mod.detect_targets(profile) == ["continue", "cline"]
+
+
+class TestMergeContinueConfig:
+    def test_preserves_user_models_and_keys(self):
+        existing = {
+            "rules": ["stay"],
+            "models": [
+                {"name": "user model", "provider": "ollama", "model": "custom:7b"},
+                {"name": "old lma", "provider": "ollama", "model": "old:1b", "lmaManaged": True},
+            ],
+        }
+        generated = {
+            "name": "Local Model Assessor",
+            "models": [
+                {"name": "new lma", "provider": "ollama", "model": "new:1b", "lmaManaged": True},
+            ],
+        }
+        merged = mod.merge_continue_config(existing, generated)
+        assert merged["rules"] == ["stay"]
+        models = merged["models"]
+        assert models[0]["model"] == "custom:7b"
+        assert models[1]["model"] == "new:1b"
+
+
+class TestNormalizeOllamaTag:
+    def test_implicit_latest(self):
+        assert mod._normalize_ollama_tag("llama3") == "llama3:latest"
+
+    def test_explicit_tag(self):
+        assert mod._normalize_ollama_tag("llama3:8b") == "llama3:8b"

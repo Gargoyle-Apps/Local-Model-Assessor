@@ -30,9 +30,9 @@ Load when the user wants to run, assess, or import an **MLX-format model** (typi
 
 ### 0. Discovery (optional)
 
-If the user has no `mlx-community/…` pick yet, load **`lma-hf-mcp`** when **`hf-mcp-server`** is connected — search Hub for `mlx-community/<model>` and quant suffixes (`-4bit`, `-6bit`, `-8bit`).
+If the user has no `mlx-community/…` pick yet, load **`lma-hf-mcp`** — **REST first** (`./scripts/py scripts/hf-hub-api.py collections|models --owner mlx-community`), then MCP `hub_repo_details` / `hub_repo_search` for README and quant suffixes (`-4bit`, `-6bit`, `-8bit`). **Do not use `hf_hub_query`.**
 
-**MCP offline:** browse [huggingface.co/mlx-community](https://huggingface.co/mlx-community), `WebFetch` a repo card, or ask user for repo ID — see `lma-hf-mcp` fallbacks. Suggest MCP connect once per [integrations/mcp/huggingface-mcp.md](../../../integrations/mcp/huggingface-mcp.md); do not block assess/import.
+**MCP offline:** same REST script or browse [huggingface.co/mlx-community](https://huggingface.co/mlx-community), `WebFetch` a repo card — see `lma-hf-mcp` fallbacks and [integrations/mcp/hf-hub-api.md](../../../integrations/mcp/hf-hub-api.md).
 
 Skip if user already named a repo ID.
 

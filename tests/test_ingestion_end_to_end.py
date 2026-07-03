@@ -1,6 +1,7 @@
 """End-to-end ingestion: seed YAML → add-model-from-yaml.py → verify DB rows."""
 
 import importlib.util
+import os
 import sqlite3
 import subprocess
 import sys
@@ -78,8 +79,8 @@ rag_pipeline:
 
 
 @pytest.fixture
-def seeded_db(tmp_path):
-    db_path = tmp_path / "test.db"
+def seeded_db(tmp_path, _isolate_lma_env):
+    db_path = _isolate_lma_env
     conn = sqlite3.connect(str(db_path))
     conn.executescript(SCHEMA_SQL.read_text())
     conn.close()
@@ -90,17 +91,12 @@ def _run_ingestion(db_path: Path, yaml_content: str = SEED_YAML):
     yaml_file = db_path.parent / "seed.yaml"
     yaml_file.write_text(yaml_content)
 
-    import os
-    old_env = os.environ.get("LMA_DB")
-    os.environ["LMA_DB"] = str(db_path)
+    old_argv = sys.argv[:]
+    sys.argv = ["add-model-from-yaml.py", str(yaml_file)]
     try:
-        sys.argv = ["add-model-from-yaml.py", str(yaml_file)]
         mod.main()
     finally:
-        if old_env is None:
-            os.environ.pop("LMA_DB", None)
-        else:
-            os.environ["LMA_DB"] = old_env
+        sys.argv = old_argv
 
 
 def test_models_inserted(seeded_db):
@@ -197,6 +193,68 @@ def test_provisioned_anti_loop_columns(seeded_db):
     assert "PARAMETER repeat_last_n 256" in mf
 
 
+def test_sparse_reimport_preserves_absent_fields(seeded_db):
+    """Re-import with sparse YAML must not wipe columns omitted from the file."""
+    _run_ingestion(seeded_db)
+    conn = sqlite3.connect(str(seeded_db))
+    c = conn.cursor()
+    c.execute(
+        "UPDATE model_docs SET description='keep me', best_for='coding' "
+        "WHERE model_id='test-model:7b'"
+    )
+    c.execute("UPDATE models SET url='https://keep.example' WHERE model_id='test-model:7b'")
+    conn.commit()
+    conn.close()
+
+    sparse = """\
+models:
+  test-model:7b:
+    vram: 9
+model_docs:
+  test-model:7b:
+    caveats: "updated caveat only"
+"""
+    _run_ingestion(seeded_db, sparse)
+
+    conn = sqlite3.connect(str(seeded_db))
+    c = conn.cursor()
+    c.execute("SELECT vram, url FROM models WHERE model_id='test-model:7b'")
+    vram, url = c.fetchone()
+    assert vram == 9.0
+    assert url == "https://keep.example"
+    c.execute(
+        "SELECT description, best_for, caveats FROM model_docs WHERE model_id='test-model:7b'"
+    )
+    desc, best_for, caveats = c.fetchone()
+    assert desc == "keep me"
+    assert best_for == "coding"
+    assert caveats == "updated caveat only"
+    conn.close()
+
+
+def test_by_constraint_scalar_coerced(seeded_db):
+    """Scalar by_constraint values must not iterate characters."""
+    yaml_content = """\
+models:
+  solo:1b:
+    vram: 2
+    ctx: 4096
+    class: Utility
+    tps: 100
+    url: https://example.com
+    install: ollama pull solo:1b
+by_constraint:
+  has_tools: solo:1b
+"""
+    _run_ingestion(seeded_db, yaml_content)
+    conn = sqlite3.connect(str(seeded_db))
+    c = conn.cursor()
+    c.execute("SELECT model_id FROM constraint_model WHERE constraint_name='has_tools'")
+    rows = [r[0] for r in c.fetchall()]
+    conn.close()
+    assert rows == ["solo:1b"]
+
+
 def test_rag_pipeline_inserted(seeded_db):
     _run_ingestion(seeded_db)
     conn = sqlite3.connect(str(seeded_db))
@@ -209,8 +267,9 @@ def test_rag_pipeline_inserted(seeded_db):
     conn.close()
 
 
-def test_triple_quote_rejection_via_subprocess(seeded_db, tmp_path):
-    """Triple-quote in system_prompt should cause failure."""
+def test_triple_quote_rejection_via_subprocess(seeded_db, tmp_path, monkeypatch):
+    """Triple-quote in system_prompt should cause failure without DB changes."""
+    monkeypatch.setenv("LMA_DB", str(seeded_db))
     bad_yaml = """\
 models:
   bad:model:
@@ -232,9 +291,16 @@ models:
 """
     yaml_file = tmp_path / "bad.yaml"
     yaml_file.write_text(bad_yaml)
+    conn = sqlite3.connect(str(seeded_db))
+    before = conn.execute("SELECT COUNT(*) FROM models").fetchone()[0]
+    conn.close()
     result = subprocess.run(
         [sys.executable, str(REPO_ROOT / "scripts" / "add-model-from-yaml.py"), str(yaml_file)],
         capture_output=True, text=True,
-        env={**subprocess.os.environ, "LMA_DB": str(seeded_db)},
+        env={**os.environ, "LMA_DB": str(seeded_db)},
     )
     assert result.returncode != 0
+    conn = sqlite3.connect(str(seeded_db))
+    after = conn.execute("SELECT COUNT(*) FROM models").fetchone()[0]
+    conn.close()
+    assert after == before

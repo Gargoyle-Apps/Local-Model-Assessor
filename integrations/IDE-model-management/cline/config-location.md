@@ -19,6 +19,8 @@
 
 **Profile keys:** Each entry is keyed by a sanitized alias (colons replaced with dashes, e.g. `qwen3-30b_coding_8k`), so multiple base models sharing the same role never collide.
 
+**Generated LMA config (tracked path):** `integrations/IDE-model-management/cline/generated/provider-settings.json` — import via the extension UI.
+
 **To keep an untracked local copy in this repo folder:**
 ```bash
 # After exporting from the extension, save here:

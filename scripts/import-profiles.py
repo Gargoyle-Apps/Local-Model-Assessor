@@ -30,12 +30,17 @@ def main():
         sys.exit(1)
 
     conn = sqlite3.connect(db_path)
+    conn.execute("PRAGMA foreign_keys = ON")
     c = conn.cursor()
 
     try:
         hw_src = HARDWARE if HARDWARE.exists() else HARDWARE_TEMPLATE
         if hw_src.exists():
-            content = hw_src.read_text()
+            try:
+                content = hw_src.read_text()
+            except OSError as e:
+                print(f"Error reading {hw_src}: {e}", file=sys.stderr)
+                sys.exit(1)
             c.execute(
                 "INSERT OR REPLACE INTO hardware_profile (id, yaml_content, updated_at) VALUES (1, ?, datetime('now'))",
                 (content,),
@@ -46,7 +51,11 @@ def main():
 
         sw_src = SOFTWARE if SOFTWARE.exists() else SOFTWARE_TEMPLATE
         if sw_src.exists():
-            content = sw_src.read_text()
+            try:
+                content = sw_src.read_text()
+            except OSError as e:
+                print(f"Error reading {sw_src}: {e}", file=sys.stderr)
+                sys.exit(1)
             c.execute(
                 "INSERT OR REPLACE INTO software_profile (id, yaml_content, updated_at) VALUES (1, ?, datetime('now'))",
                 (content,),

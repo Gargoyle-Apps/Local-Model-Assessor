@@ -40,6 +40,71 @@ except ImportError:
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB = REPO_ROOT / "model-data" / "model-assessor.db"
 DEFAULT_YAML = REPO_ROOT / "model-data" / "new-models.yaml"
+MODELFILE_ROOT = Path(
+    os.environ.get("LMA_MODELFILE_DIR", str(REPO_ROOT / "model-data" / "modelfile"))
+)
+
+_TABLE_COLUMNS = {
+    "models": frozenset({
+        "model_id", "vram", "ctx", "class", "tps", "url", "install", "runtime",
+        "vision", "tools", "reasoning", "moe", "fim", "structured", "creative",
+        "multilingual", "rag", "no_corun", "latency", "assessed_at",
+        "created_at", "created_by", "created_by_type",
+        "updated_at", "updated_by", "updated_by_type",
+    }),
+    "role_model": frozenset({
+        "role", "variant", "model_id", "notes",
+        "created_at", "created_by", "created_by_type",
+        "updated_at", "updated_by", "updated_by_type",
+    }),
+    "constraint_model": frozenset({
+        "constraint_name", "model_id", "sort_order",
+        "created_at", "created_by", "created_by_type",
+        "updated_at", "updated_by", "updated_by_type",
+    }),
+    "task_category": frozenset({
+        "category", "role_name", "sort_order",
+        "created_at", "created_by", "created_by_type",
+        "updated_at", "updated_by", "updated_by_type",
+    }),
+    "model_docs": frozenset({
+        "model_id", "spec_table", "description", "best_for", "caveats", "creative_tier",
+        "created_at", "created_by", "created_by_type",
+        "updated_at", "updated_by", "updated_by_type",
+    }),
+    "provisioned_models": frozenset({
+        "alias", "base_model_id", "role", "variant", "num_ctx", "temperature",
+        "num_predict", "repeat_penalty", "repeat_last_n", "system_prompt",
+        "modelfile_content", "modelfile_path", "create_command", "pull_command",
+        "is_active", "created_at", "created_by", "created_by_type",
+        "updated_at", "updated_by", "updated_by_type",
+    }),
+}
+
+_MODEL_INSERT_DEFAULTS = {
+    "vram": 0.0,
+    "ctx": 0,
+    "class": "",
+    "tps": 0,
+    "url": "",
+    "install": "",
+    "runtime": "ollama",
+    "vision": 0,
+    "tools": 0,
+    "reasoning": 0,
+    "moe": 0,
+    "fim": 0,
+    "structured": 0,
+    "creative": None,
+    "multilingual": 0,
+    "rag": 0,
+    "no_corun": 0,
+    "latency": None,
+}
+
+_BOOL_MODEL_FIELDS = (
+    "vision", "tools", "reasoning", "moe", "fim", "structured", "multilingual", "rag", "no_corun",
+)
 
 
 def _truthy(v):
@@ -59,8 +124,75 @@ _KNOWN_TABLES = frozenset({
 def _has_column(c, table: str, col: str) -> bool:
     if table not in _KNOWN_TABLES:
         raise ValueError(f"_has_column called with unknown table {table!r}")
+    allowed = _TABLE_COLUMNS.get(table)
+    if allowed is not None and col not in allowed:
+        raise ValueError(f"_has_column called with unknown column {col!r} on {table!r}")
     c.execute(f"SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name='{col}'")
     return c.fetchone()[0] > 0
+
+
+def _normalize_text(val, default: str = "") -> str:
+    if val is None:
+        return default
+    s = str(val).strip()
+    if s.lower() == "none":
+        return default
+    return s
+
+
+def _normalize_optional_text(val):
+    if val is None:
+        return None
+    s = str(val).strip()
+    if not s or s.lower() == "none":
+        return None
+    return s
+
+
+def _coerce_float(val, default: float = 0.0) -> float:
+    if val is None:
+        return default
+    return float(val)
+
+
+def _coerce_int(val, default: int = 0) -> int:
+    if val is None:
+        return default
+    return int(val)
+
+
+def _warn_model_downgrade(model_id: str, field: str, old, new) -> None:
+    print(
+        f"Warning: {model_id} {field} downgraded {old!r} → {new!r}",
+        file=sys.stderr,
+    )
+
+
+def _modelfile_out_path(rel_path: str) -> Path:
+    """Resolve repo-relative modelfile path; LMA_MODELFILE_DIR overrides the directory."""
+    if os.environ.get("LMA_MODELFILE_DIR"):
+        return MODELFILE_ROOT / Path(rel_path).name
+    return REPO_ROOT / rel_path
+
+
+def _flush_modelfile_ops(ops: list) -> None:
+    for op in ops:
+        kind = op[0]
+        if kind == "write":
+            _, rel_path, content = op
+            out_path = _modelfile_out_path(rel_path)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = out_path.with_suffix(out_path.suffix + ".tmp")
+            tmp.write_text(content, encoding="utf-8")
+            os.replace(tmp, out_path)
+        elif kind == "unlink":
+            _, rel_path = op
+            stale = _modelfile_out_path(rel_path)
+            if stale.is_file():
+                try:
+                    stale.unlink()
+                except OSError as e:
+                    print(f"Warning: could not remove stale modelfile {stale}: {e}", file=sys.stderr)
 
 
 def _table_exists(c, name: str) -> bool:
@@ -129,21 +261,21 @@ def upsert_provisioned(
     entry: dict,
     assessor: str,
     assessor_type: str,
-) -> Optional[str]:
-    """Insert/update provisioned_models and write .mf file. Returns alias or None if skipped.
+) -> tuple[Optional[str], list]:
+    """Insert/update provisioned_models. Returns (alias, pending_modelfile_ops).
 
     create_command uses a repo-relative -f path; run it from the repository root.
     """
     alias = str(entry.get("alias", "")).strip()
     role = str(entry.get("role", "")).strip()
     if not alias or not role:
-        return None
+        return None, []
     variant = str(entry.get("variant", "primary")).strip() or "primary"
     try:
         num_ctx = int(entry["num_ctx"])
     except (KeyError, TypeError, ValueError):
         print(f"Warning: skip provisioning for {base_model_id!r}: invalid num_ctx", file=sys.stderr)
-        return None
+        return None, []
 
     temperature = entry.get("temperature")
     if temperature == "":
@@ -208,7 +340,7 @@ def upsert_provisioned(
                 f"{base_model_id!r} role={role!r} variant={variant!r}.",
                 file=sys.stderr,
             )
-            return None
+            return None, []
 
     c.execute(
         "SELECT modelfile_path, is_active, modelfile_content, alias FROM provisioned_models "
@@ -344,29 +476,19 @@ def upsert_provisioned(
             ),
         )
 
-    out_path = REPO_ROOT / modelfile_path
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        out_path.write_text(modelfile_content, encoding="utf-8")
-    except OSError as e:
-        print(f"Error: could not write {out_path}: {e}", file=sys.stderr)
-        raise
-
+    pending_ops: list = [("write", modelfile_path, modelfile_content)]
     if prior and prior[0] and prior[0] != modelfile_path:
-        stale = REPO_ROOT / prior[0]
-        if stale.is_file() and stale.resolve() != out_path.resolve():
-            try:
-                stale.unlink()
-            except OSError as e:
-                print(f"Warning: could not remove stale modelfile {stale}: {e}", file=sys.stderr)
+        stale_path = prior[0]
+        if stale_path != modelfile_path:
+            pending_ops.append(("unlink", stale_path))
 
-    return alias
+    return alias, pending_ops
 
 
 def load_yaml(content: str) -> dict:
     """Parse YAML, optionally extracting from markdown code block."""
     content = content.strip()
-    fences = re.findall(r"^```yaml\s*\n(.*?)```", content, re.DOTALL | re.MULTILINE)
+    fences = re.findall(r"^```yaml\s*\n(.*?)^```\s*$", content, re.DOTALL | re.MULTILINE)
     if fences:
         if len(fences) > 1:
             print(
@@ -380,70 +502,102 @@ def load_yaml(content: str) -> dict:
 def insert_model(c, model_id: str, m: dict, assessor: str, assessor_type: str) -> None:
     now = _now()
     has_provenance = _has_column(c, "models", "created_at")
-
     has_runtime = _has_column(c, "models", "runtime")
-    runtime_val = str(m.get("runtime", "ollama")).strip() or "ollama"
 
-    base_cols = (
-        "model_id, vram, ctx, class, tps, url, install, "
-        "vision, tools, reasoning, moe, fim, structured, creative, "
-        "multilingual, rag, no_corun, latency, assessed_at"
-    )
-    base_vals = (
-        model_id,
-        float(m.get("vram", 0)),
-        int(m.get("ctx", 0)),
-        str(m.get("class", "")),
-        int(m.get("tps", 0)),
-        str(m.get("url", "")),
-        str(m.get("install", "")),
-        1 if _truthy(m.get("vision")) else 0,
-        1 if _truthy(m.get("tools")) else 0,
-        1 if _truthy(m.get("reasoning")) else 0,
-        1 if _truthy(m.get("moe")) else 0,
-        1 if _truthy(m.get("fim")) else 0,
-        1 if _truthy(m.get("structured")) else 0,
-        m.get("creative"),
-        1 if _truthy(m.get("multilingual")) else 0,
-        1 if _truthy(m.get("rag")) else 0,
-        1 if _truthy(m.get("no_corun")) else 0,
-        m.get("latency"),
-        now,
-    )
+    c.execute("SELECT * FROM models WHERE model_id=?", (model_id,))
+    existing_row = c.fetchone()
+    existing = dict(zip([d[0] for d in c.description], existing_row)) if existing_row else None
+    is_new = existing is None
+    present = set(m.keys()) - {"provisioning"}
 
-    if has_runtime:
-        base_cols += ", runtime"
-        base_vals += (runtime_val,)
+    insert_cols = ["model_id"]
+    insert_vals: list = [model_id]
+
+    def _add(field: str, value) -> None:
+        insert_cols.append(field)
+        insert_vals.append(value)
+
+    def _should_set(field: str) -> bool:
+        return field in present or is_new
+
+    if _should_set("vram"):
+        val = _coerce_float(m.get("vram"), _MODEL_INSERT_DEFAULTS["vram"])
+        _add("vram", val)
+        if not is_new and val < (existing.get("vram") or 0):
+            _warn_model_downgrade(model_id, "vram", existing["vram"], val)
+    if _should_set("ctx"):
+        val = _coerce_int(m.get("ctx"), _MODEL_INSERT_DEFAULTS["ctx"])
+        _add("ctx", val)
+        if not is_new and val < (existing.get("ctx") or 0):
+            _warn_model_downgrade(model_id, "ctx", existing["ctx"], val)
+    if _should_set("tps"):
+        val = _coerce_int(m.get("tps"), _MODEL_INSERT_DEFAULTS["tps"])
+        _add("tps", val)
+        if not is_new and val < (existing.get("tps") or 0):
+            _warn_model_downgrade(model_id, "tps", existing["tps"], val)
+
+    for field in ("class", "url", "install"):
+        if _should_set(field):
+            _add(field, _normalize_text(m.get(field), _MODEL_INSERT_DEFAULTS[field]))
+
+    if has_runtime and _should_set("runtime"):
+        _add("runtime", _normalize_text(m.get("runtime"), "ollama") or "ollama")
+
+    for field in _BOOL_MODEL_FIELDS:
+        if _should_set(field):
+            val = 1 if _truthy(m.get(field)) else 0
+            _add(field, val)
+            if not is_new and existing.get(field) == 1 and val == 0:
+                _warn_model_downgrade(model_id, field, 1, 0)
+
+    for field in ("creative", "latency"):
+        if _should_set(field):
+            val = _normalize_optional_text(m.get(field)) if field in present else _MODEL_INSERT_DEFAULTS[field]
+            _add(field, val)
+            if not is_new and field in present and existing.get(field) and val is None:
+                _warn_model_downgrade(model_id, field, existing[field], val)
+
+    _add("assessed_at", now)
+
+    if is_new:
+        if has_provenance:
+            _add("created_at", now)
+            _add("created_by", assessor)
+            _add("created_by_type", assessor_type)
+            _add("updated_at", now)
+            _add("updated_by", assessor)
+            _add("updated_by_type", assessor_type)
+
+        placeholders = ", ".join(["?"] * len(insert_vals))
+        update_parts = [
+            f"{col}=excluded.{col}" for col in insert_cols
+            if col not in ("model_id", "created_at", "created_by", "created_by_type")
+        ]
+        c.execute(
+            f"INSERT INTO models ({', '.join(insert_cols)}) VALUES ({placeholders}) "
+            f"ON CONFLICT(model_id) DO UPDATE SET {', '.join(update_parts)}",
+            insert_vals,
+        )
+        return
+
+    col_val = dict(zip(insert_cols, insert_vals))
+    set_parts: list[str] = []
+    update_vals: list = []
+    for col, val in col_val.items():
+        if col == "model_id":
+            continue
+        set_parts.append(f"{col}=?")
+        update_vals.append(val)
 
     if has_provenance:
-        cols = base_cols + ", created_at, created_by, created_by_type, updated_at, updated_by, updated_by_type"
-        prov_vals = (now, assessor, assessor_type, now, assessor, assessor_type)
-        vals = base_vals + prov_vals
-        placeholders = ", ".join(["?"] * len(vals))
-        runtime_update = ", runtime=excluded.runtime" if has_runtime else ""
-        update_set = (
-            "vram=excluded.vram, ctx=excluded.ctx, class=excluded.class, "
-            "tps=excluded.tps, url=excluded.url, install=excluded.install, "
-            "vision=excluded.vision, tools=excluded.tools, reasoning=excluded.reasoning, "
-            "moe=excluded.moe, fim=excluded.fim, structured=excluded.structured, "
-            "creative=excluded.creative, multilingual=excluded.multilingual, "
-            "rag=excluded.rag, no_corun=excluded.no_corun, latency=excluded.latency, "
-            "assessed_at=excluded.assessed_at, "
-            "updated_at=excluded.updated_at, updated_by=excluded.updated_by, "
-            "updated_by_type=excluded.updated_by_type"
-            + runtime_update
-        )
-        c.execute(
-            f"INSERT INTO models ({cols}) VALUES ({placeholders}) "
-            f"ON CONFLICT(model_id) DO UPDATE SET {update_set}",
-            vals,
-        )
-    else:
-        placeholders = ", ".join(["?"] * len(base_vals))
-        c.execute(
-            f"INSERT OR REPLACE INTO models ({base_cols}) VALUES ({placeholders})",
-            base_vals,
-        )
+        set_parts.extend(["updated_at=?", "updated_by=?", "updated_by_type=?"])
+        update_vals.extend([now, assessor, assessor_type])
+
+    update_vals.append(model_id)
+    c.execute(
+        f"UPDATE models SET {', '.join(set_parts)} WHERE model_id=?",
+        update_vals,
+    )
 
 
 def insert_role(c, role: str, variant: str, model_id: str, notes: str,
@@ -494,35 +648,45 @@ def insert_constraint(c, constraint_name: str, model_id: str, sort_order: int,
 
 def insert_doc(c, model_id: str, doc: dict, assessor: str, assessor_type: str) -> None:
     now = _now()
-    base_vals = (
-        model_id,
-        doc.get("spec_table") or "",
-        doc.get("description") or "",
-        doc.get("best_for") or "",
-        doc.get("caveats") or "",
-        doc.get("creative_tier"),
-    )
+    c.execute("SELECT 1 FROM model_docs WHERE model_id=?", (model_id,))
+    is_new = c.fetchone() is None
+    present = set(doc.keys())
+
+    if is_new:
+        insert_cols = ["model_id"]
+        insert_vals: list = [model_id]
+        for field in ("spec_table", "description", "best_for", "caveats", "creative_tier"):
+            insert_cols.append(field)
+            insert_vals.append(doc.get(field) or "" if field != "creative_tier" else doc.get(field))
+        if _has_column(c, "model_docs", "created_at"):
+            insert_cols.extend([
+                "created_at", "created_by", "created_by_type",
+                "updated_at", "updated_by", "updated_by_type",
+            ])
+            insert_vals.extend([now, assessor, assessor_type, now, assessor, assessor_type])
+        placeholders = ", ".join(["?"] * len(insert_vals))
+        c.execute(
+            f"INSERT INTO model_docs ({', '.join(insert_cols)}) VALUES ({placeholders})",
+            insert_vals,
+        )
+        return
+
+    set_parts: list[str] = []
+    update_vals: list = []
+    for field in ("spec_table", "description", "best_for", "caveats", "creative_tier"):
+        if field in present:
+            set_parts.append(f"{field}=?")
+            update_vals.append(doc.get(field) or "" if field != "creative_tier" else doc.get(field))
+    if not set_parts:
+        return
     if _has_column(c, "model_docs", "created_at"):
-        c.execute(
-            "INSERT INTO model_docs "
-            "(model_id, spec_table, description, best_for, caveats, creative_tier, "
-            " created_at, created_by, created_by_type, updated_at, updated_by, updated_by_type) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-            "ON CONFLICT(model_id) DO UPDATE SET "
-            "spec_table=excluded.spec_table, description=excluded.description, "
-            "best_for=excluded.best_for, caveats=excluded.caveats, "
-            "creative_tier=excluded.creative_tier, "
-            "updated_at=excluded.updated_at, updated_by=excluded.updated_by, "
-            "updated_by_type=excluded.updated_by_type",
-            base_vals + (now, assessor, assessor_type, now, assessor, assessor_type),
-        )
-    else:
-        c.execute(
-            "INSERT OR REPLACE INTO model_docs "
-            "(model_id, spec_table, description, best_for, caveats, creative_tier) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            base_vals,
-        )
+        set_parts.extend(["updated_at=?", "updated_by=?", "updated_by_type=?"])
+        update_vals.extend([now, assessor, assessor_type])
+    update_vals.append(model_id)
+    c.execute(
+        f"UPDATE model_docs SET {', '.join(set_parts)} WHERE model_id=?",
+        update_vals,
+    )
 
 
 def insert_task_category(c, category: str, role_name: str, sort_order: int,
@@ -608,7 +772,10 @@ def main():
     assessor_type = args.assessor_type or "human"
 
     conn = sqlite3.connect(db_path)
+    conn.execute("PRAGMA foreign_keys = ON")
     c = conn.cursor()
+
+    modelfile_ops: list = []
 
     try:
         prov_table = _table_exists(c, "provisioned_models")
@@ -618,22 +785,27 @@ def main():
                 continue
             if not isinstance(m, dict):
                 continue
-            insert_model(c, model_id, m, assessor, assessor_type)
+            try:
+                insert_model(c, model_id, m, assessor, assessor_type)
+            except (TypeError, ValueError) as e:
+                print(f"Error: skipping model {model_id!r}: {e}", file=sys.stderr)
+                continue
             print(f"Added/updated model: {model_id}")
 
             raw_prov = m.get("provisioning")
-            model_runtime = str(m.get("runtime", "ollama")).strip() or "ollama"
+            model_runtime = _normalize_text(m.get("runtime"), "ollama") or "ollama"
             if raw_prov and model_runtime != "ollama":
                 print(f"  Skipping Ollama provisioning for {model_id} (runtime={model_runtime})")
             elif raw_prov and prov_table:
                 entries = raw_prov if isinstance(raw_prov, list) else [raw_prov]
-                install = str(m.get("install", ""))
+                install = _normalize_text(m.get("install", ""))
                 for entry in entries:
                     if not isinstance(entry, dict):
                         continue
-                    done_alias = upsert_provisioned(
+                    done_alias, ops = upsert_provisioned(
                         c, str(model_id), install, entry, assessor, assessor_type
                     )
+                    modelfile_ops.extend(ops)
                     if done_alias:
                         print(f"  Provisioned clone: {done_alias}")
             elif raw_prov and not prov_table:
@@ -644,16 +816,26 @@ def main():
                 )
 
         for role, variants in (data.get("by_role") or {}).items():
-            for variant, val in (variants or {}).items():
+            if str(role).startswith("_"):
+                continue
+            if not isinstance(variants, dict):
+                continue
+            for variant, val in variants.items():
+                if str(variant).startswith("_"):
+                    continue
                 model_id = val.get("primary", val) if isinstance(val, dict) else val
                 notes = val.get("notes") if isinstance(val, dict) else None
                 if model_id and not str(model_id).startswith("_"):
                     insert_role(c, role, variant, str(model_id), notes, assessor, assessor_type)
 
         for constraint_name, model_ids in (data.get("by_constraint") or {}).items():
-            for i, model_id in enumerate(model_ids or []):
-                if model_id:
-                    insert_constraint(c, constraint_name, model_id, i, assessor, assessor_type)
+            if str(constraint_name).startswith("_"):
+                continue
+            if not isinstance(model_ids, list):
+                model_ids = [model_ids]
+            for i, model_id in enumerate(model_ids):
+                if model_id and not str(model_id).startswith("_"):
+                    insert_constraint(c, constraint_name, str(model_id), i, assessor, assessor_type)
 
         for model_id, doc in (data.get("model_docs") or {}).items():
             if str(model_id).startswith("_"):
@@ -685,7 +867,8 @@ def main():
                     insert_rag_pipeline(c, pipeline_name, entry)
 
         conn.commit()
-    except (sqlite3.Error, OSError, ValueError) as e:
+        _flush_modelfile_ops(modelfile_ops)
+    except (sqlite3.Error, OSError, ValueError, TypeError) as e:
         print(f"Error: {e}", file=sys.stderr)
         conn.rollback()
         sys.exit(1)

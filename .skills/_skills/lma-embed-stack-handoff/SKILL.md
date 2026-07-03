@@ -36,8 +36,16 @@ If no rows, assess and import an embedding model first (see `lma-assess-import-m
 ### 2. Generate handoff artifacts
 
 ```bash
-./scripts/py scripts/generate-stack-handoff.py [--output-dir DIR]
+./scripts/py scripts/generate-stack-handoff.py [--output-dir DIR] [--active-only] [--dry-run] [--ollama-host URL] [--vector-dim N]
 ```
+
+| Flag | Purpose |
+|------|---------|
+| `--output-dir DIR` | Write `STACK_HANDOFF.md` + `embed_sample.py` here (default: `integrations/embed-retrieval-stack/out/`) |
+| `--active-only` | Require an active (`is_active=1`) embedding provisioned clone; no `role_model` fallback |
+| `--dry-run` | Print artifacts to stdout; do not write files |
+| `--ollama-host URL` | Ollama base URL embedded in generated samples (default: `http://127.0.0.1:11434` or `OLLAMA_HOST`) |
+| `--vector-dim N` | Embedding dimension for handoff + `init/02-schema.sql` alignment (default: 768) |
 
 Default output: `integrations/embed-retrieval-stack/out/` (gitignored). Generates:
 - `STACK_HANDOFF.md` — setup instructions and model config for the target app repo.
