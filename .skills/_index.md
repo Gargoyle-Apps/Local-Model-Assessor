@@ -1,16 +1,20 @@
 # Skills Index
 
-Kit version: see `.skills/_meta.yml` (optional metadata only). Vendored kit: `.skills-harness/` (git subtree @ **v1.1.2**); kit rows below point at symlinked skills.
+Kit version: see `.skills/_meta.yml` (optional metadata only). Vendored kit: `.skills-harness/` (git subtree @ **v1.5.0**); kit rows below point at symlinked skills.
 
 Load a skill only when the task clearly requires it.
 Read the full `SKILL.md` only at that point — never preemptively.
 
 | name | description | triggers |
 |------|-------------|----------|
+| caveman-commit | Generate ultra-terse Conventional Commits messages (subject <=50 chars, why over what). | write a commit, commit message, generate commit, caveman commit, /commit, /caveman-commit |
+| caveman-review | Ultra-compressed one-line code review comments (location, problem, fix); optional severity prefixes. | review this PR, code review, review the diff, caveman review, /review, /caveman-review |
+| caveman | Ultra-compressed caveman output mode; cuts ~75% output tokens, keeps full technical accuracy; lite/full/ultra/wenyan levels. | caveman mode, talk like caveman, use caveman, less tokens, be brief, compress output, /caveman |
 | harness-subtree | Install or update the skills-harness kit in a consumer repository as a git subtree at .skills-harness/. | deploy harness as subtree, install harness as subtree, vendor skills-harness, update vendored harness, subtree pull skills-harness, skills harness subtree, add skills-harness subtree, migrate manual install to subtree, convert harness install to subtree |
 | harness-upgrade | Upgrade a skills-harness installation to the latest version with native IDE discovery. | upgrade harness, update harness, migrate harness, add native discovery, enable IDE symlinks, update skills system |
 | kit-release | Bump the skills-harness kit semver and keep CHANGELOG, README, AGENTS_skills.md, and _meta.yml in sync. | bump kit version, bump harness version, release skills harness, cut a harness release, skills-harness version, kit release |
 | skill-author | How to write a new SKILL.md from scratch and register it in the index. | write a skill, author a skill, new skill, add a skill |
+| skill-conflicts | Detect conflicts between repo-managed skills and same-named skills/slash-commands in the user's IDE config. | detect skill conflicts, skill conflict, conflicting skills, skill name collision, check skill conflicts, does my config conflict with repo skills |
 | skill-template | Canonical SKILL.md format with authoring notes and refactor guide. | new skill, skill format, create skill, reformat skill, convert rule |
 | lma-python-env | Set up and use the repo-local Python virtualenv for all LMA scripts | python env, venv, pip install, bootstrap python, PEP 668, requirements.txt, scripts/py |
 | lma-db-core | Init, migrate, and query the LMA SQLite database; data flow map and key queries | init database, migrate schema, query db, database setup, schema, db missing, migrate, schema error, data flow, key queries |

@@ -51,6 +51,8 @@ model-data/modelfile/*
 model-data/model-lookup.json
 
 # IDE reference copies (generated on demand)
+integrations/IDE-model-management/*/generated/*
+!integrations/IDE-model-management/*/generated/.gitkeep
 integrations/IDE-model-management/continue/config.yaml
 integrations/IDE-model-management/opencode/opencode.json
 integrations/IDE-model-management/goose/config.yaml

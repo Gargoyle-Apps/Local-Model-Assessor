@@ -182,7 +182,7 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 ## Skills harness (third-party)
 
-The kit is vendored as a **git subtree** at [`.skills-harness/`](.skills-harness/) ([Gargoyle-Apps/skills-harness](https://github.com/Gargoyle-Apps/skills-harness), MIT, **v1.1.2**). Runtime layout:
+The kit is vendored as a **git subtree** at [`.skills-harness/`](.skills-harness/) ([Gargoyle-Apps/skills-harness](https://github.com/Gargoyle-Apps/skills-harness), MIT, **v1.5.0**). Runtime layout:
 
 - **`.skills-harness/`** — upstream kit (updated with `git subtree pull`; do not hand-edit)
 - **`.skills/`** — consumer tree: symlinked kit `_harness/` and bundled skills; **real directories** for repo-specific `lma-*` skills under `.skills/_skills/`
@@ -191,7 +191,7 @@ The kit is vendored as a **git subtree** at [`.skills-harness/`](.skills-harness
 
 Policy is **agnostic / multi-ecosystem** (Path B): see [AGENTS.md](AGENTS.md) **Skills (agnostic / multi-ecosystem)** — we do not merge tool-specific harness templates from `.skills/_harness/` into this project.
 
-**Update kit:** `git fetch skills-harness && git subtree pull --prefix=.skills-harness skills-harness <tag> --squash`, then run `.skills/_harness/migrate-to-subtree.sh --skip-subtree --reconcile --apply` (see **harness-subtree** skill). **Credit:** shared templates and kit skills — contribute upstream; LMA skills stay in this repo.
+**Update kit:** `git remote add skills-harness https://github.com/Gargoyle-Apps/skills-harness.git` (once), then `git fetch skills-harness && git subtree pull --prefix=.skills-harness skills-harness v1.5.0 --squash`, then `.skills/_harness/migrate-to-subtree.sh --skip-subtree --reconcile --apply` (see **harness-subtree** skill). **Credit:** shared templates and kit skills — contribute upstream; LMA skills stay in this repo.
 
 ---
 

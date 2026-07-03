@@ -1,4 +1,4 @@
 # Skills harness kit metadata (consumer-owned; not overwritten by subtree pulls)
-kit_version: "1.1.2"
+kit_version: "1.5.0"
 repo_url: "https://github.com/Gargoyle-Apps/skills-harness"
 role: consumer
