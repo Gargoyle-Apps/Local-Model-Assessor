@@ -1,6 +1,6 @@
 ---
 name: kit-release
-description: "Bump the skills-harness kit semver and keep CHANGELOG, README, AGENTS_skills.md, and _meta.yml in sync."
+description: "Bump skills-harness kit semver; keep CHANGELOG, README, AGENTS_skills.md, _meta.yml in sync."
 triggers:
   - bump kit version
   - bump harness version

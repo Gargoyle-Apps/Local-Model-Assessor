@@ -7,7 +7,7 @@
   applies to consumer repos after bootstrap, NOT to this upstream repo.
 -->
 
-**Kit version:** `1.1.2` — history in root **`CHANGELOG.md`**. Maintainers shipping a new kit release: follow the **kit-release** skill so **`CHANGELOG.md`**, **`.skills/_meta.yml`**, this line, and **`README.md`** (Kit version) stay in sync; run **`.skills/_harness/check.sh`** when done.
+**Kit version:** `1.5.0` — history in root **`CHANGELOG.md`**. Maintainers shipping a new kit release: follow the **kit-release** skill so **`CHANGELOG.md`**, **`.skills/_meta.yml`**, this line, and **`README.md`** (Kit version) stay in sync; run **`.skills/_harness/check.sh`** when done.
 
 This file is **`AGENTS_skills.md`** so dropping the kit into a repo **does not overwrite** an existing project **`AGENTS.md`**. It exists only until one-time setup is finished. After setup, **delete this file** (or replace it with a one-line pointer only if your template says so).
 
@@ -29,9 +29,16 @@ Derive the prefix by splitting the repo's root directory name on `-` and `_`, ta
 
 **Multi-prefix repos:** if a single derived prefix can't describe the skill families in this repo (e.g. a build-tools repo with both `bld-` build steps and `bin-` publishing steps), the consumer can declare an explicit list of allowed prefixes under `prefixes:` in `.skills/_meta.yml`. Every consumer-authored skill must then start with one of those prefixes; the auto-derived single prefix is bypassed. Kit-bundled skills stay unprefixed regardless. See `skill-author` for full guidance. After this bootstrap file is removed, the convention is preserved by `skill-author/SKILL.md`.
 
-## Hard gate — declare a path before skills work
+## Hard gate — declare a setup before skills work
 
-**Do not proceed** with skill authoring (create/rename/delete skills under `.skills/_skills/`, register rows in `.skills/_index.md`, refactor into skills, load full `SKILL.md` to author or restructure) until the user has chosen **one** of the paths below and you have completed the matching steps.
+The kit supports two install shapes. They are named by **function**, not letters:
+
+| Short name | Long name | What it means |
+|------------|-----------|---------------|
+| **Single-Tool** | Single-Tool Harness | Commit this repo to one tool — install that tool's runtime harness into its config. |
+| **Tool-Neutral** | Tool-Neutral Skills | Keep this repo tool-agnostic — portable skills only, no tool harness committed here. |
+
+**Do not proceed** with skill authoring (create/rename/delete skills under `.skills/_skills/`, register rows in `.skills/_index.md`, refactor into skills, load full `SKILL.md` to author or restructure) until the user has chosen **one** of the two setups below and you have completed the matching steps.
 
 **Until then, you must not** do those skill tasks. You may still explain what the harness is or what to do next.
 
@@ -39,7 +46,7 @@ Reading `.skills/_index.md` only to describe the system is OK.
 
 ---
 
-### Path A — Single ecosystem (runtime harness in *this* repo)
+### Single-Tool — install one tool's runtime harness in *this* repo (formerly "Path A")
 
 Use when this repository should install **one** tool’s harness so agents working *in this repo* load skills the same way (e.g. always Cursor, or always Claude Code).
 
@@ -50,15 +57,15 @@ Use when this repository should install **one** tool’s harness so agents worki
 
 ---
 
-### Path B — Agnostic / multi-ecosystem (skills only, no tool harness *in this repo*)
+### Tool-Neutral — portable skills only, no tool harness *in this repo* (formerly "Path B")
 
 Use when this repository **maintains portable skills** (and may use this kit’s formats and bundled authoring skills) but **must stay neutral**: the same repo might be opened in Cursor, Claude, Windsurf, etc., and you **do not** want to commit **this** tree to a single ecosystem’s harness files.
 
 1. **The user explicitly declares** agnostic mode — e.g. “agnostic”, “multi-ecosystem”, “skills only, no harness”, or equivalent. Do not assume; **ask** if unsure.
-2. **Do not** paste **harness templates** from `.skills/_harness/*_template.md` into **`AGENTS.md`** or any tool-specific path **for this repo**. Those files are **reference** for *other* checkouts or consumers who run Path A (Cursor `[CURSOR]` blocks, `CLAUDE.md` harness body, etc.). Path B is **policy only**, not a runtime harness install.
+2. **Do not** paste **harness templates** from `.skills/_harness/*_template.md` into **`AGENTS.md`** or any tool-specific path **for this repo**. Those files are **reference** for *other* checkouts or consumers who run **Single-Tool** (Cursor `[CURSOR]` blocks, `CLAUDE.md` harness body, etc.). Tool-Neutral is **policy only**, not a runtime harness install.
 3. **Existing `AGENTS.md`** (if any) stays the **project contract**. You may add a short **policy section** (see example below); do **not** replace or drown it with tool-specific harness markup from the templates.
 4. **You may** create and edit skills under `.skills/_skills/`, update `.skills/_index.md`, and use **skill-template** / **skill-author** — the skills and index are **portable**.
-5. **Record** Path B where agents and humans will see it. **Recommended:** add a section to root **`AGENTS.md`** (so agents that read it still have an authoring gate after **`AGENTS_skills.md`** is deleted). **Alternatively or additionally:** **README** or **CONTRIBUTING**. Say that `.skills/_harness/` is reference-only here unless this project later adopts Path A.
+5. **Record** Tool-Neutral where agents and humans will see it. **Recommended:** add a section to root **`AGENTS.md`** (so agents that read it still have an authoring gate after **`AGENTS_skills.md`** is deleted). **Alternatively or additionally:** **README** or **CONTRIBUTING**. Say that `.skills/_harness/` is reference-only here unless this project later adopts Single-Tool.
 6. Remove **`AGENTS_skills.md`** once steps 1–5 are satisfied.
 
 **Example — optional section to merge into root `AGENTS.md` (adapt wording):**
@@ -66,15 +73,15 @@ Use when this repository **maintains portable skills** (and may use this kit’s
 ```markdown
 ## Skills (agnostic / multi-ecosystem)
 
-This repo maintains portable skills under `.skills/` (manifest: `.skills/_index.md`). We do **not** install a tool-specific runtime harness from `.skills/_harness/*_template.md` in this tree; those files are **reference** for consumers who clone this repo and may run Path A in their own environment.
+This repo maintains portable skills under `.skills/` (manifest: `.skills/_index.md`). We do **not** install a tool-specific runtime harness from `.skills/_harness/*_template.md` in this tree; those files are **reference** for consumers who clone this repo and may run the **Single-Tool** setup in their own environment.
 
 **Authoring:** Use bundled `skill-template` / `skill-author` and the index; do not paste ecosystem harness blocks into this file for this repository.
 ```
 
 ---
 
-## One-time setup (Path A only — reference)
+## One-time setup (Single-Tool only — reference)
 
-For Path A, open the template from the table, follow its **Setup instructions**, then remove **`AGENTS_skills.md`**.
+For **Single-Tool**, open the template from the table, follow its **Setup instructions**, then remove **`AGENTS_skills.md`**.
 
-Path B skips template installation; follow **Path B** above instead.
+**Tool-Neutral** skips template installation; follow the **Tool-Neutral** steps above instead.

@@ -24,6 +24,11 @@ fi
 # Canonical bullets: everything after the `# Rules` heading, blank lines stripped.
 canonical="$(sed -n '/^# Rules$/,$ p' "$RULES_FILE" | tail -n +2 | sed '/^$/d')"
 
+if [[ -z "$canonical" ]]; then
+  echo "ERROR: no '# Rules' body in $RULES_FILE" >&2
+  exit 1
+fi
+
 drifted=0
 
 for tmpl in "$HARNESS_DIR"/*_template.md; do
@@ -35,8 +40,11 @@ for tmpl in "$HARNESS_DIR"/*_template.md; do
     continue
   fi
 
-  # Extract the current rules body (everything after `## Rules` to EOF), blank-stripped
-  tmpl_rules="$(sed -n '/^## Rules$/,$ p' "$tmpl" | tail -n +2 | sed '/^$/d')"
+  # Extract the current rules body (after `## Rules` until `<!-- END` or EOF)
+  tmpl_rules="$(sed -n '/^## Rules$/,/^<!-- END/ { /^<!-- END/d; p; }' "$tmpl" | tail -n +2 | sed '/^$/d')"
+  if [[ -z "$tmpl_rules" ]]; then
+    tmpl_rules="$(sed -n '/^## Rules$/,$ p' "$tmpl" | tail -n +2 | sed '/^$/d')"
+  fi
 
   if [[ "$tmpl_rules" == "$canonical" ]]; then
     continue
@@ -45,11 +53,19 @@ for tmpl in "$HARNESS_DIR"/*_template.md; do
   drifted=$((drifted + 1))
 
   if $WRITE; then
-    # Keep everything up to and including the `## Rules` line
+    # Keep everything up to and including the `## Rules` line; preserve any
+    # post-rules appendix (e.g. CURSOR_template.md's .mdc copy block).
     head_part="$(sed -n '1,/^## Rules$/ p' "$tmpl")"
+    post_rules=""
+    if grep -q '^<!-- END' "$tmpl"; then
+      post_rules="$(awk '/^<!-- END/ {found=1} found' "$tmpl")"
+    fi
     {
       printf '%s\n\n' "$head_part"
       printf '%s\n' "$canonical"
+      if [[ -n "$post_rules" ]]; then
+        printf '\n%s\n' "$post_rules"
+      fi
     } > "$tmpl"
     echo "  updated  $tmpl_name"
   else

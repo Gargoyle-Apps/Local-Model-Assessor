@@ -85,13 +85,13 @@ if [[ ! -f "$INDEX_FILE" ]]; then
   err "_index.md not found at $INDEX_FILE"
 else
   index_names=()
-  while IFS='|' read -r _ name _rest; do
+  while IFS='|' read -r _ name _rest || [[ -n "${name:-}${_rest:-}" ]]; do
     name="$(trim "$name")"
     [[ -z "$name" || "$name" == "name" || "$name" == "---"* ]] && continue
     index_names+=("$name")
   done < "$INDEX_FILE"
 
-  for name in "${index_names[@]}"; do
+  for name in ${index_names[@]+"${index_names[@]}"}; do
     if [[ ! -d "$SKILLS_DIR/$name" ]]; then
       err "Index lists '$name' but no directory at _skills/$name/"
     fi
@@ -106,7 +106,7 @@ else
       [[ -d "$dir" ]] || continue
       dir_name="$(basename "$dir")"
       found=false
-      for name in "${index_names[@]}"; do
+      for name in ${index_names[@]+"${index_names[@]}"}; do
         [[ "$name" == "$dir_name" ]] && found=true && break
       done
       if ! $found; then
@@ -240,14 +240,14 @@ fi
 
 is_kit_skill_name() {
   local name="$1" k
-  for k in "${kit_skill_names[@]}"; do
+  for k in ${kit_skill_names[@]+"${kit_skill_names[@]}"}; do
     [[ "$k" == "$name" ]] && return 0
   done
   return 1
 }
 
 if $HAS_SUBTREE || [[ -n "$CONSUMER_SKILLS_DIR" ]]; then
-  for name in "${skill_names[@]}"; do
+  for name in ${skill_names[@]+"${skill_names[@]}"}; do
     entry_path="$SKILLS_DIR/$name"
     expected=""
 
@@ -322,7 +322,7 @@ for symdir in "${native_symdirs[@]}"; do
 
   rel_skills="$(native_expected_skills_base "$symdir")"
 
-  for name in "${skill_names[@]}"; do
+  for name in ${skill_names[@]+"${skill_names[@]}"}; do
     link_path="$symdir_abs/$name"
     expected="${rel_skills}/${name}"
 
@@ -352,16 +352,16 @@ for symdir in "${native_symdirs[@]}"; do
     fi
   done
 
-  for link in "$symdir_abs"/*/; do
-    [[ ! -e "${link%/}" && ! -L "${link%/}" ]] && continue
-    name="$(basename "${link%/}")"
+  for link in "$symdir_abs"/*; do
+    [[ -e "$link" || -L "$link" ]] || continue
+    name="$(basename "$link")"
     found=false
-    for skill_name in "${skill_names[@]}"; do
+    for skill_name in ${skill_names[@]+"${skill_names[@]}"}; do
       [[ "$skill_name" == "$name" ]] && found=true && break
     done
     if ! $found; then
-      if [[ -L "${link%/}" ]] && [[ ! -d "${link%/}" ]]; then
-        err "$symdir/$name is a dangling symlink (target: $(readlink "${link%/}")). Run: .skills/_harness/link.sh $symdir  (or: check.sh --link)"
+      if [[ -L "$link" ]] && [[ ! -e "$link" ]]; then
+        err "$symdir/$name is a dangling symlink (target: $(readlink "$link")). Run: .skills/_harness/link.sh $symdir  (or: check.sh --link)"
       else
         warn "$symdir/$name has no matching _skills/$name/ (extra entry or non-harness skill)"
       fi

@@ -1,6 +1,6 @@
 ---
 name: skill-author
-description: "How to write a new SKILL.md from scratch and register it in the index."
+description: "Write a new SKILL.md from scratch and register it in the index."
 triggers:
   - write a skill
   - author a skill
@@ -8,7 +8,7 @@ triggers:
   - add a skill
 dependencies:
   - skill-template
-version: "1.5.3"
+version: "1.5.4"
 ---
 
 # Skill Author
@@ -17,9 +17,9 @@ version: "1.5.3"
 
 Skill authoring must not be blocked after the temporary bootstrap file is removed.
 
-1. **If `AGENTS_skills.md` exists** at the repository root — bootstrap is **not** finished. Do not follow these steps until **`AGENTS_skills.md`** Path A or Path B is completed and that file is removed (see **`AGENTS_skills.md`**).
+1. **If `AGENTS_skills.md` exists** at the repository root — bootstrap is **not** finished. Do not follow these steps until the **`AGENTS_skills.md`** Single-Tool or Tool-Neutral setup is completed and that file is removed (see **`AGENTS_skills.md`**).
 
-2. **If `AGENTS_skills.md` does not exist** — the repo has finished bootstrap. Proceed **unless** the project’s own docs forbid it: check root **`AGENTS.md`**, **README**, or **CONTRIBUTING** for a Path B “skills / authoring” policy or any project-specific gate. Path B repos usually record policy in **`AGENTS.md`** so agents still see the rules without relying on a deleted bootstrap file.
+2. **If `AGENTS_skills.md` does not exist** — the repo has finished bootstrap. Proceed **unless** the project’s own docs forbid it: check root **`AGENTS.md`**, **README**, or **CONTRIBUTING** for a Tool-Neutral “skills / authoring” policy or any project-specific gate. Tool-Neutral repos usually record policy in **`AGENTS.md`** so agents still see the rules without relying on a deleted bootstrap file.
 
 Do **not** treat “`AGENTS_skills.md` missing” as an error — it is expected after setup. Rely on **`AGENTS_skills.md`** only while it is present.
 

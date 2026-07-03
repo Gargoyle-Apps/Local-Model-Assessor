@@ -71,11 +71,21 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --apply) APPLY=true ;;
     --force) FORCE=true ;;
-    --remote-name) REMOTE_NAME="$2"; shift ;;
-    --remote-url) REMOTE_URL="$2"; shift ;;
-    --ref) REF="$2"; shift ;;
-    --prefix) PREFIX="$2"; shift ;;
-    --accept-upstream) ACCEPT_UPSTREAM="$2"; shift ;;
+    --remote-name)
+      [[ $# -ge 2 ]] || { echo "ERROR: --remote-name requires a value" >&2; exit 2; }
+      REMOTE_NAME="$2"; shift ;;
+    --remote-url)
+      [[ $# -ge 2 ]] || { echo "ERROR: --remote-url requires a value" >&2; exit 2; }
+      REMOTE_URL="$2"; shift ;;
+    --ref)
+      [[ $# -ge 2 ]] || { echo "ERROR: --ref requires a value" >&2; exit 2; }
+      REF="$2"; shift ;;
+    --prefix)
+      [[ $# -ge 2 ]] || { echo "ERROR: --prefix requires a value" >&2; exit 2; }
+      PREFIX="$2"; shift ;;
+    --accept-upstream)
+      [[ $# -ge 2 ]] || { echo "ERROR: --accept-upstream requires a value" >&2; exit 2; }
+      ACCEPT_UPSTREAM="$2"; shift ;;
     --accept-derived-url) ACCEPT_DERIVED_URL=true ;;
     --reconcile) RECONCILE=true ;;
     --symlink-consumer-skills) SYMLINK_CONSUMER_SKILLS=true ;;
@@ -116,10 +126,34 @@ err  () { printf '  ERROR %s\n' "$*" >&2; ((++ERRORS)) || true; }
 
 ERRORS=0
 
+safe_backup_mv() {
+  local src="$1"
+  local bak="${src}.bak"
+  if [[ -e "$bak" ]]; then
+    echo "ERROR: backup target $bak already exists. Remove or rename it before retrying." >&2
+    exit 1
+  fi
+  mv "$src" "$bak"
+}
+
+preserve_mode_mv() {
+  local tmp="$1" target="$2"
+  local mode="644"
+  if [[ -f "$target" ]]; then
+    if stat -f '%Lp' "$target" >/dev/null 2>&1; then
+      mode="$(stat -f '%Lp' "$target")"
+    else
+      mode="$(stat -c '%a' "$target")"
+    fi
+  fi
+  mv "$tmp" "$target"
+  chmod "$mode" "$target"
+}
+
 # --- Preconditions ---
 
-if [[ ! -d ".git" ]]; then
-  echo "ERROR: must be run from a git repository root (no .git/ here)." >&2
+if ! git rev-parse --show-toplevel >/dev/null 2>&1; then
+  echo "ERROR: must be run from a git repository root." >&2
   exit 1
 fi
 if [[ ! -d ".skills" ]]; then
@@ -138,8 +172,12 @@ if $APPLY; then
   # script itself plus any *.bak directories (which can only exist mid-migration).
   # See gh issue #3, friction point 2.
   script_basename="$(basename "$script_src")"
+  dirty_filter=(cat)
+  if ! git ls-files --error-unmatch "$script_src" >/dev/null 2>&1; then
+    dirty_filter=(grep -v -E "(^|/)${script_basename}\$")
+  fi
   dirty="$(git status --porcelain 2>/dev/null \
-    | grep -v -E "(^|/)${script_basename}\$" \
+    | "${dirty_filter[@]}" \
     | grep -v -E '\.bak/?$' \
     || true)"
   if [[ -n "$dirty" ]]; then
@@ -205,7 +243,14 @@ note ""
 
 SUBTREE_SKILLS=""
 add_subtree() {
-  if ! git remote get-url "$REMOTE_NAME" >/dev/null 2>&1; then
+  if git remote get-url "$REMOTE_NAME" >/dev/null 2>&1; then
+    local existing
+    existing="$(git remote get-url "$REMOTE_NAME")"
+    if [[ "$existing" != "$REMOTE_URL" ]]; then
+      do_ "git remote set-url $REMOTE_NAME $REMOTE_URL (was: $existing)"
+      git remote set-url "$REMOTE_NAME" "$REMOTE_URL"
+    fi
+  else
     do_ "git remote add $REMOTE_NAME $REMOTE_URL"
     git remote add "$REMOTE_NAME" "$REMOTE_URL"
   fi
@@ -274,7 +319,7 @@ migrate_harness_dir() {
   fi
   if $APPLY; then
     do_ "backup $local_dir -> $local_dir.bak"
-    mv "$local_dir" "$local_dir.bak"
+    safe_backup_mv "$local_dir"
     do_ "ln -s $target_rel $local_dir"
     ln -s "$target_rel" "$local_dir"
   else
@@ -323,7 +368,7 @@ migrate_kit_skill() {
     if diff -r -q "$local_path" "$SUBTREE_SKILLS/$name" >/dev/null 2>&1; then
       if $APPLY; then
         do_ "identical to upstream — backup $local_path -> $local_path.bak, then symlink"
-        mv "$local_path" "$local_path.bak"
+        safe_backup_mv "$local_path"
         ln -s "$target_rel" "$local_path"
       else
         plan "$name is identical to upstream → backup + symlink"
@@ -332,7 +377,7 @@ migrate_kit_skill() {
       if ($FORCE || $accept_this) && $APPLY; then
         reason="$($accept_this && echo "[--accept-upstream]" || echo "[--force]")"
         do_ "$reason backup local-modified $local_path -> $local_path.bak, then symlink"
-        mv "$local_path" "$local_path.bak"
+        safe_backup_mv "$local_path"
         ln -s "$target_rel" "$local_path"
       else
         warn "$name differs from upstream — kept local copy."
@@ -554,7 +599,11 @@ if [[ -d ".skills/_skills" ]]; then
       for f in $REQUIRED_FIELDS; do
         if [[ "$key" == "$f" ]]; then
           seen="${seen}${f}|"
-          [[ "$f" == "name" ]] && fm_name="$(trim "$(printf '%s' "$line" | cut -d: -f2-)")"
+          if [[ "$f" == "name" ]]; then
+            fm_name="$(trim "$(printf '%s' "$line" | cut -d: -f2-)")"
+            fm_name="${fm_name#\"}"
+            fm_name="${fm_name%\"}"
+          fi
         fi
       done
     done < "$skill_md"
@@ -643,7 +692,7 @@ reconcile_meta() {
   # If kit_version/repo_url didn't exist in the file at all, append them.
   grep -q '^kit_version:' "$tmp" || printf 'kit_version: %s\n' "$up_kv" >> "$tmp"
   grep -q '^repo_url:'    "$tmp" || printf 'repo_url: %s\n'    "$up_url" >> "$tmp"
-  mv "$tmp" .skills/_meta.yml
+  preserve_mode_mv "$tmp" .skills/_meta.yml
   do_ ".skills/_meta.yml updated to kit_version=$up_kv, repo_url=$up_url"
   return 0
 }
@@ -678,10 +727,33 @@ reconcile_index() {
   #      gives a deterministic, idempotent result.)
   local tmp
   tmp="$(mktemp)"
-  local in_table_body=false dropped=0 added=0
+  local in_table_body=false kit_rows_appended=false dropped=0 added=0
 
-  while IFS= read -r line; do
-    # Detect the table header separator |---|---|---|; everything after it is body
+  append_kit_rows() {
+    if $kit_rows_appended || [[ -z "$up_kit_rows" ]]; then
+      return 0
+    fi
+    while IFS= read -r kr; do
+      [[ -z "$kr" ]] && continue
+      printf '%s\n' "$kr" >> "$tmp"
+      added=$((added + 1))
+    done <<< "$up_kit_rows"
+    kit_rows_appended=true
+  }
+
+  # Extract kit rows from upstream before walking the local file.
+  local up_kit_rows
+  up_kit_rows="$(awk -v kit_set="|$(echo "$KIT_SKILL_NAMES" | tr ' ' '|')|" '
+    /^\|[[:space:]-]+\|/ { in_body=1; next }
+    in_body && /^\|/ {
+      n=$0
+      sub(/^\|[[:space:]]*/, "", n)
+      sub(/[[:space:]]*\|.*/, "", n)
+      if (kit_set ~ "\\|" n "\\|") print
+    }
+  ' "$upstream_index")"
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
     if [[ "$line" =~ ^\|[[:space:]-]+\| ]]; then
       in_table_body=true
       printf '%s\n' "$line" >> "$tmp"
@@ -694,30 +766,20 @@ reconcile_index() {
         dropped=$((dropped + 1))
         continue
       fi
+      printf '%s\n' "$line" >> "$tmp"
+      continue
+    fi
+
+    if $in_table_body && [[ "$line" != \|* ]]; then
+      append_kit_rows
+      in_table_body=false
     fi
 
     printf '%s\n' "$line" >> "$tmp"
   done < "$local_index"
 
-  # Now extract kit rows from upstream and append in upstream order.
-  local up_kit_rows
-  up_kit_rows="$(awk -v kit_set="|$(echo "$KIT_SKILL_NAMES" | tr ' ' '|')|" '
-    /^\|[[:space:]-]+\|/ { in_body=1; next }
-    in_body && /^\|/ {
-      n=$0
-      sub(/^\|[[:space:]]*/, "", n)
-      sub(/[[:space:]]*\|.*/, "", n)
-      if (kit_set ~ "\\|" n "\\|") print
-    }
-  ' "$upstream_index")"
-
-  if [[ -n "$up_kit_rows" ]]; then
-    # If the local file ended without a trailing newline, the table won't be valid;
-    # the awk pass above already wrote complete lines so we can safely append.
-    while IFS= read -r kr; do
-      printf '%s\n' "$kr" >> "$tmp"
-      added=$((added + 1))
-    done <<< "$up_kit_rows"
+  if $in_table_body; then
+    append_kit_rows
   fi
 
   if ! $APPLY; then
@@ -739,7 +801,7 @@ reconcile_index() {
     note "  ok    .skills/_index.md kit rows already match upstream"
     rm -f "$tmp"
   else
-    mv "$tmp" "$local_index"
+    preserve_mode_mv "$tmp" "$local_index"
     do_ ".skills/_index.md merged: dropped $dropped stale kit rows, added $added current kit rows"
   fi
   return 0

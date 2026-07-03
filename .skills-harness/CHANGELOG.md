@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-07-03
+
+### Added
+
+- **`caveman/deploy.sh --print` (skill v1.2.0)** — user-level activation via copy/paste for globals that can't be scripted (e.g. Cursor's Settings → Rules → User Rules). Writes nothing: `stdout` is the paste-ready activation block, `stderr` says where to paste it. `target` is optional and only tailors the paste hint (`cursor`/`claude`/`codex`/`continue`, else generic), leaving the door open for any IDE with a "User Rules" / "Custom Instructions" box. Honors `--level`.
+
+### Fixed
+
+- **Harness shell safety and docs drift ([#6](https://github.com/Gargoyle-Apps/skills-harness/issues/6)–[#11](https://github.com/Gargoyle-Apps/skills-harness/issues/11)).** Hardened `build-index.sh`, `check.sh`, `link.sh`, `sync.sh`, `migrate-to-subtree.sh`, and `caveman/deploy.sh` for bash 3.2, destructive-op edge cases, and symlink topology. `build-index.sh` is idempotent with corrected `SKILL.md` frontmatter parsing; `check.sh` no longer crashes on bash 3.2 and reports dangling native-discovery symlinks; `link.sh` prune/`--clean` removes broken symlinks; `sync.sh --write` no longer wipes Rules blocks; `caveman/deploy.sh` avoids unsafe `rm -rf` / `sed`-to-EOF patterns on user skill dirs; `migrate-to-subtree.sh` closes subtree-migration safety gaps. Docs: restore missing `## [x.y.z]` headings for tagged releases in CHANGELOG, fix broken `v1.0.0` pin example, retarget Cursor Single-Tool setup to `.mdc` rules (`CURSOR_template.md`).
+
+## [1.4.1] - 2026-06-30
+
+### Changed
+
+- Trimmed every skill `description` ~10-20% (kept match keywords) to shrink the recurring `_index.md` cost agents load per task.
+- `build-index.sh`: replaced the per-line `sed -n Np` table-end scan (O(n²) subprocess spawns) with a single `awk` pass. Output byte-identical; trailing prose still preserved.
+
+## [1.4.0] - 2026-06-30
+
+### Changed
+
+- **`caveman/deploy.sh` v1.1.0 — added `codex` and `continue` targets** alongside `cursor`/`claude`:
+  - **`codex`** — symlinks the trio into `~/.codex/skills/` (override `CODEX_SKILLS_DIR`); `--always-on` appends a marker block to the global `~/.codex/AGENTS.md` (override `CODEX_AGENTS_FILE`).
+  - **`continue`** — rules-only (Continue has no `SKILL.md` discovery): writes `~/.continue/rules/caveman.md` (override `CONTINUE_RULES_DIR`) with `alwaysApply: true` under `--always-on`, else `alwaysApply: false` (pulled in by description). `--copy` is a no-op here.
+  - Fixed `--level` warning gating and a `CONTINUE_RULES_DIR` override that was being pre-cleared.
+- **`skill-conflicts` v1.1.0** — scanner now also checks `~/.codex/skills/` and `~/.codex/prompts/` (`/name` collisions). Continue is rules-only and intentionally not scanned. New env overrides `CODEX_SKILLS_DIR`, `CODEX_PROMPTS_DIR`.
+
+## [1.3.0] - 2026-06-30
+
+### Added
+
+- **`skill-conflicts` skill v1.0.0 + `.skills/_harness/skill-conflicts.sh`.** Detects collisions between repo-managed skills (`.skills/_skills/<name>`) and same-named skills or slash-commands in the user's IDE config (`~/.cursor/skills`, `~/.claude/skills`, `~/.cursor/commands`, `~/.claude/commands`; overridable via env). Classifies each hit: symlink-into-repo → OK (managed), identical independent copy → WARN (drift risk), divergent definition or command/skill name clash → CONFLICT (exit 1). Read-only; never mutates user config.
+
+### Changed
+
+- **Renamed the two install shapes from "Path A / Path B" to function-based names:** **Single-Tool** (Single-Tool Harness — installs one tool's runtime harness in the repo) and **Tool-Neutral** (Tool-Neutral Skills — portable skills only, no tool harness committed). Updated `AGENTS_skills.md` (headings keep a "formerly Path A/B" alias), the canonical Rules bullet in `_rules.md` and all 10 `*_template.md` files (kept in sync), `README.md` (new "Install shapes: Single-Tool vs Tool-Neutral" section with comparison table), **`skill-author` v1.5.4**, **`harness-subtree` v1.5.3**, and **`harness-upgrade` v1.1.2**.
+
+## [1.2.0] - 2026-06-30
+
+### Added
+
+- **Caveman skill trio (bundled).** New kit-bundled skills vendored from [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (MIT, prompt content only — no upstream installer, hooks, npm, or statusline machinery):
+  - **`caveman` v1.0.0** — ultra-compressed communication mode (~75% output-token reduction) with `lite` / `full` / `ultra` / `wenyan-lite` / `wenyan-full` / `wenyan-ultra` intensity levels and built-in Auto-Clarity for security/destructive/ambiguous cases.
+  - **`caveman-commit` v1.0.0** — terse Conventional Commits messages (subject ≤50 chars, why over what).
+  - **`caveman-review` v1.0.0** — one-line PR review comments with optional severity prefixes.
+- **`caveman/deploy.sh`** — zero-dependency helper to deploy the trio to an IDE config location (`cursor` → `~/.cursor/skills/`, `claude` → `~/.claude/skills/`) via symlink or `--copy`. `--always-on` writes the config-level activation the IDE injects each turn (Cursor per-project `.cursor/rules/caveman.mdc`; Claude Code global `~/.claude/CLAUDE.md`), mirroring caveman's own `caveman-activate.md` rule body. Supports `--level`, `--uninstall [DIR]`, and `--dry-run`.
+
+### Fixed
+
+- **`check.sh` — consumer-skill directory symlink topology** is now diagnosable when the kit is subtree-vendored or `consumer_skills_dir` is declared ([#5](https://github.com/Gargoyle-Apps/skills-harness/issues/5)).
+
 ## [1.1.2] - 2026-05-18
 
 ### Added
@@ -37,8 +88,8 @@ First **stable** kit release for multi-repo deployment. Intended behaviour match
 
 ### Changed
 
-- **Pinning examples** in **README** and **harness-subtree** now cite `v1.0.0` for reproducible curl/bootstrap and subtree pulls.
-- **`harness-subtree` v1.5.0** — frontmatter bump; bootstrap/curl examples aligned with the `v1.0.0` tag.
+- **Pinning examples** in **README** and **harness-subtree** now cite `v1.0.1` for reproducible curl/bootstrap and subtree pulls.
+- **`harness-subtree` v1.5.0** — frontmatter bump; bootstrap/curl examples aligned with the `v1.0.1` tag.
 - **`skill-author` v1.5.2** — example `_meta.yml` snippet: `kit_version` set to `1.0.0`.
 
 ## [0.6.1] - 2026-05-02

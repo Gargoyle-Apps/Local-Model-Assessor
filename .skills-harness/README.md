@@ -8,7 +8,7 @@ A zero-dependency, file-only kit that teaches coding agents how to discover and 
 2. Open `AGENTS_skills.md` in your agent. It will ask which environment you use, then walk through setup automatically.
 3. After setup, `AGENTS_skills.md` is deleted. The harness lives in `AGENTS.md` or a sidecar file, depending on your IDE.
 
-For repos that need to stay **IDE-neutral** (used across Cursor, Claude Code, Windsurf, etc. by different people), follow **Path B** in `AGENTS_skills.md` — skills stay portable under `.skills/` without committing to a single tool's config files.
+For repos that need to stay tool-neutral (used across Cursor, Claude Code, Windsurf, etc. by different people), follow the **Tool-Neutral** setup in `AGENTS_skills.md` — skills stay portable under `.skills/` without committing to a single tool's config files.
 
 ## How it works
 
@@ -20,6 +20,24 @@ For repos that need to stay **IDE-neutral** (used across Cursor, Claude Code, Wi
 | **Skills** | Execute — step-by-step instructions for a specific task | `.skills/_skills/<name>/SKILL.md` |
 
 The agent reads the index at the start of non-trivial work. When a task matches a skill's triggers, the agent loads that `SKILL.md` — never preemptively. If a skill lists dependencies, those are loaded first. Skills cannot override user intent or agent core behavior; they only provide domain-specific procedures.
+
+## Install shapes: Single-Tool vs Tool-Neutral
+
+When you install the harness into a repo, bootstrap (`AGENTS_skills.md`) forces a one-time choice between two shapes. They are named by **function** (the older "Path A / Path B" labels map directly). They differ in exactly **one** thing: whether *this* repo commits to a single tool's runtime harness files.
+
+| | **Single-Tool** (Single-Tool Harness) | **Tool-Neutral** (Tool-Neutral Skills) |
+|---|---|---|
+| Formerly | Path A | Path B |
+| Use when | Everyone working in this repo uses the same tool (always Cursor, or always Claude Code, …) | The repo is opened across different tools and must stay neutral |
+| What gets installed | That tool's harness template (from `.skills/_harness/*_template.md`) is written into `AGENTS.md` / tool config | **Nothing tool-specific** — only a short policy note in `AGENTS.md` / README / CONTRIBUTING |
+| `.skills/_harness/*_template.md` | The source you install from | **Reference only** — for other checkouts/consumers who run Single-Tool themselves |
+| Skills + `.skills/_index.md` | Portable | Portable (identical) |
+| Runtime skill loading | Installed tool harness **plus** native discovery | Native discovery + the index (no committed tool harness) |
+| Net result | Repo is wired to one tool | Repo stays tool-agnostic |
+
+**Quick decision:** one tool for everyone → **Single-Tool**. Mixed tools / must stay neutral → **Tool-Neutral**. Both keep skills portable under `.skills/_skills/` with the same `_index.md`; the only commitment Single-Tool makes that Tool-Neutral avoids is writing a specific tool's harness block into this repo.
+
+**This repo (`skills-harness` upstream) is a special third case:** it is the *source* of those templates, so it never installs one into itself and never deletes `AGENTS_skills.md`. Agents here load skills via native discovery (`.agents/skills/`, `.claude/skills/` symlinks) plus `.skills/_index.md` — effectively Tool-Neutral in spirit, with the maintainer exception that the bootstrap file stays.
 
 ## Supported tools
 
@@ -108,7 +126,7 @@ The kit is vendored as-is into `.skills-harness/`. The consumer's runtime tree u
 │   │   └── <prefix>-<own>/ → symlink to consumer_skills_dir when declared; else real dir
 │   ├── _index.md           ← consumer-owned (kit rows + own rows)
 │   └── _meta.yml           ← consumer-owned, mirrors vendored kit_version
-└── AGENTS.md               ← Path A harness or Path B policy
+└── AGENTS.md               ← Single-Tool harness or Tool-Neutral policy
 ```
 
 This keeps the kit pieces overwritable on every pull while consumer-authored skills, the index, and the local `_meta.yml` stay independent.
@@ -121,7 +139,7 @@ git fetch skills-harness
 git subtree add --prefix=.skills-harness skills-harness main --squash
 ```
 
-Then create the symlinked `.skills/` shell, copy `.skills-harness/AGENTS_skills.md` to repo root, complete bootstrap (Path A or B), delete the bootstrap file, and run `.skills/_harness/check.sh`. The **harness-subtree** skill has the exact commands.
+Then create the symlinked `.skills/` shell, copy `.skills-harness/AGENTS_skills.md` to repo root, complete bootstrap (Single-Tool or Tool-Neutral), delete the bootstrap file, and run `.skills/_harness/check.sh`. The **harness-subtree** skill has the exact commands.
 
 ### Updating
 
@@ -147,7 +165,7 @@ chmod +x .skills/_harness/migrate-to-subtree.sh
 .skills/_harness/migrate-to-subtree.sh        # dry-run first
 ```
 
-Swap `main` for a release tag (e.g. `v1.0.0`) for a reproducible install. The script ignores its own untracked status and any `*.bak/` directories during the dirty-tree check, so running it from `.skills/_harness/` is fine.
+Swap `main` for a release tag (e.g. `v1.0.1`) for a reproducible install. The script ignores its own untracked status and any `*.bak/` directories during the dirty-tree check, so running it from `.skills/_harness/` is fine.
 
 ### Pinning
 
@@ -173,7 +191,7 @@ For progressive skill loading via MCP, see [skillport](https://github.com/gotala
 
 ## Kit version
 
-**Current release:** `1.1.2`
+**Current release:** `1.5.0`
 
 - **Canonical:** [`kit_version` in `.skills/_meta.yml`](.skills/_meta.yml)
 - **History:** [CHANGELOG.md](CHANGELOG.md)
