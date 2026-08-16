@@ -2,3 +2,5 @@
 kit_version: "1.5.0"
 repo_url: "https://github.com/Gargoyle-Apps/skills-harness"
 role: consumer
+native_targets:
+  - .agents/skills

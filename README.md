@@ -191,7 +191,7 @@ The kit is vendored as a **git subtree** at [`.skills-harness/`](.skills-harness
 
 Policy is **agnostic / multi-ecosystem** (Path B): see [AGENTS.md](AGENTS.md) **Skills (agnostic / multi-ecosystem)** — we do not merge tool-specific harness templates from `.skills/_harness/` into this project.
 
-**Update kit:** `git remote add skills-harness https://github.com/Gargoyle-Apps/skills-harness.git` (once), then `git fetch skills-harness && git subtree pull --prefix=.skills-harness skills-harness v1.5.0 --squash`, then `.skills/_harness/migrate-to-subtree.sh --skip-subtree --reconcile --apply` (see **harness-subtree** skill). **Credit:** shared templates and kit skills — contribute upstream; LMA skills stay in this repo.
+**Update kit:** `git fetch skills-harness && git subtree pull --prefix=.skills-harness skills-harness main --squash` (or pin a release tag), then `.skills/_harness/migrate-to-subtree.sh --skip-subtree --reconcile --apply` and `.skills/_harness/check.sh --link` (see **harness-subtree** skill). **Credit:** shared templates and kit skills — contribute upstream; LMA skills stay in this repo.
 
 ---
 

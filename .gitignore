@@ -1,6 +1,7 @@
 # IDE / tooling
 .cursorignore
 .cursorrules
+.agents/
 .continue/
 .opencode/
 .vscode/
