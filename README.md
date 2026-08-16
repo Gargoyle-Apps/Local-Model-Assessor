@@ -1,6 +1,6 @@
 # skills-harness
 
-A zero-dependency, file-only kit that teaches coding agents how to discover and load skills on demand. Drop `.skills/` and `AGENTS_skills.md` into any repo — the agent sets itself up, reads the index, and loads each `SKILL.md` only when the task matches its triggers.
+A zero-dependency, file-only kit that teaches coding agents how to discover and load skills on demand. Drop `.skills/` and `AGENTS_skills.md` into any repo — the agent sets itself up, routes from native skill metadata when available, and loads each matching `SKILL.md` only on demand.
 
 ## Quick start
 
@@ -15,11 +15,25 @@ For repos that need to stay tool-neutral (used across Cursor, Claude Code, Winds
 | Role | What it does | Implemented by |
 |------|-------------|----------------|
 | **User** | Sets goals, chooses the IDE, resolves conflicts | The human |
-| **Agent** | Reads the index, loads skills on demand, manages files | The AI in your IDE |
-| **Index** | Routes — declares what skills exist and when to trigger them | `.skills/_index.md` |
+| **Agent** | Routes from native metadata, loads skills on demand, manages files | The AI in your IDE |
+| **Index** | Fallback catalog for targeted lookup, ambiguous routing, and maintenance | `.skills/_index.md` |
 | **Skills** | Execute — step-by-step instructions for a specific task | `.skills/_skills/<name>/SKILL.md` |
 
-The agent reads the index at the start of non-trivial work. When a task matches a skill's triggers, the agent loads that `SKILL.md` — never preemptively. If a skill lists dependencies, those are loaded first. Skills cannot override user intent or agent core behavior; they only provide domain-specific procedures.
+Native hosts receive each skill's `name` and `description` and use that compact catalog for routing. The full index is consulted only when native discovery is unavailable, a match is ambiguous or missing, the host reports omitted skills, or the catalog itself is being maintained. Once a skill is selected, only its unconditional `dependencies` load immediately; branch-specific companions load at their documented decision point. Skills cannot override user intent or agent core behavior; they only provide domain-specific procedures.
+
+## DESIGN.md integration
+
+Repos with a visual design system can add [DESIGN.md](https://github.com/google-labs-code/design.md) (Google Labs) alongside the harness. Each layer owns one job:
+
+| Layer | Location | When loaded | Owns |
+|-------|----------|-------------|------|
+| **Harness** | `.skills/_index.md` + skills | On trigger match | Multi-step workflows |
+| **AGENTS.md** | Repo root (or tool sidecar) | Every session | Project policy and *pointers* to skills and `DESIGN.md` |
+| **DESIGN.md** | Repo root (default) | UI / visual work | Design tokens (YAML) + design rationale (markdown) |
+
+Point `AGENTS.md` at `DESIGN.md` for UI work; keep design tokens in `DESIGN.md` YAML front matter, not in `AGENTS.md` or skill files. Validate with `npx -y -p @google/design.md designmd lint DESIGN.md`.
+
+Load **skill-reviewer** when reviewing skill changes (quality, security, harness layout). **skill-author** covers creating skills; **skill-catalog-maintainer** audits the catalog; **skill-import** / **skill-export** handle cross-repo vendoring.
 
 ## Install shapes: Single-Tool vs Tool-Neutral
 
@@ -37,7 +51,7 @@ When you install the harness into a repo, bootstrap (`AGENTS_skills.md`) forces 
 
 **Quick decision:** one tool for everyone → **Single-Tool**. Mixed tools / must stay neutral → **Tool-Neutral**. Both keep skills portable under `.skills/_skills/` with the same `_index.md`; the only commitment Single-Tool makes that Tool-Neutral avoids is writing a specific tool's harness block into this repo.
 
-**This repo (`skills-harness` upstream) is a special third case:** it is the *source* of those templates, so it never installs one into itself and never deletes `AGENTS_skills.md`. Agents here load skills via native discovery (`.agents/skills/`, `.claude/skills/` symlinks) plus `.skills/_index.md` — effectively Tool-Neutral in spirit, with the maintainer exception that the bootstrap file stays.
+**This repo (`skills-harness` upstream) is a special third case:** it is the *source* of those templates, so it never installs one into itself and never deletes `AGENTS_skills.md`. Agents here route through native discovery (`.agents/skills/` is declared in `_meta.yml`; local `.claude/skills/` may also exist) and use `.skills/_index.md` as a targeted fallback — effectively Tool-Neutral in spirit, with the maintainer exception that the bootstrap file stays.
 
 ## Supported tools
 
@@ -63,10 +77,10 @@ Each `SKILL.md` opens with YAML frontmatter. See [skill-template](.skills/_skill
 | `name` | agentskills.io + harness | Must match directory name (kebab-case, 1–64 chars) |
 | `description` | agentskills.io + harness | One sentence for index and IDE matching (1–1024 chars) |
 | `triggers` | harness only | Phrases that should cause this skill to load |
-| `dependencies` | harness only | Other skill names to load first (`[]` if none) |
+| `dependencies` | harness only | Unconditional prerequisite skill names (`[]` if none) |
 | `version` | harness only | Semver string (e.g. `1.0.0`) |
 
-`name` and `description` follow the [agentskills.io specification](https://agentskills.io/specification) and are used by IDEs with native skill discovery. The harness adds `triggers`, `dependencies`, and `version`; IDEs that don't recognize them silently ignore them.
+`name` and `description` follow the [agentskills.io specification](https://agentskills.io/specification) and are used by IDEs with native skill discovery. The harness adds `triggers`, `dependencies`, and `version`; IDEs that don't recognize them silently ignore them. See [`.skills/_index.md`](.skills/_index.md) for bundled skills.
 
 ## Native IDE discovery
 
@@ -80,9 +94,16 @@ Most IDEs auto-discover skills from standard directories. After setup, run the s
 .skills/_harness/link.sh .claude/skills
 ```
 
-Symlinks point from the cross-agent discovery path back to `.skills/_skills/`. Add the target directory to `.gitignore` — symlinks are machine-local, not committed.
+Symlinks point from the cross-agent discovery path back to `.skills/_skills/`. `link.sh` also records the chosen path under `native_targets:` in `.skills/_meta.yml`; pass `--no-record` only for a deliberately temporary surface. Add the generated target directory to `.gitignore` — symlinks are machine-local, but the declaration is committed.
 
-The harness index and native discovery work side by side: native gives IDE integration, the index gives trigger keywords and dependency chains.
+Native discovery is the primary router. The harness index remains the portable human catalog and targeted fallback for non-native, ambiguous, omitted-skill, and catalog-maintenance cases.
+
+```yaml
+native_targets:
+  - .agents/skills
+```
+
+A plain `check.sh` distinguishes an undeclared install from a declared target that is missing or unhealthy. `check.sh --link` creates and repairs every declared target. Avoid declaring both `.agents/skills` and `.cursor/skills` for the same catalog because Cursor scans both and may expose duplicate names.
 
 ### Swapping IDEs
 
@@ -98,7 +119,7 @@ For upgrading from an older harness version, use the bundled **harness-upgrade**
 
 1. Copy [skill-template](.skills/_skills/skill-template/SKILL.md) to `.skills/_skills/<name>/SKILL.md` and edit.
 2. Add a row to [`.skills/_index.md`](.skills/_index.md).
-3. Re-run `.skills/_harness/link.sh` if native discovery symlinks are set up.
+3. Run `.skills/_harness/check.sh --link` to refresh every declared native target.
 4. For the full checklist, load the **skill-author** skill.
 
 ## Updating the kit
@@ -139,7 +160,7 @@ git fetch skills-harness
 git subtree add --prefix=.skills-harness skills-harness main --squash
 ```
 
-Then create the symlinked `.skills/` shell, copy `.skills-harness/AGENTS_skills.md` to repo root, complete bootstrap (Single-Tool or Tool-Neutral), delete the bootstrap file, and run `.skills/_harness/check.sh`. The **harness-subtree** skill has the exact commands.
+Then create the symlinked `.skills/` shell, copy `.skills-harness/AGENTS_skills.md` to repo root, complete bootstrap (Single-Tool or Tool-Neutral), delete the bootstrap file, and run `.skills/_harness/check.sh --link`. The **harness-subtree** skill has the exact commands.
 
 ### Updating
 
@@ -148,13 +169,13 @@ git fetch skills-harness
 git subtree pull --prefix=.skills-harness skills-harness main --squash
 ```
 
-Read `.skills-harness/CHANGELOG.md` for the diff, refresh kit-skill symlinks (idempotent loop in **harness-subtree**), reconcile any new rows into your `.skills/_index.md`, bump `.skills/_meta.yml` `kit_version`, and re-run `check.sh`.
+Read `.skills-harness/CHANGELOG.md` for the diff, refresh kit-skill symlinks, reconcile new rows and metadata, sync declared native targets, and re-run `check.sh`. The **harness-subtree** migration helper performs these steps idempotently.
 
 ### Migrating an existing manual install
 
-If a repo already has `.skills/` from a file-copy install and you want to switch to subtree updates, run `.skills/_harness/migrate-to-subtree.sh` (dry-run by default; `--apply` to perform). It vendors the subtree, replaces kit-owned pieces with symlinks, and — unless `--reconcile` is also passed — **never touches consumer-authored skills, the index, or `_meta.yml`**. It also audits consumer skills against the prefix convention (per **skill-author**) and required frontmatter fields, and prints rename/patch suggestions for you to apply manually.
+If a repo already has `.skills/` from a file-copy install and you want to switch to subtree updates, run `.skills/_harness/migrate-to-subtree.sh` (dry-run by default; `--apply` to perform). It vendors the subtree, replaces kit-owned pieces with symlinks, and never touches consumer-authored skills. The index changes only under `--reconcile`; `_meta.yml` changes under `--reconcile` or when `--native-target` adds a declaration. It also audits consumer skills against the prefix convention (per **skill-author**) and required frontmatter fields, and prints rename/patch suggestions for you to apply manually.
 
-Pass `--reconcile` (and optionally `--symlink-consumer-skills`) to fold the post-migration index/`_meta.yml` reconcile and consumer-skill shim creation into the same run. Full procedure (including drift handling with `--accept-upstream <name>` or `--force`) lives in **harness-subtree**.
+Pass `--reconcile` (and optionally `--symlink-consumer-skills`) to fold the post-migration index/`_meta.yml` reconcile and consumer-skill shim creation into the same run. Existing `native_targets` are preserved and synced; `--native-target .agents/skills` selects one for a legacy install. Full procedure (including drift handling with `--accept-upstream <name>` or `--force`) lives in **harness-subtree**.
 
 **Bootstrapping on a stale install** (pre-0.6.0 doesn't ship the script):
 
@@ -181,7 +202,7 @@ Because the kit can be updated mid-project with a single command, **per-skill `v
 
 ## Validation
 
-Run `.skills/_harness/check.sh` to verify index/directory consistency, frontmatter, template sync, `_skills/` directory-symlink topology (subtree or `consumer_skills_dir` installs), and native-discovery symlink completeness (when `.agents/skills/` or `.claude/skills/` exist). After adding kit skills or a subtree pull, run **`check.sh --link`** to sync those dirs via `link.sh`, then validate.
+Run `.skills/_harness/check.sh` to verify index/directory consistency, Agent Skills frontmatter shape, template sync, `_skills/` directory-symlink topology, and every declared native target. It also warns on missing/cyclic dependencies, large transitive dependency loads, native metadata budget, index growth, and oversized skill bodies. After adding kit skills or a subtree pull, run **`check.sh --link`** to create or sync all `native_targets`, then validate.
 
 The kit-version surface checks (CHANGELOG/README/AGENTS_skills.md must agree on `kit_version`) only make sense in this upstream repo. **Consumer repos auto-skip them** when either `.skills-harness/` exists at the repo root (subtree install) or `.skills/_meta.yml` declares `role: consumer`. Override with `SKILLS_CHECK_KIT_SURFACES=1` (force checks) or `SKILLS_CHECK_KIT_SURFACES=0` (suppress) when the auto-detect gets it wrong. See [CONTRIBUTING.md — Environment overrides](CONTRIBUTING.md#environment-overrides) for the full list.
 

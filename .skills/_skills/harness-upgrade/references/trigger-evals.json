@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "skill": "harness-upgrade",
+  "should_trigger": [
+    "upgrade our harness from 0.3.x to the latest version",
+    "update harness files by copying from upstream",
+    "enable native IDE discovery with link.sh",
+    "migrate harness to add .agents/skills symlinks",
+    "add native discovery to our file-copy harness install",
+    "run link.sh for Cursor native skill discovery",
+    "update our skills system to the current kit version",
+    "swap from Cursor to Claude Code and re-run link.sh"
+  ],
+  "should_not_trigger": [
+    "install skills-harness as a git subtree at .skills-harness/",
+    "git subtree add the skills-harness kit to this repo",
+    "write a new skill from scratch",
+    "vendor the harness via git subtree pull",
+    "migrate our manual install to subtree vendoring",
+    "release a new skills-harness kit version and bump CHANGELOG",
+    "export our custom skill to another repository",
+    "detect skill name collisions in my IDE config"
+  ]
+}

@@ -24,10 +24,10 @@ Skills are in `.skills/_skills/`. The index is at `.skills/_index.md`.
 
 ## Rules
 
-- Read `.skills/_index.md` at the start of any non-trivial task.
-- Load a skill's full `SKILL.md` only when the task matches its triggers in the index.
+- Prefer the host's native skill catalog. Route from each skill's `name` and `description`, then load the full `SKILL.md` only for a clear match.
+- Consult `.skills/_index.md` only when native discovery is unavailable, routing is ambiguous or missing, the host warns that skills were omitted, or the task concerns the catalog itself. Prefer a targeted search before reading the full index.
 - Never load skills preemptively.
-- If a skill lists `dependencies`, load those skills before proceeding.
+- After loading a skill, load only its unconditional `dependencies`; load conditional companion skills only when their documented branch is reached.
 - **`.skills/_index.md` is the source of truth.** When you create, rename, or delete a skill, update the index in the same operation. Never leave the index out of sync with `.skills/_skills/`.
 - If `.skills/` is missing from the repo, warn the user and do not invent skill content.
 - **Subtree-vendored installs:** if `.skills-harness/` exists at the repo root, the kit is vendored as a git subtree — treat files under `.skills-harness/` as upstream-owned (do not hand-edit; updates come via `git subtree pull`) and use the **harness-subtree** skill for install/update/reconcile work.

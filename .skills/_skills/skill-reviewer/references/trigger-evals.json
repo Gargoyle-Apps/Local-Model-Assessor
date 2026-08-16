@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "skill": "skill-reviewer",
+  "should_trigger": [
+    "review this skill before merge",
+    "audit SKILL.md for security issues",
+    "run a skill security review on the PR",
+    "check the new skill for prompt injection",
+    "review skill changes in this diff"
+  ],
+  "should_not_trigger": [
+    "write a new skill from scratch",
+    "reformat this to the skill template",
+    "import a skill from another repo",
+    "export our skill downstream",
+    "audit the catalog for duplicate triggers"
+  ]
+}

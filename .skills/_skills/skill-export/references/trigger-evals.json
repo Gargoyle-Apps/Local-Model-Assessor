@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "skill": "skill-export",
+  "should_trigger": [
+    "export this skill to another repo",
+    "publish our deploy skill downstream",
+    "share this skill with the platform team",
+    "push our skill to acme/infra via PR",
+    "open a PR in the target repo with this skill"
+  ],
+  "should_not_trigger": [
+    "import a skill from upstream",
+    "write a new skill from scratch",
+    "refresh a vendored skill copy",
+    "review skill changes before merge",
+    "audit skills for trigger overlap"
+  ]
+}

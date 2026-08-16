@@ -1,0 +1,23 @@
+{
+  "description": "Trigger eval cases for caveman-commit. Near-misses target general caveman mode and PR review.",
+  "should_trigger": [
+    "write a commit message",
+    "generate commit for this diff",
+    "caveman commit",
+    "/caveman-commit",
+    "commit message for these changes",
+    "conventional commit subject",
+    "help me commit this",
+    "terse commit message"
+  ],
+  "should_not_trigger": [
+    "use caveman mode",
+    "talk like caveman",
+    "/caveman ultra",
+    "review this PR",
+    "code review the diff",
+    "/caveman-review",
+    "compress your replies",
+    "review comment on line 42"
+  ]
+}

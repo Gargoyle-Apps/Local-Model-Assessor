@@ -16,7 +16,7 @@ set -euo pipefail
 # Targets (skill dir → override env):
 #   cursor     Symlink trio into ~/.cursor/skills/     (CURSOR_SKILLS_DIR)
 #   claude     Symlink trio into ~/.claude/skills/     (CLAUDE_SKILLS_DIR)
-#   codex      Symlink trio into ~/.codex/skills/      (CODEX_SKILLS_DIR)
+#   codex      Symlink trio into ~/.agents/skills/     (CODEX_SKILLS_DIR)
 #   continue   Rules-only (no SKILL.md discovery) — writes ~/.continue/rules/caveman.md
 #              (CONTINUE_RULES_DIR). VS Code / JetBrains "Continue" extension.
 #
@@ -85,10 +85,36 @@ BODY
 # Print the leading comment header as help (stops at first non-comment line).
 usage() { awk '/^#!/||/^set /{next} /^#/{sub(/^# ?/,"");print;h=1;next} h{exit}' "$0"; }
 
-# --- Resolve this repo's _skills root (two levels up from this script) ---
+# --- Resolve this repo's _skills root (skill dir is parent of scripts/) ---
 script_src="${BASH_SOURCE[0]:-$0}"
 script_dir="$(cd "$(dirname "$script_src")" && pwd -P)"
-SKILLS_ROOT="$(cd "$script_dir/.." && pwd -P)"
+SKILLS_ROOT="$(cd "$script_dir/../.." && pwd -P)"
+PROJECT_ROOT="$(pwd -P)"
+
+# Resolve ALWAYS_ON_DIR to a canonical path; reject if outside PROJECT_ROOT (PWD at script start).
+resolve_always_on_dir() {
+  local input="${1:-$PROJECT_ROOT}"
+  local dir parent
+
+  if [[ -d "$input" ]]; then
+    dir="$(cd "$input" && pwd -P)"
+  elif [[ -d "$(dirname "$input")" ]]; then
+    parent="$(cd "$(dirname "$input")" && pwd -P)"
+    dir="$parent/$(basename "$input")"
+  else
+    echo "ERROR: project directory does not exist: $input" >&2
+    exit 1
+  fi
+
+  case "$dir" in
+    "$PROJECT_ROOT"|"$PROJECT_ROOT"/*) ;;
+    *)
+      echo "ERROR: project directory must be inside $PROJECT_ROOT (got: $dir)" >&2
+      exit 1
+      ;;
+  esac
+  printf '%s' "$dir"
+}
 
 run() {
   if $DRY_RUN; then
@@ -265,6 +291,10 @@ if [[ -n "$LEVEL" ]]; then
   fi
 fi
 
+if [[ -n "$ALWAYS_ON_DIR" ]]; then
+  ALWAYS_ON_DIR="$(resolve_always_on_dir "$ALWAYS_ON_DIR")"
+fi
+
 # --- Print mode: emit paste-ready activation, touch nothing ---
 # stdout = exactly the text to paste; stderr = where to paste it.
 if $PRINT; then
@@ -297,7 +327,8 @@ case "$TARGET" in
     SKILLS_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
     AO_KIND="memory-block"; MEM_FILE="${CLAUDE_MEMORY_FILE:-$HOME/.claude/CLAUDE.md}" ;;
   codex)
-    SKILLS_DIR="${CODEX_SKILLS_DIR:-$HOME/.codex/skills}"
+    SKILLS_DIR="${CODEX_SKILLS_DIR:-$HOME/.agents/skills}"
+    CODEX_LEGACY_SKILLS_DIR="${CODEX_LEGACY_SKILLS_DIR:-$HOME/.codex/skills}"
     AO_KIND="memory-block"; MEM_FILE="${CODEX_AGENTS_FILE:-$HOME/.codex/AGENTS.md}" ;;
   continue)
     AO_KIND="continue-rule"; CONTINUE_RULES_DIR="${CONTINUE_RULES_DIR:-$HOME/.continue/rules}" ;;
@@ -318,10 +349,15 @@ if $UNINSTALL; then
       remove_managed_skill_dest "$SKILLS_DIR/$name" "$name"
     done
   fi
+  if [[ "$TARGET" == "codex" && "${CODEX_LEGACY_SKILLS_DIR:-}" != "$SKILLS_DIR" ]]; then
+    for name in "${TRIO[@]}"; do
+      remove_managed_skill_dest "$CODEX_LEGACY_SKILLS_DIR/$name" "$name"
+    done
+  fi
 
   case "$AO_KIND" in
     cursor-rule)
-      rule_file="${ALWAYS_ON_DIR:-$PWD}/.cursor/rules/caveman.mdc"
+      rule_file="$(resolve_always_on_dir "${ALWAYS_ON_DIR:-}")/.cursor/rules/caveman.mdc"
       if [[ -f "$rule_file" ]]; then
         run rm -f "$rule_file"
         echo "  removed always-on rule $rule_file"
@@ -386,7 +422,7 @@ done
 if $ALWAYS_ON; then
   case "$AO_KIND" in
     cursor-rule)
-      proj="${ALWAYS_ON_DIR:-$PWD}"
+      proj="$(resolve_always_on_dir "${ALWAYS_ON_DIR:-}")"
       rule_dir="$proj/.cursor/rules"
       rule_file="$rule_dir/caveman.mdc"
       echo "Writing always-on rule: $rule_file (per-project${LEVEL:+, level=$LEVEL})"

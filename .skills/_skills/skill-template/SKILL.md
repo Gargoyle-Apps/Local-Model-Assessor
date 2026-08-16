@@ -1,24 +1,41 @@
 ---
 name: skill-template
-description: "Canonical SKILL.md format, authoring notes, refactor guide."
+description: "Documents the canonical SKILL.md layout and refactor guide for converting rules or docs into skills. Load when the user needs format guidance, reformatting, or conversion — not when authoring a new skill from scratch."
 triggers:
-  - new skill
   - skill format
-  - create skill
   - reformat skill
   - convert rule
+  - skill layout
+  - refactor to skill
 dependencies: []
-version: "1.1.0"
+version: "1.3.1"
 ---
 
 # Skill Template
 
 Use this as a starting point for any new skill.
 Copy this file to `.skills/_skills/<your-skill-name>/SKILL.md` and fill it in.
+Pair with **skill-author** for registration, index sync, and review.
 
 ## When to use this skill
 
 Load when the user needs the canonical skill layout, is creating a new skill, or is converting an existing rule or doc into the standard format.
+
+## Skill directory layout
+
+Every skill is a directory. `SKILL.md` is required; optional subfolders follow the [agentskills.io specification](https://agentskills.io/specification) for bundled resources (Level 3 — loaded only when referenced). Cursor and other IDEs may document the same layout ([Cursor skills docs](https://cursor.com/docs/skills) — optional).
+
+```text
+.skills/_skills/<name>/
+├── SKILL.md          ← required: frontmatter + agent instructions
+├── scripts/          ← optional: executable helpers the agent runs via shell
+├── references/       ← optional: extra markdown/docs loaded on demand
+└── assets/           ← optional: templates, schemas, images, data files
+```
+
+**Progressive disclosure:** keep `SKILL.md` focused. Move long reference material to `references/`, deterministic steps to `scripts/`, and static files to `assets/`. Reference them from `SKILL.md` with relative paths (e.g. `scripts/<name>.sh`, `references/<name>.md`). The agent (and native IDE discovery) loads these only when the task needs them — not at trigger time.
+
+Do **not** place scripts or extra markdown loose at the skill root; `check.sh` warns on that layout.
 
 ## Instructions
 
@@ -26,11 +43,48 @@ Load when the user needs the canonical skill layout, is creating a new skill, or
 2. Set `name` to match the directory name exactly — kebab-case, 1–64 characters, lowercase alphanumeric and hyphens only, no leading/trailing/consecutive hyphens ([agentskills.io](https://agentskills.io/specification) `name` rules).
 3. Write `description` as one sentence, 1–1024 characters — used by the harness index and native IDE skill matching ([agentskills.io](https://agentskills.io/specification) `description` rules).
 4. List natural-language `triggers` users might say.
-5. Fill **When to use**, **Instructions**, and **Examples** for the agent.
+5. Put only unconditional runtime companions in `dependencies`; load branch-specific companions from the body step that needs them.
+6. Fill **When to use**, **Instructions**, and **Examples** for the agent.
+7. If the skill needs bundled files, add `scripts/`, `references/`, and/or `assets/` and link to them from `SKILL.md` with relative paths. Optional trigger evals: `references/trigger-evals.json`.
+
+## Body scaffolds (copy into your skill)
+
+Use these sections as needed — delete unused headings rather than leaving them empty:
+
+```markdown
+## When to use this skill
+
+- Concrete trigger one.
+- Concrete trigger two.
+
+## Prerequisites
+
+Skip if none.
+
+## Instructions
+
+1. First step.
+2. Verification step.
 
 ## Examples
 
-- "Add a skill for our deploy checklist" → use this template, then register in `.skills/_index.md`.
+**Scenario name** — input / expected outcome.
+
+## Failure modes
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+|         |              |     |
+
+## What not to do
+
+- Scope foot-gun specific to this skill.
+```
+
+## Examples
+
+- "Add a skill for our deploy checklist" → use this template, then register via **skill-author** (`build-index.sh --write`).
+- "Skill with a validation script" → put `scripts/<name>.sh` in the skill dir and tell the agent to run it from **Instructions**.
 
 ---
 
@@ -45,7 +99,7 @@ Steps:
 2. Extract it into a new directory: .skills/_skills/<name>/SKILL.md
 3. Add YAML frontmatter (name, description, triggers, dependencies, version)
 4. Rewrite the body as agent-facing instructions (not human docs)
-5. Add a row to .skills/_index.md
+5. Run .skills/_harness/build-index.sh --write to regenerate .skills/_index.md
 6. Remove or replace the original content with a one-liner pointing to the skill
 
 Common sources to refactor:

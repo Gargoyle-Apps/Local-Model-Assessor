@@ -1,0 +1,23 @@
+{
+  "description": "Trigger eval cases for caveman (general terse output). Near-misses target commit/review siblings.",
+  "should_trigger": [
+    "use caveman mode",
+    "talk like caveman",
+    "compress your replies",
+    "less tokens please",
+    "/caveman ultra",
+    "be more terse",
+    "caveman mode wenyan-full",
+    "stop being so verbose"
+  ],
+  "should_not_trigger": [
+    "write a commit message",
+    "generate commit for this diff",
+    "review this PR",
+    "code review the diff",
+    "/caveman-commit",
+    "/caveman-review",
+    "conventional commit subject line",
+    "review comment on line 42"
+  ]
+}

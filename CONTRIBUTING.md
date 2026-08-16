@@ -32,12 +32,16 @@ Follow the bundled **skill-author** skill (`.skills/_skills/skill-author/SKILL.m
 1. Create `.skills/_skills/<name>/SKILL.md` using `skill-template` as a starting point.
 2. Fill in YAML frontmatter (`name`, `description`, `triggers`, `dependencies`, `version`).
 3. Run `.skills/_harness/build-index.sh --write` to regenerate `.skills/_index.md` from frontmatter.
-4. If native discovery symlinks are set up, re-run `.skills/_harness/link.sh <target>` to include the new skill.
+4. Run `.skills/_harness/check.sh --link` to refresh every native target declared in `.skills/_meta.yml`.
 5. Run `.skills/_harness/check.sh` to verify index-to-directory consistency.
+
+Kit-bundled skills ship unprefixed (`skill-author`, `skill-reviewer`, `harness-subtree`, …). See [`.skills/_index.md`](.skills/_index.md) for the full list.
+
+New or changed skills with bundled scripts should pass **skill-reviewer** before merge. Consumer repos may document optional `upstream:` frontmatter on imported skills — see **skill-import**.
 
 ## Testing
 
-There is no automated CI. Use the validation script and manual smoke testing:
+Use the validation script, zero-dependency smoke suite, and targeted manual testing:
 
 - **`check.sh`** — run `.skills/_harness/check.sh` from the repo root. It checks:
   - Every index row has a matching skill directory (and vice versa)
@@ -45,13 +49,16 @@ There is no automated CI. Use the validation script and manual smoke testing:
   - Frontmatter `name` matches directory name
   - Rules blocks in all templates match `_rules.md`
   - When `.skills-harness/` exists or `consumer_skills_dir:` is declared, `_skills/<name>/` directory symlinks point at the expected kit or consumer targets (and `check.sh` prints `directory symlink → <target> ✓` on success — do not use `readlink` on inner `SKILL.md` paths; see **harness-subtree**)
-  - When `.agents/skills/` or `.claude/skills/` exist, every harness skill in `_skills/` has a correct symlink there (and dangling extras are reported)
-  - Use **`check.sh --link`** or **`SKILLS_AUTO_LINK=1`** to run `link.sh` on existing native dirs before validating (idempotent repair after new kit skills or subtree pull)
+  - Every path declared under `_meta.yml` `native_targets:` exists and mirrors `_skills/`; undeclared legacy installs are distinguished from configured-but-broken ones
+  - Dependency target/cycle and context-health warnings (transitive bodies, native metadata, index growth, skill size)
+  - Use **`check.sh --link`** or **`SKILLS_AUTO_LINK=1`** to create/sync all declared native targets before validating
+
+- **Smoke suite** — run `/bin/bash .skills/_harness/tests/smoke.sh`. It covers declared-target creation, missing-target failure, the undeclared empty-target path under macOS Bash 3.2, dependency diagnostics, subtree migration sync, clean Cursor single-surface setup, Codex's current and legacy user-skill paths, and legacy Codex conflict scanning.
 
 - **Manual smoke test** (before a release):
   1. Create a fresh temp directory; copy `AGENTS_skills.md` and `.skills/` into it.
   2. For at least one AGENTS-based and one sidecar template: follow SETUP; confirm destination file has no SETUP block and contains the harness.
-  3. Verify the agent reads `.skills/_index.md` without preloading every `SKILL.md`.
+  3. Verify a native host routes from `name` + `description` without eagerly reading the full index; verify targeted index fallback separately.
   4. Verify the agent can follow `skill-author` to add a trivial skill.
 
 ## Versioning
@@ -87,22 +94,27 @@ Harness-specific fields (`triggers`, `dependencies`, `version`) are recommended 
 
 ## Environment overrides
 
-Both `check.sh` and `link.sh` derive paths from their own location. If your repo has a non-standard layout (monorepo, submodule, `tools/.skills/`), override with environment variables:
+Both `check.sh`, `link.sh`, and `skill-conflicts.sh` derive paths from their own location. If your repo has a non-standard layout (monorepo, submodule, `tools/.skills/`), override with environment variables:
 
 | Variable | Used by | Default |
 |----------|---------|---------|
-| `SKILLS_HARNESS_DIR` | check, link | directory containing the script |
-| `SKILLS_DIR` | check, link | `../_skills` relative to harness |
+| `SKILLS_HARNESS_DIR` | check, link, skill-conflicts | directory containing the script |
+| `SKILLS_DIR` | check, link, skill-conflicts | `../_skills` relative to harness |
 | `SKILLS_REPO_ROOT` | check, link | two levels above harness |
 | `SKILLS_INDEX` | check | `../_index.md` relative to harness |
 | `SKILLS_RULES` | check | `_rules.md` in harness dir |
+| `SKILLS_META` | check, link | `../_meta.yml` relative to harness |
 | `SKILLS_CHECK_KIT_SURFACES` | check | auto: `0` if `.skills-harness/` exists at repo root or `_meta.yml` has `role: consumer`; otherwise `1`. Set explicitly to override. |
-| `SKILLS_AUTO_LINK` | check | `0` (default). Set to `1` to run `link.sh` on existing `.agents/skills/` and `.claude/skills/` before validating (same as `--link`). |
+| `SKILLS_AUTO_LINK` | check | `0` (default). Set to `1` to create/sync declared `native_targets` before validating (same as `--link`). |
+| `SKILLS_NATIVE_METADATA_LIMIT` | check | `8000` characters |
+| `SKILLS_TRANSITIVE_WARN_BYTES` | check | `20000` bytes |
+| `SKILLS_INDEX_WARN_BYTES` | check | `12000` bytes |
+| `SKILLS_SKILL_LARGE_LINES` / `SKILLS_SKILL_SPLIT_LINES` | check | `180` / `350` lines |
 
-`check.sh` also accepts `--quiet` (suppress success footer) and `--link` (sync native discovery symlinks when those directories already exist).
+`check.sh` also accepts `--quiet` (suppress success footer) and `--link` (create/sync every declared native target).
 
 ## Symlink helper (`link.sh`)
 
-`.skills/_harness/link.sh <target-dir>` creates symlinks from `<target-dir>/<skill-name>` to `.skills/_skills/<skill-name>` for every skill directory. It is idempotent (safe to re-run). Pass `--clean` to remove existing symlinks before creating new ones.
+`.skills/_harness/link.sh <target-dir>` creates symlinks from `<target-dir>/<skill-name>` to `.skills/_skills/<skill-name>` for every skill directory and records `<target-dir>` under `_meta.yml` `native_targets:`. It is idempotent. Pass `--clean` to remove existing symlinks before creating new ones, or `--no-record` for a temporary target.
 
 When adding a new IDE template, include a "Native discovery" SETUP step calling `link.sh` with the IDE's cross-agent path (`.agents/skills/` or `.claude/skills/`).

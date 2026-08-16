@@ -1,0 +1,22 @@
+{
+  "description": "Trigger eval cases for toon-export. YAML/CSV phrases resolve to this skill, not sibling skills.",
+  "should_trigger": [
+    "encode this JSON snapshot to TOON",
+    "yaml to toon for the agent slice",
+    "csv to toon with null for empty cells",
+    "validate the .toon fixtures with strict decode",
+    "json to toon for scan output",
+    "fix TOON quoting mistakes in our test files",
+    "write a .toon file for the agent",
+    "token efficient structured data for LLM context"
+  ],
+  "should_not_trigger": [
+    "create a yaml-to-toon skill",
+    "should we use RAG or pgvector",
+    "update adoption-matrix defaults",
+    "talk like caveman",
+    "write a commit message",
+    "review this PR",
+    "convert the README to markdown"
+  ]
+}

@@ -9,7 +9,7 @@ triggers:
   - enable IDE symlinks
   - update skills system
 dependencies: []
-version: "1.1.2"
+version: "1.2.0"
 ---
 
 # Harness Upgrade
@@ -40,13 +40,13 @@ Copy these from the latest [skills-harness](https://github.com/Gargoyle-Apps/ski
 | `.skills/_harness/link.sh` | `.skills/_harness/link.sh` | New — symlink helper |
 | `.skills/_harness/check.sh` | `.skills/_harness/check.sh` | Updated — adds symlink validation |
 | `.skills/_harness/*_template.md` | `.skills/_harness/*_template.md` | Updated — SETUP now includes native discovery step |
-| `.skills/_meta.yml` | `.skills/_meta.yml` | Bump `kit_version` to match |
+| `.skills/_meta.yml` | `.skills/_meta.yml` | Merge `kit_version`, `repo_url`, and `native_targets`; preserve consumer fields |
 
 Do **not** replace `.skills/_index.md` or the entire `.skills/_skills/` directory — those contain consumer-owned content. To pick up **new** bundled skills from upstream (e.g. `harness-upgrade`), copy the specific skill directory into `.skills/_skills/` and add its row to `.skills/_index.md`.
 
 ### 3. Enable native discovery
 
-Run the link script with the target for your IDE:
+Run the link script with the target for your IDE. The helper records the selected path under `native_targets:` in `.skills/_meta.yml`, making native discovery a validated repository intention rather than optional local state:
 
 | IDE | Command |
 |-----|---------|
@@ -67,7 +67,7 @@ Add entries for the symlink directories (they are generated, not committed):
 
 ### 5. Verify
 
-Run `.skills/_harness/check.sh`. All checks should pass, including the new symlink validation.
+Run `.skills/_harness/check.sh --link`. It creates or repairs every declared native target, then validates its complete symlink set. A plain `check.sh` reports a declared-but-missing target as an error.
 
 ### 6. Update kit version
 
@@ -78,7 +78,7 @@ Set `kit_version` in `.skills/_meta.yml` to the version you upgraded to.
 If switching from one IDE to another (e.g. Cursor to Claude Code):
 
 1. Follow the new IDE's template in `.skills/_harness/` to install or update harness rules.
-2. Run `link.sh` with the new target if it differs from the current one.
+2. Run `link.sh` with the new target if it differs from the current one; this adds it to `native_targets`.
 3. Both `.agents/skills/` and `.claude/skills/` symlinks can coexist. No need to remove old ones.
 
 Skills stay in `.skills/_skills/` regardless of IDE — the same files, just different ways to discover them.
@@ -90,6 +90,10 @@ Skills stay in `.skills/_skills/` regardless of IDE — the same files, just dif
 | `link.sh` added | Creates symlinks from `.agents/skills/` or `.claude/skills/` into `.skills/_skills/` for native IDE auto-discovery |
 | Templates updated | Each SETUP now includes a "Native discovery" step calling `link.sh` |
 | New templates | `ROO_template.md` (Roo Code), `OPENCODE_template.md` (OpenCode) |
-| `check.sh` updated | Validates native discovery dirs mirror `_skills/` when present; `check.sh --link` runs `link.sh` to repair |
+| `check.sh` updated | Validates declared native targets; `check.sh --link` creates missing targets and repairs their links; also warns on dependency and context-budget health |
 | `skill-author` updated | Reminds authors to re-run `link.sh` after adding skills |
 | Frontmatter | `name` + `description` documented as [agentskills.io](https://agentskills.io/specification)-compatible; harness extensions (`triggers`, `dependencies`, `version`) unchanged |
+
+## Notes
+
+- Trigger eval cases: `references/trigger-evals.json` (file-copy upgrade and native discovery vs **harness-subtree** and skill-author near-misses).

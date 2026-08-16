@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "skill": "skill-talker",
+  "should_trigger": [
+    "what does skill-import do",
+    "how does the skill-reviewer work",
+    "when would skill-export trigger",
+    "why did the harness choose skill-author",
+    "why didn't this request trigger toon-export",
+    "which skill should I use to update the harness",
+    "do we have a skill for checking name conflicts",
+    "do we have a skill that can publish one skill to another repo",
+    "how would I do this using the repo skills",
+    "compare skill-author and skill-template"
+  ],
+  "should_not_trigger": [
+    "import this skill from another repository",
+    "review this SKILL.md for security",
+    "create a new deployment skill",
+    "audit every skill for trigger overlap",
+    "export toon from this JSON file",
+    "upgrade the harness now",
+    "how do I configure nginx",
+    "how would I center this div",
+    "explain database connection pooling",
+    "fix the failing unit tests"
+  ]
+}

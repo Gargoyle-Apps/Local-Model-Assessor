@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "skill": "kit-release",
+  "should_trigger": [
+    "bump kit version for the next skills-harness release",
+    "cut a harness release and update CHANGELOG",
+    "release skills-harness kit semver 0.5.0 upstream",
+    "sync kit_version across README and _meta.yml",
+    "ship a new skills-harness version on main",
+    "bump harness version in AGENTS_skills.md for release",
+    "prepare a kit release before tagging vX.Y.Z",
+    "add a Keep a Changelog entry for the new kit version"
+  ],
+  "should_not_trigger": [
+    "write a new skill from scratch",
+    "export our skill to another repository",
+    "upgrade our consumer harness from 0.3.x",
+    "import a skill from another repo into _skills/",
+    "review this skill before merge",
+    "install skills-harness as a git subtree",
+    "detect skill conflicts in my IDE user config",
+    "audit the skill catalog for duplicate triggers"
+  ]
+}

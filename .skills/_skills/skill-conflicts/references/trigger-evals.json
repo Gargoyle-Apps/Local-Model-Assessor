@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "skill": "skill-conflicts",
+  "should_trigger": [
+    "detect skill conflicts between repo skills and my IDE config",
+    "check for a skill name collision with ~/.cursor/skills",
+    "does my config conflict with repo-managed skills",
+    "run skill-conflicts.sh after deploying caveman",
+    "caveman shadows our repo skill — check collisions",
+    "conflicting skills in user config vs _skills/",
+    "check skill conflicts before we deploy to user-level",
+    "does /caveman collide with something in ~/.claude/commands"
+  ],
+  "should_not_trigger": [
+    "write a new skill from scratch",
+    "review this skill for security issues",
+    "export our skill to the platform team repo",
+    "import a vendored skill from upstream",
+    "run check.sh on the harness index consistency",
+    "audit the skill catalog for duplicate triggers",
+    "install skills-harness as a git subtree",
+    "upgrade our harness to the latest kit version"
+  ]
+}

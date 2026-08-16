@@ -1,0 +1,80 @@
+{
+  "skill": "harness-subtree",
+  "description": "Trigger eval cases for subtree install/update/migrate vs harness-upgrade near-misses.",
+  "should_trigger": [
+  {
+    "query": "Install skills-harness as a git subtree at .skills-harness/",
+    "reason": "Explicit subtree install intent"
+  },
+  {
+    "query": "Vendor the skills-harness kit so we can git subtree pull updates",
+    "reason": "Vendor + subtree pull vocabulary"
+  },
+  {
+    "query": "Add the skills-harness subtree to this consumer repo",
+    "reason": "Matches add skills-harness subtree trigger"
+  },
+  {
+    "query": "Run git subtree pull to update our vendored harness",
+    "reason": "Update vendored kit via subtree pull"
+  },
+  {
+    "query": "Update vendored harness after subtree pull — reconcile index and meta",
+    "reason": "Post-pull reconcile workflow"
+  },
+  {
+    "query": "Migrate our manual .skills/ file-copy install to subtree vendoring",
+    "reason": "Manual-to-subtree migration"
+  },
+  {
+    "query": "Convert this harness install to subtree using migrate-to-subtree.sh",
+    "reason": "Named migration script + convert intent"
+  },
+  {
+    "query": "We have .skills/ but no .skills-harness/ — switch to subtree updates",
+    "reason": "Pre-subtree consumer layout"
+  }
+  ],
+  "should_not_trigger": [
+  {
+    "query": "Upgrade our harness from 0.3.x to the latest version",
+    "reason": "File-copy upgrade — load harness-upgrade instead",
+    "near_miss_skill": "harness-upgrade"
+  },
+  {
+    "query": "Update harness files by copying from upstream",
+    "reason": "Manual copy upgrade path, not subtree",
+    "near_miss_skill": "harness-upgrade"
+  },
+  {
+    "query": "Enable native IDE discovery with link.sh",
+    "reason": "Native discovery only — harness-upgrade",
+    "near_miss_skill": "harness-upgrade"
+  },
+  {
+    "query": "Migrate harness to add .agents/skills symlinks",
+    "reason": "IDE symlink migration, not subtree vendoring",
+    "near_miss_skill": "harness-upgrade"
+  },
+  {
+    "query": "Bump kit_version in _meta.yml after copying check.sh",
+    "reason": "File-copy kit bump",
+    "near_miss_skill": "harness-upgrade"
+  },
+  {
+    "query": "Import a skill from another repo into _skills/",
+    "reason": "Single skill import — skill-import",
+    "near_miss_skill": "skill-import"
+  },
+  {
+    "query": "Publish our custom skill to another repository",
+    "reason": "Outbound export — skill-export",
+    "near_miss_skill": "skill-export"
+  },
+  {
+    "query": "Release a new skills-harness kit version and bump CHANGELOG",
+    "reason": "Upstream kit authoring — kit-release",
+    "near_miss_skill": "kit-release"
+  }
+  ]
+}
