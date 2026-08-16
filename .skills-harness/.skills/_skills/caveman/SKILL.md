@@ -1,6 +1,7 @@
 ---
 name: caveman
-description: "Ultra-compressed caveman output mode; cuts ~75% output tokens, keeps full technical accuracy; lite/full/ultra/wenyan levels."
+description: "When the user wants terse or compressed replies without losing technical accuracy — ultra-compressed caveman output mode with lite/full/ultra/wenyan levels (~75% fewer tokens)."
+license: MIT
 triggers:
   - caveman mode
   - talk like caveman
@@ -10,7 +11,7 @@ triggers:
   - compress output
   - /caveman
 dependencies: []
-version: "1.2.0"
+version: "1.3.1"
 ---
 
 Respond terse like smart caveman. All technical substance stay. Only fluff die.
@@ -19,7 +20,7 @@ Respond terse like smart caveman. All technical substance stay. Only fluff die.
 
 ACTIVE EVERY RESPONSE. No revert after many turns. No filler drift. Still active if unsure. Off only: "stop caveman" / "normal mode".
 
-Default: **full**. Switch: `/caveman lite|full|ultra`.
+Default: **full**. Switch: `/caveman lite|full|ultra|wenyan-lite|wenyan-full|wenyan-ultra`.
 
 ## Rules
 
@@ -85,5 +86,27 @@ Code/commits/PRs: write normal. "stop caveman" or "normal mode": revert. Level p
 ## Notes
 
 - Vendored from [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (`skills/caveman`), MIT licensed. Prompt content only — none of the upstream installer, hooks, npm packages, or statusline machinery is included.
-- As a harness skill this loads **on-demand** when a trigger fires; it is not always-on. For always-on / cross-project cost savings, deploy to your IDE config with `deploy.sh` (see this skill's directory) — targets: `cursor`, `claude`, `codex`, `continue`.
-- **User-level (global) via copy/paste:** for globals that can't be scripted (e.g. Cursor's Settings → Rules → User Rules), run `deploy.sh [target] --print [--level LVL]`. It writes nothing — `stdout` is the paste-ready activation block, `stderr` says where to paste it. Works for any IDE with a global "User Rules" / "Custom Instructions" box.
+- As a harness skill this loads **on-demand** when a trigger fires; it is not always-on.
+- Trigger eval cases (should-trigger vs near-miss should-not-trigger): `references/trigger-evals.json`.
+
+### Before you run `scripts/deploy.sh`
+
+`scripts/deploy.sh` installs the **full trio** — `caveman`, `caveman-commit`, and `caveman-review` — into IDE skill directories so they are available across projects.
+
+**Targets:** `cursor`, `claude`, `codex`, `continue`
+
+- `cursor` → `~/.cursor/skills/`
+- `claude` → `~/.claude/skills/`
+- `codex` → `$HOME/.agents/skills/` (current Codex user-skill location)
+- `continue` → rules-only (`~/.continue/rules/caveman.md`; no SKILL.md discovery)
+
+**`--always-on`** writes persistent rules the IDE injects every turn:
+
+- `cursor` → `<project>/.cursor/rules/caveman.mdc` (per-project)
+- `claude` → marker block in `~/.claude/CLAUDE.md`
+- `codex` → marker block in `~/.codex/AGENTS.md`
+- `continue` → sets `alwaysApply: true` in the rule file
+
+Recommend `--dry-run` first to preview actions. **`--uninstall`** removes the trio symlinks/copies and any activation artifacts for the target. For Codex, it also removes managed legacy trio entries from `~/.codex/skills` during the path-migration window.
+
+**User-level (global) via copy/paste:** for globals that can't be scripted (e.g. Cursor's Settings → Rules → User Rules), run `scripts/deploy.sh [target] --print [--level LVL]`. It writes nothing — `stdout` is the paste-ready activation block, `stderr` says where to paste it. Works for any IDE with a global "User Rules" / "Custom Instructions" box.

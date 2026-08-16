@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "skill": "skill-import",
+  "should_trigger": [
+    "import a skill from another repo",
+    "vendor the deploy skill from acme/tools",
+    "refresh our imported skill from upstream",
+    "pull the latest version of the vendored skill",
+    "update the vendored copy from GitHub"
+  ],
+  "should_not_trigger": [
+    "export our skill to another team",
+    "write a new local skill from scratch",
+    "reformat this skill to match the template",
+    "audit the catalog for duplicate triggers",
+    "review this skill before merge"
+  ]
+}

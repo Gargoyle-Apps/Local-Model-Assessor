@@ -6,14 +6,16 @@ set -euo pipefail
 #   2. Every row in _index.md has a matching directory under _skills/
 #   3. Each SKILL.md has required frontmatter fields
 #   4. Each SKILL.md name field matches its directory name
-#   5. Rules blocks in all templates match the canonical _rules.md
-#   6. _skills/<name>/ entry topology (directory symlinks for kit/consumer shims) when applicable
-#   7. Native discovery dirs (.agents/skills/, .claude/skills/) mirror _skills/ when present
-#   8. kit_version in _meta.yml matches newest CHANGELOG release, README, and AGENTS_skills.md
+#   5. Level 3 resource layout (scripts/, references/, assets/) and path references
+#   6. Rules blocks in all templates match the canonical _rules.md
+#   7. _skills/<name>/ entry topology (directory symlinks for kit/consumer shims) when applicable
+#   8. Declared native discovery targets exist and mirror _skills/
+#   9. Dependency graph, skill-size, index-size, and native metadata health
+#  10. kit_version in _meta.yml matches newest CHANGELOG release, README, and AGENTS_skills.md
 #
 # Options:
 #   --quiet              Suppress success footer
-#   --link               Run link.sh for each existing native discovery dir, then validate
+#   --link               Create/sync every declared native discovery target, then validate
 #   SKILLS_AUTO_LINK=1   Same as --link
 
 QUIET=false
@@ -24,7 +26,7 @@ for arg in "$@"; do
     --link)  AUTO_LINK=true ;;
     -h|--help)
       echo "Usage: $(basename "$0") [--quiet] [--link]" >&2
-      echo "  --link  Sync .agents/skills/ and .claude/skills/ via link.sh when those dirs exist" >&2
+      echo "  --link  Create/sync native_targets declared in .skills/_meta.yml" >&2
       exit 0
       ;;
     -*)
@@ -46,6 +48,7 @@ SKILLS_DIR="${SKILLS_DIR:-$(dirname "$HARNESS_DIR")/_skills}"
 INDEX_FILE="${SKILLS_INDEX:-$(dirname "$HARNESS_DIR")/_index.md}"
 RULES_FILE="${SKILLS_RULES:-$HARNESS_DIR/_rules.md}"
 REPO_ROOT="${SKILLS_REPO_ROOT:-$(dirname "$(dirname "$HARNESS_DIR")")}"
+META_FILE="${SKILLS_META:-$(dirname "$HARNESS_DIR")/_meta.yml}"
 
 # Auto-detect consumer-vs-kit role for the kit-surface checks (CHANGELOG/README/AGENTS_skills.md
 # version assertions). These only make sense in the upstream kit repo; consumers shouldn't
@@ -58,7 +61,7 @@ if [[ -z "${SKILLS_CHECK_KIT_SURFACES:-}" ]]; then
   if [[ -d "$REPO_ROOT/.skills-harness" ]]; then
     SKILLS_CHECK_KIT_SURFACES=0
   else
-    META_FILE_AUTO="$(dirname "$HARNESS_DIR")/_meta.yml"
+    META_FILE_AUTO="$META_FILE"
     if [[ -f "$META_FILE_AUTO" ]] && grep -qE '^role:[[:space:]]*consumer[[:space:]]*$' "$META_FILE_AUTO"; then
       SKILLS_CHECK_KIT_SURFACES=0
     fi
@@ -171,7 +174,276 @@ if [[ -d "$SKILLS_DIR" ]]; then
   done
 fi
 
-# --- 5: Rules block sync ---
+# --- 4b: Contract, dependency graph, and context-health warnings ---
+
+TRANSITIVE_WARN_BYTES="${SKILLS_TRANSITIVE_WARN_BYTES:-20000}"
+NATIVE_METADATA_LIMIT="${SKILLS_NATIVE_METADATA_LIMIT:-8000}"
+INDEX_WARN_BYTES="${SKILLS_INDEX_WARN_BYTES:-12000}"
+SKILL_LARGE_LINES="${SKILLS_SKILL_LARGE_LINES:-180}"
+SKILL_SPLIT_LINES="${SKILLS_SKILL_SPLIT_LINES:-350}"
+
+for numeric_setting in TRANSITIVE_WARN_BYTES NATIVE_METADATA_LIMIT INDEX_WARN_BYTES SKILL_LARGE_LINES SKILL_SPLIT_LINES; do
+  eval "numeric_value=\${$numeric_setting}"
+  case "$numeric_value" in
+    ''|*[!0-9]*)
+      err "$numeric_setting must be a non-negative integer (got '$numeric_value')"
+      eval "$numeric_setting=0"
+      ;;
+  esac
+done
+
+metrics_tmp="$(mktemp)"
+deps_tmp="$(mktemp)"
+trap 'rm -f "$metrics_tmp" "$deps_tmp"' EXIT HUP INT TERM
+
+catalog_names=()
+native_metadata_estimate=0
+
+if [[ -d "$SKILLS_DIR" ]]; then
+  for skill_file in "$SKILLS_DIR"/*/SKILL.md; do
+    [[ -f "$skill_file" ]] || continue
+    dir_name="$(basename "$(dirname "$skill_file")")"
+    case "$dir_name" in _*) continue ;; esac
+    catalog_names+=("$dir_name")
+
+    skill_bytes="$(LC_ALL=C wc -c < "$skill_file" | tr -d '[:space:]')"
+    skill_lines="$(wc -l < "$skill_file" | tr -d '[:space:]')"
+    fm_description="$(awk '
+      NR == 1 && $0 == "---" { in_fm=1; next }
+      in_fm && $0 == "---" { exit }
+      in_fm && /^description:/ { sub(/^description:[[:space:]]*/, ""); print; exit }
+    ' "$skill_file")"
+    fm_description="${fm_description#\"}"
+    fm_description="${fm_description%\"}"
+    fm_description="${fm_description#\'}"
+    fm_description="${fm_description%\'}"
+
+    name_len="${#dir_name}"
+    if (( name_len < 1 || name_len > 64 )) || [[ ! "$dir_name" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$ ]] || [[ "$dir_name" == *--* ]]; then
+      err "$dir_name/SKILL.md: name violates Agent Skills shape (1-64 lowercase alphanumeric/hyphen characters; no edge or consecutive hyphens)"
+    fi
+
+    description_len="${#fm_description}"
+    if (( description_len < 1 || description_len > 1024 )); then
+      err "$dir_name/SKILL.md: description must contain 1-1024 characters (got $description_len)"
+    elif [[ "$fm_description" == *"<"* || "$fm_description" == *">"* ]]; then
+      err "$dir_name/SKILL.md: description must not contain XML-like angle brackets"
+    fi
+
+    if (( skill_lines > SKILL_SPLIT_LINES )); then
+      warn "$dir_name/SKILL.md is $skill_lines lines (split candidate: > $SKILL_SPLIT_LINES)"
+    elif (( skill_lines > SKILL_LARGE_LINES )); then
+      warn "$dir_name/SKILL.md is $skill_lines lines (large: > $SKILL_LARGE_LINES; consider references/)"
+    fi
+
+    printf '%s\t%s\t%s\t%s\n' "$dir_name" "$skill_bytes" "$skill_lines" "$fm_description" >> "$metrics_tmp"
+    representative_path=".agents/skills/$dir_name/SKILL.md"
+    native_metadata_estimate=$((native_metadata_estimate + ${#dir_name} + ${#fm_description} + ${#representative_path} + 3))
+
+    while IFS= read -r dep; do
+      [[ -n "$dep" ]] || continue
+      printf '%s\t%s\n' "$dir_name" "$dep" >> "$deps_tmp"
+    done <<EOF
+$(awk '
+  NR == 1 && $0 == "---" { in_fm=1; next }
+  in_fm && $0 == "---" { exit }
+  !in_fm { next }
+  /^dependencies:/ {
+    rest=$0
+    sub(/^dependencies:[[:space:]]*/, "", rest)
+    if (rest ~ /^\[/) {
+      gsub(/^\[[[:space:]]*|[[:space:]]*\]$/, "", rest)
+      count=split(rest, values, /[[:space:]]*,[[:space:]]*/)
+      for (i=1; i<=count; i++) if (values[i] != "") {
+        gsub(/^["'"'']|["'"'']$/, "", values[i])
+        print values[i]
+      }
+      exit
+    }
+    in_deps=1
+    next
+  }
+  in_deps && /^[^[:space:]#][^:]*:/ { exit }
+  in_deps && /^[[:space:]]*-[[:space:]]*/ {
+    value=$0
+    sub(/^[[:space:]]*-[[:space:]]*/, "", value)
+    gsub(/^["'"'']|["'"'']$/, "", value)
+    if (value != "") print value
+  }
+' "$skill_file")
+EOF
+  done
+fi
+
+catalog_has_name() {
+  local needle="$1" candidate
+  for candidate in ${catalog_names[@]+"${catalog_names[@]}"}; do
+    [[ "$candidate" == "$needle" ]] && return 0
+  done
+  return 1
+}
+
+while IFS=$'\t' read -r owner dep; do
+  [[ -n "$owner" && -n "$dep" ]] || continue
+  if ! catalog_has_name "$dep"; then
+    warn "$owner/SKILL.md declares missing dependency '$dep'"
+  fi
+done < "$deps_tmp"
+
+cycles="$(awk -F '\t' '
+  NF >= 2 { nodes[$1]=1; nodes[$2]=1; edge[$1 SUBSEP $2]=1 }
+  function dfs(n,    key, pair, next_node, i, start, chain) {
+    state[n]=1
+    stack[++depth]=n
+    for (key in edge) {
+      split(key, pair, SUBSEP)
+      if (pair[1] != n) continue
+      next_node=pair[2]
+      if (state[next_node] == 0) dfs(next_node)
+      else if (state[next_node] == 1) {
+        start=1
+        for (i=1; i<=depth; i++) if (stack[i] == next_node) { start=i; break }
+        chain=stack[start]
+        for (i=start+1; i<=depth; i++) chain=chain " -> " stack[i]
+        chain=chain " -> " next_node
+        if (!reported[chain]++) print chain
+      }
+    }
+    state[n]=2
+    delete stack[depth--]
+  }
+  END { for (n in nodes) if (state[n] == 0) dfs(n) }
+' "$deps_tmp")"
+while IFS= read -r cycle; do
+  [[ -n "$cycle" ]] && warn "dependency cycle detected: $cycle"
+done <<EOF
+$cycles
+EOF
+
+transitive_reports="$(awk -F '\t' -v limit="$TRANSITIVE_WARN_BYTES" '
+  FILENAME == ARGV[1] { size[$1]=$2; next }
+  NF >= 2 { edge[$1 SUBSEP $2]=1 }
+  function total(n,    key, pair, subtotal) {
+    if (seen[n] == generation) return 0
+    seen[n]=generation
+    subtotal=size[n] + 0
+    for (key in edge) {
+      split(key, pair, SUBSEP)
+      if (pair[1] == n) subtotal += total(pair[2])
+    }
+    return subtotal
+  }
+  END {
+    for (n in size) {
+      generation++
+      bytes=total(n)
+      if (bytes > limit) print n "\t" bytes
+    }
+  }
+' "$metrics_tmp" "$deps_tmp")"
+while IFS=$'\t' read -r root_skill transitive_bytes; do
+  [[ -n "$root_skill" ]] && warn "$root_skill loads approximately $transitive_bytes bytes including transitive dependencies (threshold: $TRANSITIVE_WARN_BYTES)"
+done <<EOF
+$transitive_reports
+EOF
+
+if (( native_metadata_estimate > NATIVE_METADATA_LIMIT )); then
+  warn "native skill metadata estimate is $native_metadata_estimate characters (threshold: $NATIVE_METADATA_LIMIT; Codex unknown-window reference: 8000)"
+fi
+
+if [[ -f "$INDEX_FILE" ]]; then
+  index_bytes="$(LC_ALL=C wc -c < "$INDEX_FILE" | tr -d '[:space:]')"
+  if (( index_bytes > INDEX_WARN_BYTES )); then
+    warn "_index.md is $index_bytes bytes (growth threshold: $INDEX_WARN_BYTES); keep fallback lookup targeted"
+  fi
+fi
+
+# --- 5: Level 3 resource layout (scripts/, references/, assets/) ---
+
+resource_dirs=(scripts references assets)
+
+trim_resource_ref() {
+  local s="$1"
+  s="$(echo "$s" | sed -E 's/[.,;:!?)}\`"'\''>]+$//')"
+  printf '%s' "$s"
+}
+
+if [[ -d "$SKILLS_DIR" ]]; then
+  for skill_dir in "$SKILLS_DIR"/*/; do
+    [[ -d "$skill_dir" ]] || continue
+    dir_name="$(basename "$skill_dir")"
+    case "$dir_name" in
+      _*) continue ;;
+    esac
+    skill_file="$skill_dir/SKILL.md"
+    [[ -f "$skill_file" ]] || continue
+
+    for rd in "${resource_dirs[@]}"; do
+      if [[ -e "$skill_dir/$rd" && ! -d "$skill_dir/$rd" ]]; then
+        err "$dir_name/$rd exists but is not a directory"
+      fi
+    done
+
+    for item in "$skill_dir"/*; do
+      [[ -f "$item" && ! -L "$item" ]] || continue
+      base="$(basename "$item")"
+      [[ "$base" == "SKILL.md" ]] && continue
+      case "$base" in
+        *.sh|*.py|*.js|*.ts|*.rb|*.pl)
+          warn "$dir_name/$base: script at skill root — move to scripts/"
+          ;;
+        *.md)
+          warn "$dir_name/$base: markdown at skill root — move to references/"
+          ;;
+      esac
+    done
+
+    # Track referenced paths so we only report each missing path once.
+    seen_refs="|"
+    in_fm=false
+    fm_done=false
+    while IFS= read -r line; do
+      if [[ "$line" == "---" ]]; then
+        if $in_fm; then
+          fm_done=true
+          in_fm=false
+          continue
+        else
+          in_fm=true
+          continue
+        fi
+      fi
+      $fm_done || continue
+
+      refs="$(echo "$line" | grep -oE '(scripts|references|assets)/[A-Za-z0-9_./-]+\.[A-Za-z0-9][A-Za-z0-9._-]*' || true)"
+      [[ -z "$refs" ]] && continue
+
+      while IFS= read -r ref_path; do
+        [[ -z "$ref_path" ]] && continue
+        ref_path="$(trim_resource_ref "$ref_path")"
+        [[ -z "$ref_path" ]] && continue
+        if [[ "$seen_refs" == *"|${ref_path}|"* ]]; then
+          continue
+        fi
+        seen_refs="${seen_refs}${ref_path}|"
+
+        if [[ ! -e "$skill_dir/$ref_path" ]]; then
+          err "$dir_name/SKILL.md references missing resource: $ref_path"
+          continue
+        fi
+
+        # Symlink stability: bundled resources must resolve through symlinked skill dirs.
+        if [[ -L "$skill_dir" && ! -r "$skill_dir/$ref_path" ]]; then
+          err "$dir_name/SKILL.md resource not readable through directory symlink: $ref_path (→ $(readlink "$skill_dir"))"
+        fi
+      done <<EOF
+$refs
+EOF
+    done < "$skill_file"
+  done
+fi
+
+# --- 6: Rules block sync ---
 
 if [[ -f "$RULES_FILE" ]]; then
   canonical="$(sed -n '/^# Rules$/,$ p' "$RULES_FILE" | tail -n +2)"
@@ -180,7 +452,7 @@ if [[ -f "$RULES_FILE" ]]; then
     [[ ! -f "$tmpl" ]] && continue
     tmpl_name="$(basename "$tmpl")"
 
-    tmpl_rules="$(sed -n '/^## Rules$/,/^<!-- END/ { /^<!-- END/d; p; }' "$tmpl" | tail -n +2)"
+    tmpl_rules="$(sed -n '/^## Rules$/,/^<!-- END RULES -->/ { /^<!-- END RULES -->/d; p; }' "$tmpl" | tail -n +2)"
     if [[ -z "$tmpl_rules" ]]; then
       tmpl_rules="$(sed -n '/^## Rules$/,$ p' "$tmpl" | tail -n +2)"
     fi
@@ -210,7 +482,7 @@ if [[ -d "$SKILLS_DIR" ]]; then
   done
 fi
 
-# --- 6: _skills/ entry topology (directory symlinks) ---
+# --- 7: _skills/ entry topology (directory symlinks) ---
 # When the kit is subtree-vendored or consumer_skills_dir is declared, kit skills and
 # consumer shims are directory symlinks. Inner files (SKILL.md) look like regular files;
 # verify sync here, not with readlink on inner paths. See gh issue #5.
@@ -290,9 +562,61 @@ if $HAS_SUBTREE || [[ -n "$CONSUMER_SKILLS_DIR" ]]; then
   done
 fi
 
-# --- 7: Native discovery symlink completeness (optional) ---
+# --- 8: Persisted native discovery targets ---
 
-native_symdirs=(".agents/skills" ".claude/skills")
+native_symdirs=()
+native_targets_declared=false
+
+if [[ -f "$META_FILE" ]]; then
+  if grep -qE '^native_targets:[[:space:]]*\[' "$META_FILE"; then
+    err "_meta.yml: native_targets must use a block list, not flow-style YAML"
+  fi
+
+  in_native_targets=false
+  while IFS= read -r line; do
+    if [[ "$line" =~ ^native_targets:[[:space:]]*$ ]]; then
+      native_targets_declared=true
+      in_native_targets=true
+      continue
+    fi
+    if $in_native_targets && [[ "$line" =~ ^[^[:space:]#][^:]*: ]]; then
+      in_native_targets=false
+    fi
+    if $in_native_targets && [[ "$line" =~ ^[[:space:]]*-[[:space:]]*(.*)$ ]]; then
+      target="${BASH_REMATCH[1]}"
+      target="$(trim "$target")"
+      target="${target#\"}"; target="${target%\"}"
+      target="${target#\'}"; target="${target%\'}"
+      target="${target#./}"; target="${target%/}"
+      case "$target" in
+        ""|.|/*|..|../*|*/../*|*/..)
+          err "_meta.yml: unsafe native target '$target' (must be relative to repo root)"
+          continue
+          ;;
+      esac
+      duplicate=false
+      for existing_target in ${native_symdirs[@]+"${native_symdirs[@]}"}; do
+        [[ "$existing_target" == "$target" ]] && duplicate=true && break
+      done
+      if $duplicate; then
+        warn "_meta.yml: duplicate native target '$target'"
+      else
+        native_symdirs+=("$target")
+      fi
+    fi
+  done < "$META_FILE"
+fi
+
+if $native_targets_declared && (( ${#native_symdirs[@]} == 0 )); then
+  err "_meta.yml: native_targets is declared but contains no valid targets"
+elif ! $native_targets_declared; then
+  warn "native discovery is not configured; add native_targets to .skills/_meta.yml"
+  # Backward-compatible validation for pre-metadata installs. These existing
+  # directories are checked, but --link will not invent a target choice.
+  for legacy_target in ".agents/skills" ".claude/skills"; do
+    [[ -d "$REPO_ROOT/$legacy_target" ]] && native_symdirs+=("$legacy_target")
+  done
+fi
 
 # Relative path from <symdir>/ to .skills/_skills (same climb logic as link.sh).
 native_expected_skills_base() {
@@ -308,17 +632,30 @@ native_expected_skills_base() {
 }
 
 if $AUTO_LINK; then
-  for symdir in "${native_symdirs[@]}"; do
-    symdir_abs="$REPO_ROOT/$symdir"
-    [[ ! -d "$symdir_abs" ]] && continue
+  for symdir in ${native_symdirs[@]+"${native_symdirs[@]}"}; do
     $QUIET || echo "Syncing native discovery: $symdir"
-    "$HARNESS_DIR/link.sh" "$symdir"
+    "$HARNESS_DIR/link.sh" --no-record "$symdir"
   done
 fi
 
-for symdir in "${native_symdirs[@]}"; do
+has_agents_target=false
+has_cursor_target=false
+for symdir in ${native_symdirs[@]+"${native_symdirs[@]}"}; do
+  [[ "$symdir" == ".agents/skills" ]] && has_agents_target=true
+  [[ "$symdir" == ".cursor/skills" ]] && has_cursor_target=true
+done
+if $has_agents_target && $has_cursor_target; then
+  warn "both .agents/skills and .cursor/skills are configured; Cursor may expose duplicate skill names from both native surfaces"
+fi
+
+for symdir in ${native_symdirs[@]+"${native_symdirs[@]}"}; do
   symdir_abs="$REPO_ROOT/$symdir"
-  [[ ! -d "$symdir_abs" ]] && continue
+  if [[ ! -d "$symdir_abs" ]]; then
+    if $native_targets_declared; then
+      err "declared native target '$symdir' is absent. Run: .skills/_harness/check.sh --link"
+    fi
+    continue
+  fi
 
   rel_skills="$(native_expected_skills_base "$symdir")"
 
@@ -369,9 +706,8 @@ for symdir in "${native_symdirs[@]}"; do
   done
 done
 
-# --- 8: Kit version surfaces (_meta.yml, CHANGELOG, README, AGENTS_skills.md) ---
+# --- 10: Kit version surfaces (_meta.yml, CHANGELOG, README, AGENTS_skills.md) ---
 
-META_FILE="$(dirname "$HARNESS_DIR")/_meta.yml"
 CHANGELOG_FILE="$REPO_ROOT/CHANGELOG.md"
 README_FILE="$REPO_ROOT/README.md"
 BOOTSTRAP_FILE="$REPO_ROOT/AGENTS_skills.md"

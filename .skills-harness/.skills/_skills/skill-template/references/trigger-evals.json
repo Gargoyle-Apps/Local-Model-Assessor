@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "skill": "skill-template",
+  "should_trigger": [
+    "what is the canonical skill format",
+    "reformat this rule as a SKILL.md",
+    "convert this AGENTS.md section into a skill",
+    "show me the skill directory layout",
+    "refactor this cursor rule into the standard skill format"
+  ],
+  "should_not_trigger": [
+    "write a brand new skill from scratch",
+    "register the skill in the index",
+    "review this skill before merge",
+    "import a vendored skill from GitHub",
+    "audit skills for trigger collisions"
+  ]
+}

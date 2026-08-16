@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`skill-conflicts.sh` — symlink-safe `SKILLS_DIR` (gh issue [#14](https://github.com/Gargoyle-Apps/skills-harness/issues/14)).** Path resolution now uses `${BASH_SOURCE[0]}` + `pwd -L` and honors `SKILLS_HARNESS_DIR`, matching `check.sh`. Default invocation on subtree-vendored consumer repos scans the full `.skills/_skills/` set (kit + consumer-authored skills) instead of only `.skills-harness/.skills/_skills/`.
+- **`sync.sh` rules-boundary handling.** Rules synchronization now keys off `<!-- END RULES -->` after the selected `## Rules` section, so an earlier `<!-- END SETUP -->` marker cannot be mistaken for a post-rules appendix and duplicated into templates.
+
+### Added
+
+- **`skill-talker` (v1.0.0)** — read-only skill interrogation and goal-to-skill mapping from native metadata and the harness index, with bounded document inspection and explicit opt-in handoffs to actionable skills.
+- **`toon-export` (v1.1.1)** — universal TOON encode/validate skill with JSON-hub ingest (YAML/CSV adapters in one skill, no per-format siblings); `@toon-format/cli` encode, strict-decode gate, `scripts/validate-toon.sh`, `scripts/encode-from-json.sh`, `scripts/csv-to-json.sh`.
+- **Level 3 skill resources** — `skill-template` / `skill-author` document `scripts/`, `references/`, `assets/`; `check.sh` validates layout and path references; `caveman` deploy helper moved to `scripts/deploy.sh`.
+- **`skill-reviewer` (v1.0.0)** — quality and security rubric for skill changes (`references/` bundle: quality, security, plugin, output format, examples, threat model).
+- **`skill-author` (v2.0.0)** — merged authoring quality guidance (description, body structure, writing style, trigger smoke-test).
+- **`skill-template` (v1.3.1)** — optional body scaffolds; points to **skill-author** for registration.
+- **`skill-catalog-maintainer` (v1.0.0)** — catalog audit, overlap detection, guarded edit authority.
+- **`skill-import` / `skill-export` (v1.0.1)** — vendored skill pull and target-only publish with optional `upstream:` lineage.
+- **Persisted native discovery targets.** `.skills/_meta.yml` now declares `native_targets`; `link.sh` records selections, `check.sh --link` creates/repairs them, and subtree migration preserves and syncs them or accepts repeatable `--native-target` values.
+- **Context-health validation and smoke coverage.** `check.sh` now validates Agent Skills name/description shape and warns on missing/cyclic dependencies, transitive dependency-body cost, native metadata budget, index growth, and large skill bodies. `.skills/_harness/tests/smoke.sh` covers native-target repair, Cursor single-surface setup, and current/legacy Codex user-skill paths.
+
+### Changed
+
+- **Native-first routing.** Canonical rules and all ten templates now route from native `name` + `description` metadata and consult `.skills/_index.md` only as a targeted fallback for unavailable, ambiguous, omitted-skill, or catalog-maintenance cases. Conditional companion skills load only when their branch is reached.
+- **Cursor setup uses one shared always-on surface.** `CURSOR_template.md` installs the shared harness in root `AGENTS.md` and no longer duplicates it in an `alwaysApply: true` `.cursor/rules/skills-harness.mdc` file.
+- **Current Codex user-skill path.** `caveman` v1.3.1 deploys Codex skills to `$HOME/.agents/skills` and removes managed legacy entries during uninstall; `skill-conflicts` v1.2.0 scans that path plus legacy `~/.codex/skills` with a migration warning.
+- **Conditional catalog companions.** `skill-catalog-maintainer` v1.1.0 removes its eager `skill-author` dependency and loads author/reviewer companions only at the apply-edits gate. Related workflow docs were updated in `skill-author` v2.0.2, `harness-upgrade` v1.2.0, and `harness-subtree` v1.6.0.
+- **Lean skill loading.** `skill-author` v2.0.3, `skill-import` v1.0.1, and `skill-export` v1.0.1 now load branch-specific companions only when needed; `skill-author` and `toon-export` v1.1.1 move optional detail to gated references and trim routing metadata.
+- **Skill context optimization.** `skill-catalog-maintainer` v1.2.0 now audits direct, transitive, and native-metadata cost and applies a gated behavior-preserving compaction workflow; `skill-template` v1.3.1 makes conditional dependency loading explicit.
+
+### Removed
+
+- **`design-md-coord`** — not bundled in wide release; retained on the `design-md-coord` branch for optional vendoring.
+
 ## [1.5.0] - 2026-07-03
 
 ### Added

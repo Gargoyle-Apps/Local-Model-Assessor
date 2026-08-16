@@ -1,6 +1,6 @@
 ---
 name: caveman-commit
-description: "Generate ultra-terse Conventional Commits messages (subject <=50 chars, why over what)."
+description: "When the user wants to write or generate a git commit message — ultra-terse Conventional Commits (subject ≤50 chars, why over what)."
 triggers:
   - write a commit
   - commit message
@@ -71,4 +71,5 @@ Only generates the commit message. Does not run `git commit`, does not stage fil
 
 ## Notes
 
-Vendored from [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (`skills/caveman-commit`), MIT licensed. Prompt content only.
+- Vendored from [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (`skills/caveman-commit`), MIT licensed. Prompt content only.
+- Trigger eval cases: `references/trigger-evals.json`.

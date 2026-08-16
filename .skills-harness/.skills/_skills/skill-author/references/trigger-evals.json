@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "skill": "skill-author",
+  "should_trigger": [
+    "write a new skill for our deploy checklist",
+    "author a skill that documents our API workflow",
+    "add a skill to the catalog for code review",
+    "register a new skill in the index"
+  ],
+  "should_not_trigger": [
+    "reformat this skill to match the template",
+    "review this skill for security issues",
+    "import a skill from another repo",
+    "export our skill to the platform team repo",
+    "audit the skill catalog for duplicate triggers"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "skill": "skill-catalog-maintainer",
+  "should_trigger": [
+    "audit the skill catalog for overlap",
+    "do we have duplicate skill triggers",
+    "inventory all skills and their sizes",
+    "this skill is too big — should we split it",
+    "run a catalog health check",
+    "reduce the context cost of this skill",
+    "condense this skill without losing behavior",
+    "trim the transitive skill dependencies"
+  ],
+  "should_not_trigger": [
+    "write a new skill for deployments",
+    "reformat this skill to the template",
+    "import a skill from another repository",
+    "review this skill for security",
+    "export our skill downstream",
+    "be brief in your replies",
+    "compress this paragraph"
+  ]
+}

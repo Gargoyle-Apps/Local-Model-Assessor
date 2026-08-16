@@ -19,9 +19,9 @@ set -euo pipefail
 #         changes vs. the upstream copy AND --force is not set; reports the
 #         drift instead so a human can review.
 #       - Never touches consumer-authored skills.
-#       - Touches .skills/_index.md and .skills/_meta.yml only when --reconcile
-#         is also passed (and only kit-skill rows + kit_version/repo_url —
-#         consumer rows and other fields stay put). See --reconcile below.
+#       - Touches .skills/_index.md only when --reconcile is passed. Touches
+#         .skills/_meta.yml for --reconcile and when --native-target must add a
+#         declaration; consumer-owned fields otherwise stay put.
 #
 # Optional modes (each opt-in, each respects --apply gating):
 #   --reconcile                Merge upstream kit-skill rows into local
@@ -38,6 +38,8 @@ set -euo pipefail
 #   --skip-subtree             For already-vendored installs: skip the subtree
 #                              add and kit-skill replacement; useful with
 #                              --reconcile / --symlink-consumer-skills only.
+#   --native-target <path>     Persist and sync a native discovery target
+#                              (repeatable, e.g. .agents/skills).
 #
 # Compatibility: bash 3.2 (macOS /bin/bash), POSIX find/diff/git, no GNU-isms.
 #
@@ -45,13 +47,18 @@ set -euo pipefail
 #   .skills/_harness/migrate-to-subtree.sh [--apply] [--force] \
 #       [--remote-name <name>] [--remote-url <url>] [--ref <ref>] \
 #       [--prefix <dir>] [--accept-upstream <name>[,<name>…]] \
-#       [--reconcile] [--symlink-consumer-skills] [--skip-subtree]
+#       [--reconcile] [--symlink-consumer-skills] [--skip-subtree] \
+#       [--native-target <path>]
 #
 # Defaults:
 #   remote-name = skills-harness
 #   remote-url  = repo_url from .skills/_meta.yml (required if not present)
 #   ref         = main
 #   prefix      = .skills-harness
+
+usage() {
+  sed -n '/^# migrate-to-subtree\.sh$/,/^$/p' "$0" | sed 's/^# \{0,1\}//'
+}
 
 CANONICAL_URL_SUBSTR="Gargoyle-Apps/skills-harness"
 
@@ -66,6 +73,7 @@ ACCEPT_DERIVED_URL=false
 RECONCILE=false               # gh issue #3, friction point 7
 SYMLINK_CONSUMER_SKILLS=false # gh issue #3, friction point 8
 SKIP_SUBTREE=false            # for --reconcile-only / --symlink-only on already-vendored installs
+NATIVE_TARGETS=()             # repeatable --native-target values
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -90,8 +98,21 @@ while [[ $# -gt 0 ]]; do
     --reconcile) RECONCILE=true ;;
     --symlink-consumer-skills) SYMLINK_CONSUMER_SKILLS=true ;;
     --skip-subtree) SKIP_SUBTREE=true ;;
+    --native-target)
+      [[ $# -ge 2 ]] || { echo "ERROR: --native-target requires a value" >&2; exit 2; }
+      target="$2"
+      target="${target#./}"; target="${target%/}"
+      case "$target" in
+        ""|.|/*|..|../*|*/../*|*/..)
+          echo "ERROR: --native-target must be a safe path relative to the repo root: $target" >&2
+          exit 2
+          ;;
+      esac
+      NATIVE_TARGETS+=("$target")
+      shift
+      ;;
     -h|--help)
-      sed -n '3,55p' "$0" | sed 's/^# \{0,1\}//'
+      usage
       exit 0
       ;;
     *) echo "ERROR: unknown arg: $1" >&2; exit 2 ;;
@@ -902,7 +923,45 @@ if $SYMLINK_CONSUMER_SKILLS; then
   note ""
 fi
 
-# --- Step 8: post-action reminders --------------------------------------------
+# --- Step 8: create/sync persisted native discovery targets ------------------
+
+declared_native_targets() {
+  [[ -f ".skills/_meta.yml" ]] || return 0
+  awk '
+    /^native_targets:[[:space:]]*$/ { in_targets=1; next }
+    in_targets && /^[^[:space:]#][^:]*:/ { in_targets=0 }
+    in_targets && /^[[:space:]]*-[[:space:]]*/ {
+      value=$0
+      sub(/^[[:space:]]*-[[:space:]]*/, "", value)
+      gsub(/^["'"'']|["'"'']$/, "", value)
+      if (value != "") print value
+    }
+  ' .skills/_meta.yml
+}
+
+while IFS= read -r declared_target; do
+  [[ -n "$declared_target" ]] || continue
+  already=false
+  for configured_target in ${NATIVE_TARGETS[@]+"${NATIVE_TARGETS[@]}"}; do
+    [[ "$configured_target" == "$declared_target" ]] && already=true && break
+  done
+  $already || NATIVE_TARGETS+=("$declared_target")
+done < <(declared_native_targets)
+
+if (( ${#NATIVE_TARGETS[@]} > 0 )); then
+  note "Step: native discovery targets"
+  for target in ${NATIVE_TARGETS[@]+"${NATIVE_TARGETS[@]}"}; do
+    if $APPLY; then
+      do_ "create/sync $target and persist it in .skills/_meta.yml"
+      .skills/_harness/link.sh "$target"
+    else
+      plan "create/sync $target and persist it in .skills/_meta.yml"
+    fi
+  done
+  note ""
+fi
+
+# --- Step 9: post-action reminders --------------------------------------------
 
 note ""
 if $RECONCILE && $SYMLINK_CONSUMER_SKILLS; then
@@ -915,8 +974,13 @@ else
   note "  2. .skills/_meta.yml  — bump kit_version to match $PREFIX/.skills/_meta.yml"
   note "       Both of the above can be done with: --reconcile --apply"
 fi
-note "  - Re-run native discovery if you use it:"
-note "        .skills/_harness/link.sh .agents/skills    # or .claude/skills"
+if (( ${#NATIVE_TARGETS[@]} == 0 )); then
+  note "  - Native discovery is not declared. Choose and persist a target:"
+  note "        .skills/_harness/link.sh .agents/skills    # or .claude/skills"
+  note "    Migration can do this with: --native-target .agents/skills"
+else
+  note "  - Native discovery targets above are declared and $($APPLY && echo synced || echo planned)."
+fi
 note "  - Validate:"
 note "        .skills/_harness/check.sh"
 

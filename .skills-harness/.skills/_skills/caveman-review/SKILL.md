@@ -1,6 +1,6 @@
 ---
 name: caveman-review
-description: "Ultra-compressed one-line code review comments (location, problem, fix); optional severity prefixes."
+description: "When the user wants a code or PR review — ultra-compressed one-line comments (location, problem, fix) with optional severity prefixes."
 triggers:
   - review this PR
   - code review
@@ -61,4 +61,5 @@ Reviews only — does not write the code fix, does not approve/request-changes, 
 
 ## Notes
 
-Vendored from [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (`skills/caveman-review`), MIT licensed. Prompt content only.
+- Vendored from [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) (`skills/caveman-review`), MIT licensed. Prompt content only.
+- Trigger eval cases: `references/trigger-evals.json`.

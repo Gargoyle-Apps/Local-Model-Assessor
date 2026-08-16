@@ -40,8 +40,9 @@ for tmpl in "$HARNESS_DIR"/*_template.md; do
     continue
   fi
 
-  # Extract the current rules body (after `## Rules` until `<!-- END` or EOF)
-  tmpl_rules="$(sed -n '/^## Rules$/,/^<!-- END/ { /^<!-- END/d; p; }' "$tmpl" | tail -n +2 | sed '/^$/d')"
+  # Extract the current rules body (after `## Rules` until its explicit marker
+  # or EOF). Do not stop at an earlier setup marker elsewhere in the template.
+  tmpl_rules="$(sed -n '/^## Rules$/,/^<!-- END RULES -->/ { /^<!-- END RULES -->/d; p; }' "$tmpl" | tail -n +2 | sed '/^$/d')"
   if [[ -z "$tmpl_rules" ]]; then
     tmpl_rules="$(sed -n '/^## Rules$/,$ p' "$tmpl" | tail -n +2 | sed '/^$/d')"
   fi
@@ -54,11 +55,15 @@ for tmpl in "$HARNESS_DIR"/*_template.md; do
 
   if $WRITE; then
     # Keep everything up to and including the `## Rules` line; preserve any
-    # post-rules appendix (e.g. CURSOR_template.md's .mdc copy block).
+    # post-rules appendix, if a template has one.
     head_part="$(sed -n '1,/^## Rules$/ p' "$tmpl")"
     post_rules=""
-    if grep -q '^<!-- END' "$tmpl"; then
-      post_rules="$(awk '/^<!-- END/ {found=1} found' "$tmpl")"
+    if grep -q '^<!-- END RULES -->' "$tmpl"; then
+      post_rules="$(awk '
+        /^## Rules$/ { seen_rules=1 }
+        seen_rules && /^<!-- END RULES -->/ { found=1 }
+        found { print }
+      ' "$tmpl")"
     fi
     {
       printf '%s\n\n' "$head_part"
