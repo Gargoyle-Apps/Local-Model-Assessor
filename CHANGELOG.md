@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.6.0] - 2026-08-17
 
 ### Fixed
 
@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Skill authoring prose contract ([#18](https://github.com/Gargoyle-Apps/skills-harness/issues/18)).** The README and `skill-author` v2.1.0 / `skill-template` v1.4.0 now set lite, direct prose as the skill-body default while preserving natural-language routing and explicit safety/order. `skill-reviewer` v1.1.0 flags harmful over-compression, `skill-catalog-maintainer` v1.2.1 rejects bulk caveman rewrites as context optimization, and `caveman` v1.3.2 clarifies that reply compression is not catalog policy.
 - **Native-first routing.** Canonical rules and all ten templates now route from native `name` + `description` metadata and consult `.skills/_index.md` only as a targeted fallback for unavailable, ambiguous, omitted-skill, or catalog-maintenance cases. Conditional companion skills load only when their branch is reached.
 - **Cursor setup uses one shared always-on surface.** `CURSOR_template.md` installs the shared harness in root `AGENTS.md` and no longer duplicates it in an `alwaysApply: true` `.cursor/rules/skills-harness.mdc` file.
 - **Current Codex user-skill path.** `caveman` v1.3.1 deploys Codex skills to `$HOME/.agents/skills` and removes managed legacy entries during uninstall; `skill-conflicts` v1.2.0 scans that path plus legacy `~/.codex/skills` with a migration warning.

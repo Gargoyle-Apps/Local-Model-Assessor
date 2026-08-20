@@ -10,7 +10,7 @@ triggers:
   - review this skill
 dependencies:
   - skill-template
-version: "1.0.0"
+version: "1.1.0"
 ---
 
 # Skill Reviewer
@@ -82,7 +82,7 @@ Classify the skill's overall risk before walking checks. Two or more HIGH indica
 
 ## What not to do
 
-- Don't comment on style or taste unless it breaks triggering (Q1) or progressive disclosure (Q2).
+- Don't comment on harmless concision or style preferences. Flag compression only when it harms routing, disclosure, actor/order clarity, confirmation gates, or safety (Q1/Q2c).
 - Don't rewrite the skill for the author.
 - Don't fetch external URLs to verify references — flag the URL and move on.
 - Don't read files outside the diff except sibling skill directories when investigating chain references (check 17).

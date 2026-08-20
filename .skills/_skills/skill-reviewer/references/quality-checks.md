@@ -32,6 +32,21 @@ If the user reports false positives or false negatives, recommend a trigger-eval
 
 Symptoms: description lists 3+ unrelated triggers; parallel unrelated workflows; references organized by unrelated tasks. Recommend splitting into narrower skills with focused descriptions.
 
+## Q2c. Harmful over-compression (MEDIUM / HIGH)
+
+Lite, direct prose is the kit default. Concise, complete sentences are not a finding. Flag compression only when it removes information needed to route or execute safely.
+
+| Check | Severity |
+|---|---|
+| `description` or `triggers` use dropped grammar, invented abbreviations, or shorthand instead of natural user language | MEDIUM; HIGH if triggering is broken |
+| Numbered steps omit the actor, conjunction, or ordering needed to distinguish sequence or responsibility | MEDIUM; HIGH if the omission affects a safety, confirmation, irreversible-action, or required-order sequence |
+| Compression obscures whether text is a confirmation gate or an instruction to act | HIGH |
+| Compression weakens a security warning, irreversible-action warning, or required execution order | HIGH |
+
+Recommend the smallest clear rewrite: restore the missing actor, conjunction, confirmation, or order, then resume lite prose. Do not request a full stylistic rewrite.
+
+Do not flag arrows or fragments that express causality unambiguously in ordinary non-safety prose.
+
 ## Q3. Eval coverage (MEDIUM if missing)
 
 | Check | Severity |

@@ -6,7 +6,7 @@ triggers:
   - new skill
   - register a skill
 dependencies: []
-version: "2.0.3"
+version: "2.1.0"
 ---
 
 # Skill Author
@@ -24,7 +24,7 @@ version: "2.0.3"
    - Read [references/naming.md](references/naming.md) when deriving, choosing, or validating a prefix. Do not rename existing unprefixed skills unless asked.
 2. Create `.skills/_skills/<name>/` and copy `.skills/_skills/skill-template/SKILL.md` into it. Load `skill-template` only when canonical layout or refactor guidance beyond that scaffold is needed.
 3. Fill in frontmatter. `name` must exactly match the directory; keep `description` under 1024 characters and include both what the skill does and when it loads.
-4. Write imperative, agent-facing instructions. Keep one default per concept and include a brief reason only when it changes behavior.
+4. Write imperative, agent-facing instructions in lite, direct prose. Keep one default per concept and include a brief reason only when it changes behavior.
 5. Add natural-language `triggers`. Test one realistic user phrase; if the index entry would not clearly route it here, tighten the description or triggers and retest.
 6. List only unconditional runtime companions in `dependencies`; load branch-specific companions in the relevant body step. Use `dependencies: []` when none. Avoid cycles.
 7. Put bundled files in the standard subdirectories and link every file from `SKILL.md`:
@@ -56,6 +56,10 @@ Order content for an agent that just loaded it:
 5. Rare edge cases or notes.
 
 Keep `SKILL.md` lean. Move optional detail to a reference and gate its load. Do not split one coherent workflow into extra skills merely to shorten the body.
+
+Use short, complete sentences. Drop filler and hedging, but keep articles, conjunctions, explicit actors, and step order when they preserve meaning. Keep `description` and `triggers` in natural user language; do not compress routing metadata into caveman shorthand.
+
+Do not use dropped grammar, invented abbreviations, or arrows as substitutes for causality when they could obscure who acts, what happens first, or whether a step is a confirmation versus an instruction. Write the normal sentence for safety-sensitive or ambiguous steps, then resume lite prose.
 
 ### Safety and reuse
 

@@ -8,7 +8,7 @@ triggers:
   - skill layout
   - refactor to skill
 dependencies: []
-version: "1.3.1"
+version: "1.4.0"
 ---
 
 # Skill Template
@@ -34,6 +34,8 @@ Every skill is a directory. `SKILL.md` is required; optional subfolders follow t
 ```
 
 **Progressive disclosure:** keep `SKILL.md` focused. Move long reference material to `references/`, deterministic steps to `scripts/`, and static files to `assets/`. Reference them from `SKILL.md` with relative paths (e.g. `scripts/<name>.sh`, `references/<name>.md`). The agent (and native IDE discovery) loads these only when the task needs them — not at trigger time.
+
+**Writing style:** use lite, direct agent prose with short, complete sentences. Keep `description` and `triggers` in natural user language for routing. Keep full grammar when actor, order, confirmation, causality, or safety could become ambiguous; do not use ultra-caveman shorthand as the body or reference style.
 
 Do **not** place scripts or extra markdown loose at the skill root; `check.sh` warns on that layout.
 
@@ -98,7 +100,7 @@ Steps:
 1. Identify the core capability the existing file describes
 2. Extract it into a new directory: .skills/_skills/<name>/SKILL.md
 3. Add YAML frontmatter (name, description, triggers, dependencies, version)
-4. Rewrite the body as agent-facing instructions (not human docs)
+4. Rewrite the body as lite, agent-facing instructions (not human docs); preserve full grammar for routing, order, confirmation, and safety
 5. Run .skills/_harness/build-index.sh --write to regenerate .skills/_index.md
 6. Remove or replace the original content with a one-liner pointing to the skill
 

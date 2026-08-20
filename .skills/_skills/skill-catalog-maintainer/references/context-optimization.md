@@ -4,6 +4,8 @@ Load when `check.sh` reports direct, transitive, native-metadata, or index-size 
 
 Goal: reduce happy-path context without weakening routing, behavior, safety, or verification.
 
+Bulk caveman rewriting is not an optimization strategy. Keep descriptions and triggers in natural user language, and keep enough grammar in bodies and references to make actor, order, confirmation, causality, and safety explicit.
+
 ## Baseline
 
 From the repository root, record direct size for each target:
