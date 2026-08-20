@@ -182,7 +182,7 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 ## Skills harness (third-party)
 
-The kit is vendored as a **git subtree** at [`.skills-harness/`](.skills-harness/) ([Gargoyle-Apps/skills-harness](https://github.com/Gargoyle-Apps/skills-harness), MIT, **v1.5.0**). Runtime layout:
+The kit is vendored as a **git subtree** at [`.skills-harness/`](.skills-harness/) ([Gargoyle-Apps/skills-harness](https://github.com/Gargoyle-Apps/skills-harness), MIT, **v1.6.0**). Runtime layout:
 
 - **`.skills-harness/`** — upstream kit (updated with `git subtree pull`; do not hand-edit)
 - **`.skills/`** — consumer tree: symlinked kit `_harness/` and bundled skills; **real directories** for repo-specific `lma-*` skills under `.skills/_skills/`
