@@ -82,6 +82,12 @@ Each `SKILL.md` opens with YAML frontmatter. See [skill-template](.skills/_skill
 
 `name` and `description` follow the [agentskills.io specification](https://agentskills.io/specification) and are used by IDEs with native skill discovery. The harness adds `triggers`, `dependencies`, and `version`; IDEs that don't recognize them silently ignore them. See [`.skills/_index.md`](.skills/_index.md) for bundled skills.
 
+### Writing skill prose
+
+Use lite, direct agent prose: remove filler and hedging, but keep short, complete sentences. Keep `description` and `triggers` in natural user language because they carry routing. Preserve explicit actors, conjunctions, step order, confirmation gates, and safety language whenever compression could make them ambiguous; do not substitute invented abbreviations or arrows for causality in those instructions.
+
+For size pressure, prune conditional dependencies, remove duplication, and move optional bulk to explicitly gated `references/`. Keep common-path decisions and safety gates in `SKILL.md`. Never bulk-rewrite a catalog into ultra-caveman prose merely to satisfy a size warning.
+
 ## Native IDE discovery
 
 Most IDEs auto-discover skills from standard directories. After setup, run the symlink helper to enable native features (`@skill-name` mentions, auto-invocation, skill panels):
@@ -212,7 +218,7 @@ For progressive skill loading via MCP, see [skillport](https://github.com/gotala
 
 ## Kit version
 
-**Current release:** `1.5.0`
+**Current release:** `1.6.0`
 
 - **Canonical:** [`kit_version` in `.skills/_meta.yml`](.skills/_meta.yml)
 - **History:** [CHANGELOG.md](CHANGELOG.md)

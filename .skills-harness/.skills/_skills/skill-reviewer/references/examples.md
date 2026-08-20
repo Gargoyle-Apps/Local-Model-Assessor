@@ -30,6 +30,19 @@ For details, see [references/migration.md](references/migration.md).
 > **[MEDIUM] reference loaded unconditionally**
 > Recommendation: `If upgrading from v1, load references/migration.md for the version-specific procedure.`
 
+### HIGH — compression reverses a destructive sequence
+
+```markdown
+1. Delete production.
+2. Take a backup.
+```
+
+> **[HIGH] required execution order is unsafe**
+> Why it matters: The compressed steps place an irreversible action before its prerequisite and omit the gate that protects production data.
+> Recommendation: `Before deleting production data, create and verify a restorable backup, then request explicit confirmation for the deletion.`
+
+Ordinary shorthand is not a finding when its meaning is unambiguous and no safety, confirmation, or irreversible sequence is involved; for example, `parse → validate → render`.
+
 ## Security findings
 
 ### HIGH — secret in scripts/

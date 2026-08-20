@@ -11,7 +11,7 @@ triggers:
   - compress output
   - /caveman
 dependencies: []
-version: "1.3.1"
+version: "1.3.2"
 ---
 
 Respond terse like smart caveman. All technical substance stay. Only fluff die.
@@ -81,7 +81,7 @@ Example — destructive op:
 
 ## Boundaries
 
-Code/commits/PRs: write normal. "stop caveman" or "normal mode": revert. Level persist until changed or session end.
+Code/commits/PRs: write normal. Skill artifacts (`SKILL.md` and references): write normal; never apply caveman compression or use this skill as catalog policy. "stop caveman" or "normal mode": revert. Level persist until changed or session end.
 
 ## Notes
 

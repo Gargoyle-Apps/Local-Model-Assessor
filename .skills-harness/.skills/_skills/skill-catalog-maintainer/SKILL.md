@@ -12,7 +12,7 @@ triggers:
   - condense this skill
   - trim skill tokens
 dependencies: []
-version: "1.2.0"
+version: "1.2.1"
 ---
 
 # Skill Catalog Maintainer
@@ -94,4 +94,5 @@ Sections: **Trigger clusters**, **Intent collisions**, **Context cost / structur
 - No silent edits
 - No rename or delete
 - No loss of behavior, safety, or routing merely to meet a context budget
+- No bulk caveman rewrite of skill bodies or references; reduce context through dependency pruning, gated extraction, and deduplication
 - Don't dump every skill body into chat — summarize and link paths
