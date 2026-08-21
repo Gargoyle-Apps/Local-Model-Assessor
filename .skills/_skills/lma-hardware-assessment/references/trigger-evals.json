@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "skill": "lma-hardware-assessment",
+  "should_trigger": [
+    "Assess this RTX 5090 workstation for running local LLMs.",
+    "I am considering SKU Z1CG000AB. What model sizes and context windows should I expect?",
+    "Compare this 128 GB unified-memory machine with the computer in my hardware profile.",
+    "Would these CPU, GPU, RAM, and bandwidth specs be good for local coding and RAG models?",
+    "Evaluate an AMD MI300X server for 70B models and concurrent inference.",
+    "How useful would this CPU-only 256 GB server be for quantized LLMs?",
+    "Compare these three laptop configurations for local vision and coding models.",
+    "Estimate practical context and decode speed for this Arc GPU build."
+  ],
+  "should_not_trigger": [
+    "Inventory this Mac and write hardware-profile.yaml.",
+    "Which installed Ollama model should I use for coding?",
+    "Benchmark the model running on this machine now.",
+    "Import this GGUF model into Ollama.",
+    "Initialize the model assessor database.",
+    "Generate my Continue and Cline configuration.",
+    "Find a Hugging Face model that fits my existing profile.",
+    "Remove old Ollama models to free disk space."
+  ]
+}

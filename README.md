@@ -1,6 +1,6 @@
 # Local Model Assessor
 
-**Version 2.6.0** — bump criteria: [AGENTS.md](AGENTS.md#lma-version).
+**Version 2.7.0** — bump criteria: [AGENTS.md](AGENTS.md#lma-version).
 
 For **tool-calling agents** in IDEs (Cursor, Cline, Continue, …): query SQLite and run repo scripts — not for chat-only LLMs without shell access.
 
@@ -223,6 +223,10 @@ The `runtime` column is `ollama` (default, including Ollama `-mlx` tags) or `mlx
 ---
 
 ## Hardware Classes
+
+Assess hardware you may buy or deploy with [`lma-hardware-assessment`](.skills/_skills/lma-hardware-assessment/SKILL.md). Give it a SKU, product page, or specifications to get model-size, quantization, practical context, theoretical performance, concurrency, and workload-fit estimates. If a local `hardware-profile.yaml` exists, it can add a separate comparison with the declared current system; it does not probe the host or overwrite the profile.
+
+### Profile classes
 
 Models are categorized by VRAM footprint and performance. **Full fields** (budget, `os_headroom_gb`, quantization, concurrency, `context_strategy`, hardware class definitions) live in **`computer-profile/hardware-profile.template.yaml`** — copy to `hardware-profile.yaml` and edit.
 
