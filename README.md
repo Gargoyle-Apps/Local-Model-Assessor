@@ -1,6 +1,6 @@
 # Local Model Assessor
 
-**Version 2.5.0** — bump criteria: [AGENTS.md](AGENTS.md#lma-version).
+**Version 2.6.0** — bump criteria: [AGENTS.md](AGENTS.md#lma-version).
 
 For **tool-calling agents** in IDEs (Cursor, Cline, Continue, …): query SQLite and run repo scripts — not for chat-only LLMs without shell access.
 
@@ -164,7 +164,7 @@ What model should I use for [vision tasks / creative writing / RAG / etc.]?
 
 ## Assess new models
 
-1. `LLM-prompts/model-assessment-prompt.yaml` + `hardware-profile.yaml` + URLs (Ollama, HF GGUF via [`lma-hf-gguf-ollama`](.skills/_skills/lma-hf-gguf-ollama/SKILL.md) skill, or MLX via [`lma-mlx-lm`](.skills/_skills/lma-mlx-lm/SKILL.md) skill)
+1. `LLM-prompts/model-assessment-prompt.yaml` + `hardware-profile.yaml` + URLs (Ollama including `-mlx` tags via [`lma-assess-import-model`](.skills/_skills/lma-assess-import-model/SKILL.md), HF GGUF via [`lma-hf-gguf-ollama`](.skills/_skills/lma-hf-gguf-ollama/SKILL.md), or HuggingFace MLX via [`lma-mlx-lm`](.skills/_skills/lma-mlx-lm/SKILL.md))
 2. LLM → save YAML → `model-data/new-models.yaml`
 3. `./scripts/py scripts/add-model-from-yaml.py model-data/new-models.yaml` then `./scripts/py scripts/export-assessed-models.py`
 
@@ -197,20 +197,28 @@ Policy is **agnostic / multi-ecosystem** (Path B): see [AGENTS.md](AGENTS.md) **
 
 ## Model Runtimes: Ollama vs MLX LM
 
-**Ollama** is the primary runtime. Use it for any model available in the [Ollama library](https://ollama.com/library) or importable as a GGUF. It provides the HTTP API that IDEs connect to, provisioned clones with role-tuned parameters, and the full assessment/selection/config-generation pipeline. If a model is in Ollama, use Ollama.
+Two **discrete** Apple Silicon MLX paths exist. Do not mix them.
 
-**[MLX LM](https://github.com/ml-explore/mlx-lm)** is an optional secondary runtime for Apple Silicon Macs. Use it **only** when a model is not available in Ollama (no GGUF exists) but does exist in MLX safetensors format — typically from the [mlx-community](https://huggingface.co/mlx-community) organization on HuggingFace. MLX models run natively on unified memory via Apple's MLX framework.
+### 1. Ollama `-mlx` tags (still Ollama)
+
+**Ollama** is the primary runtime. Use it for any model in the [Ollama library](https://ollama.com/library) or importable as GGUF. It provides the HTTP API that IDEs connect to, provisioned clones, and the assessment/selection/config pipeline.
+
+On **Apple Silicon**, if the library ships a same-size `-mlx` tag (for example `qwen3.8:27b-mlx` next to `qwen3.8:27b`), **pull and compare that tag first**. It stays `runtime=ollama`. Do not set `runtime: mlx`. Do not run it through mlx-lm. Strategy: [`lma-assess-import-model`](.skills/_skills/lma-assess-import-model/SKILL.md) → `references/ollama-mlx-tags.md`.
+
+### 2. MLX LM (HuggingFace safetensors)
+
+**[MLX LM](https://github.com/ml-explore/mlx-lm)** is an optional secondary runtime. Use it **only** when the model is **not** in Ollama (no library tag, including no `-mlx` tag) but exists as MLX safetensors, typically from [mlx-community](https://huggingface.co/mlx-community). Set `runtime: mlx`. No Modelfile clones. See [`lma-mlx-lm`](.skills/_skills/lma-mlx-lm/SKILL.md).
 
 When to use MLX LM:
-- The model has **no Ollama/GGUF equivalent** (MLX-only release or conversion)
-- You need **MLX-specific features** (LoRA fine-tuning on Apple Silicon, distributed inference)
-- You want to evaluate an MLX-community quantization that differs from available GGUF quants
+- The model has **no Ollama equivalent** (including no `-mlx` library tag)
+- You need **mlx-lm-only features** (LoRA fine-tuning, `mlx_lm.server` against a Hub repo)
+- You want an mlx-community quant that Ollama does not ship
 
 When *not* to use MLX LM:
-- The same model is already in Ollama — Ollama gives you provisioned clones, IDE integration, and the full workflow
-- You're on an Intel Mac or non-macOS platform — MLX is Apple Silicon only
+- The same weights are already an Ollama tag (GGUF or `-mlx`)
+- You're on an Intel Mac or non-macOS platform
 
-The `runtime` column in the DB distinguishes models (`ollama` default, `mlx` for MLX LM). Cloud-only models (e.g. Ollama `model:cloud` tags) are excluded from both runtimes — they are remote API proxies, not local weights. See the [`lma-mlx-lm`](.skills/_skills/lma-mlx-lm/SKILL.md) skill for the full MLX LM workflow.
+The `runtime` column is `ollama` (default, including Ollama `-mlx` tags) or `mlx` (mlx-lm only). Cloud-only Ollama tags remain excluded.
 
 ---
 

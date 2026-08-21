@@ -13,7 +13,7 @@ triggers:
   - hf collections
   - mlx-community collections
 dependencies: []
-version: "1.3.0"
+version: "1.3.1"
 ---
 
 # LMA Hugging Face MCP + Hub REST API
@@ -115,4 +115,4 @@ Gate on `computer-profile/hardware-profile.yaml` VRAM budget before assess. MCP 
 1. `./scripts/py scripts/hf-hub-api.py collections --owner mlx-community --recent 10 --json`
 2. Pick 1–2 collections matching task (code, vision, etc.)
 3. MCP `hub_repo_details` on specific `mlx-community/Model-4bit` repos
-4. VRAM check → assess → `new-models.yaml` (`runtime: mlx`)
+4. If the repo is already an Ollama `-mlx` library tag, stop and hand off to `lma-assess-import-model`. Otherwise: VRAM check → assess → `new-models.yaml` (`runtime: mlx`)

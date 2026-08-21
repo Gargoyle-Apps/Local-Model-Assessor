@@ -8,7 +8,7 @@
 
 ### LMA version
 
-**`2.5.0`** — bump **MAJOR** for breaking paths, agent-facing contracts, or DB/schema expectations without a clear migration; **MINOR** for additive capability (e.g. new runtime, integration, or skills surface); **PATCH** for fixes and docs-only; keep **README.md** and this heading in sync; prefer non-`x.y.0` patch on intentional release lines.
+**`2.6.0`** — bump **MAJOR** for breaking paths, agent-facing contracts, or DB/schema expectations without a clear migration; **MINOR** for additive capability (e.g. new runtime, integration, or skills surface); **PATCH** for fixes and docs-only; keep **README.md** and this heading in sync; prefer non-`x.y.0` patch on intentional release lines.
 
 ---
 
@@ -30,7 +30,7 @@ This repository uses **Path B** from the bundled skills harness: **portable skil
 - **If DB missing:** `./scripts/init-db.sh`. **If columns/tables missing:** `./scripts/migrate-schema.sh`.
 - **Tests:** `./scripts/py -m pytest tests/ -v` from repo root. Add tests for new helpers and ingestion paths. Dev deps: `pip install -r requirements-dev.txt`.
 - **Cloud models excluded:** Never assess, import, or recommend models that exist only as cloud/API proxies (e.g. Ollama `model:cloud` tags). If a model is cloud-only, inform the user and suggest checking [HuggingFace](https://huggingface.co) for a local alternative.
-- **Model runtimes:** Ollama (primary) and MLX LM (optional, Apple Silicon). The `runtime` column in `models` distinguishes them (`ollama` default, `mlx` for MLX LM). Use MLX LM only when a model has no Ollama/GGUF equivalent. See `lma-mlx-lm` skill and README § "Model Runtimes: Ollama vs MLX LM."
+- **Model runtimes:** Ollama is primary. On Apple Silicon, prefer an Ollama library `-mlx` tag over the same-size GGUF default when both exist (`runtime` stays `ollama`; see `lma-assess-import-model` `references/ollama-mlx-tags.md`). **MLX LM** (`runtime=mlx`) is a separate optional path for HuggingFace MLX safetensors with no Ollama equivalent. See `lma-mlx-lm` and README § "Model Runtimes: Ollama vs MLX LM."
 - **HF Hub discovery:** **REST + MCP hybrid** — `./scripts/py scripts/hf-hub-api.py` for lists/counts/collections; MCP (`hub_repo_details`, `hub_repo_search`, `hf_doc_search`, `hf_whoami`) for drill-down. **Avoid `hf_hub_query`** (hangs/timeouts). See `lma-hf-mcp` skill and [integrations/mcp/hf-hub-api.md](integrations/mcp/hf-hub-api.md).
 
 ---

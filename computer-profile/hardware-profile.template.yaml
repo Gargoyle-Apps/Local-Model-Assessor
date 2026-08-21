@@ -21,6 +21,8 @@ quantization:
   default: ["q4_k_m", "q5_k_m"]
   small_models: ["q8", "fp16"]  # For models <8B or embeddings
   small_model_threshold: 8      # Billion parameters
+  # Apple Silicon: when Ollama ships a same-size `-mlx` tag, prefer it over these GGUF defaults.
+  # That is still Ollama (not mlx-lm). See lma-assess-import-model references/ollama-mlx-tags.md.
 
 concurrency:
   description: "Describe your concurrency strategy here"

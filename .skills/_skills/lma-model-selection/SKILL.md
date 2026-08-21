@@ -19,7 +19,7 @@ triggers:
 dependencies:
   - lma-db-core
   - lma-ide-config
-version: "1.1.0"
+version: "1.2.0"
 ---
 
 # LMA Model Selection
@@ -86,7 +86,9 @@ Look up the install command and run it:
 ./scripts/query-db.sh "SELECT install FROM models WHERE model_id='...'"
 ```
 
-The returned command may be `ollama pull <tag>` (catalog models), `ollama create -f …` (GGUF bases), or an `mlx_lm.generate` command (MLX models). Check the `runtime` column to distinguish: `ollama` (default) vs `mlx`.
+The returned command may be `ollama pull <tag>` (catalog models, including Ollama `-mlx` tags), `ollama create -f …` (GGUF bases), or an `mlx_lm.generate` command (`runtime=mlx` HuggingFace models). Check the `runtime` column: `ollama` (default, including library `-mlx` tags) vs `mlx` (mlx-lm only).
+
+On Apple Silicon, if the user asks to pull a library model and a same-size `-mlx` tag exists, install that tag. Load `lma-assess-import-model` for the discrete Ollama `-mlx` tag strategy. Do not route Ollama `-mlx` tags through `lma-mlx-lm`.
 
 After installing a base model and any provisioned clones (`create_command` from `provisioned_models`), sweep IDE config:
 

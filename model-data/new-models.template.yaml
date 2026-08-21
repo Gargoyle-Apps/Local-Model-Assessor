@@ -1,6 +1,7 @@
 # Model assessment output template
 # Copy to model-data/new-models.yaml and fill in. Then: ./scripts/py scripts/add-model-from-yaml.py model-data/new-models.yaml
-# See LLM-prompts/model-assessment-prompt.yaml, LLM-prompts/ollama-search.md, lma-hf-gguf-ollama skill, and lma-mlx-lm skill.
+# See LLM-prompts/model-assessment-prompt.yaml, LLM-prompts/ollama-search.md, lma-hf-gguf-ollama skill,
+# lma-assess-import-model references/ollama-mlx-tags.md (Ollama -mlx tags), and lma-mlx-lm (HuggingFace only).
 # Cloud-only models (e.g. Ollama model:cloud) are excluded — only locally-runnable weights qualify.
 
 models:
@@ -18,6 +19,8 @@ models:
     #   latency: low      # interactive responsiveness tier, e.g. low | medium | high
     url: https://ollama.com/library/model-name
     install: ollama pull model-name:tag
+    # Apple Silicon: if the library ships model-name:tag-mlx at the same size, use that as model_id
+    # and `ollama pull model-name:tag-mlx`. Keep runtime omitted (still Ollama). See ollama-mlx-tags.md.
 
     # Provisioning: role-tuned clones.
     # Only declare alias, role, variant, and parameter overrides here.
@@ -109,9 +112,31 @@ model_docs:
   #     caveats: "Download GGUF to e.g. ./weights/model.gguf; base .mf uses FROM ./weights/model.gguf; run install before clone create_command."
 
 # =============================================================================
-# MLX LM model — full example (Apple Silicon only; uncomment to use):
-# No Modelfiles or provisioned clones — MLX models run directly via mlx_lm.
-# See lma-mlx-lm skill for orchestration rules.
+# Ollama `-mlx` tag — still Ollama (Apple Silicon). Uncomment to use.
+# runtime stays omitted / ollama. Clones work. This is NOT mlx-lm.
+# See lma-assess-import-model references/ollama-mlx-tags.md.
+# =============================================================================
+  # qwen3.8:27b-mlx:
+  #   vram: 18
+  #   ctx: 256000
+  #   class: Daily Driver
+  #   tps: 30
+  #   vision: true
+  #   tools: true
+  #   reasoning: true
+  #   url: https://ollama.com/library/qwen3.8
+  #   install: ollama pull qwen3.8:27b-mlx
+  #   provisioning:
+  #     - alias: "qwen3.8:27b-mlx_coding_8k"
+  #       role: coding
+  #       variant: primary
+  #       num_ctx: 8192
+  #       temperature: 0.2
+
+# =============================================================================
+# MLX LM model — HuggingFace safetensors only (Apple Silicon). Uncomment to use.
+# No Modelfiles or provisioned clones. runtime: mlx is required.
+# See lma-mlx-lm. Do not use this block for Ollama `-mlx` library tags.
 # =============================================================================
   # mlx-community/SomeModel-4bit:
   #   vram: 10

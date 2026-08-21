@@ -14,9 +14,10 @@ A guidance document for tool-calling AI agents to discover new Ollama models wor
 4. **Prioritize** models that are new-to-DB or newly updated on Ollama since last scan
 5. **Exclude** Cloud-only models — they are remote API proxies, not local weights (see note above)
 6. **Cap** at 7 candidate models for full assessment
-7. **Compare** candidates to existing DB models — only assess if they "beat" in size, performance, or unmet need
-8. **Assess** accepted candidates using `LLM-prompts/model-assessment-prompt.yaml` and insert into DB
-9. **Update** last scan timestamp in the database
+7. **On Apple Silicon**, resolve each library candidate to its same-size `-mlx` tag when one exists (discrete from mlx-lm; see `lma-assess-import-model`)
+8. **Compare** candidates to existing DB models — only assess if they "beat" in size, performance, or unmet need
+9. **Assess** accepted candidates using `LLM-prompts/model-assessment-prompt.yaml` and insert into DB
+10. **Update** last scan timestamp in the database
 
 ---
 
@@ -101,8 +102,10 @@ A candidate **beats** existing models if it improves at least one of:
 | Dimension | Beat means |
 |-----------|------------|
 | **Size** | Larger capable variant (e.g. 32b vs 24b) or fills a missing size tier |
-| **Performance** | Higher expected t/s for the same VRAM class |
+| **Performance** | Higher expected t/s for the same VRAM class. On Apple Silicon, a same-size Ollama `-mlx` tag beats its GGUF sibling even if that sibling is already in the DB (see `lma-assess-import-model` `references/ollama-mlx-tags.md`). |
 | **Need** | Fills an unmet role/constraint (e.g. no vision model, no tools model, no embedding) |
+
+When a library model has both a GGUF default and a same-size `-mlx` tag, assess **only** the `-mlx` tag on Apple Silicon. Do not treat the GGUF tag as a second candidate.
 
 **Query current fleet:**
 ```bash
@@ -160,6 +163,7 @@ After completing a scan (whether or not any models were added), update the DB:
 - [ ] Exclude Cloud-only models (`categories` = only `cloud`) — never add to DB; inform user to check HuggingFace for local alternatives
 - [ ] Check `meta.last_ollama_scan` and prioritize new/recently-updated
 - [ ] Pre-filter with hardware/software profiles
+- [ ] On Apple Silicon, resolve each candidate to its same-size `-mlx` tag when the library ships one
 - [ ] Compare to current fleet — only keep candidates that "beat" on size, performance, or need
 - [ ] Cap at 7 candidates
 - [ ] If none qualify: return explanation and stop

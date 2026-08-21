@@ -1,24 +1,31 @@
 ---
 name: lma-mlx-lm
-description: "Run and assess MLX-format models on Apple Silicon via mlx-lm."
+description: "Run and assess HuggingFace MLX safetensors on Apple Silicon via mlx-lm. Do not use for Ollama library -mlx tags."
 triggers:
-  - MLX
   - mlx-lm
   - MLX LM
-  - mlx model
   - mlx-community
-  - Apple Silicon model
+  - mlx_lm.generate
+  - mlx_lm.server
+  - HuggingFace MLX
   - safetensors model
 dependencies:
   - lma-assess-import-model
-version: "1.1.0"
+version: "1.2.0"
 ---
 
 # LMA MLX LM
 
 ## When to use this skill
 
-Load when the user wants to run, assess, or import an **MLX-format model** (typically from [mlx-community](https://huggingface.co/mlx-community) on HuggingFace) on an Apple Silicon Mac. MLX models use safetensors format and run natively on unified memory via the [mlx-lm](https://github.com/ml-explore/mlx-lm) Python package — they do **not** go through Ollama.
+Load when the user wants to run, assess, or import an **MLX-format model that is not in the Ollama library** (typically from [mlx-community](https://huggingface.co/mlx-community) on HuggingFace) on an Apple Silicon Mac. Those weights use safetensors and run via the [mlx-lm](https://github.com/ml-explore/mlx-lm) Python package. They do **not** go through Ollama. Set `runtime: mlx`.
+
+**Not this skill:** Ollama library tags ending in `-mlx` (for example `qwen3.8:27b-mlx`). Those stay on Ollama (`runtime` default `ollama`, clones, IDE sweep). Load `lma-assess-import-model` instead. That skill owns the discrete Ollama `-mlx` tag strategy. On Apple Silicon, it prefers the Ollama `-mlx` tag over GGUF when both exist.
+
+## Anti-triggers
+
+- `ollama pull …-mlx` or replacing a GGUF Ollama tag with its `-mlx` sibling
+- Any model already listed on [ollama.com/library](https://ollama.com/library)
 
 ## Prerequisites
 
@@ -49,14 +56,14 @@ MoE models use total parameter count for download size but only activate a fract
 
 ### 2. Understand the key differences from Ollama
 
-| Aspect | Ollama | MLX LM |
+| Aspect | Ollama (including `-mlx` tags) | MLX LM (this skill) |
 |--------|--------|--------|
-| Format | GGUF | MLX safetensors |
+| Format | GGUF or Ollama-served MLX | HuggingFace MLX safetensors |
 | Install | `ollama pull` or `ollama create -f` | First `mlx_lm.generate` triggers HF download |
-| Runtime | `ollama serve` (HTTP API) | Direct Python execution or `mlx_lm.server` |
+| Runtime column | `ollama` (default) | `mlx` |
 | Clones | Modelfile-based aliases | Not supported — use CLI flags |
 | IDE integration | Native (Ollama provider) | Via `mlx_lm.server` (OpenAI-compatible) |
-| Platform | Cross-platform | Apple Silicon only |
+| Platform | Cross-platform (MLX tags: Apple Silicon) | Apple Silicon only |
 
 ### 3. Install and verify
 

@@ -1,6 +1,6 @@
 ---
 name: lma-assess-import-model
-description: "Assess a new Ollama model, generate YAML, import to DB, and export the report."
+description: "Assess a new Ollama model, generate YAML, import to DB, and export the report. On Apple Silicon, prefer Ollama -mlx library tags when they exist."
 triggers:
   - assess model
   - evaluate model
@@ -16,18 +16,23 @@ triggers:
   - created_by
   - provenance
   - assessor
+  - ollama mlx
+  - prefer mlx tag
+  - 27b-mlx
 dependencies:
   - lma-python-env
   - lma-db-core
   - lma-ide-config
-version: "1.2.0"
+version: "1.3.0"
 ---
 
 # LMA Assess & Import Model
 
 ## When to use this skill
 
-Load when the user wants to assess a new model from the Ollama catalog, discover popular models, import a YAML assessment into the DB, or query/set provenance on model records. For HF GGUF models **not** in the Ollama library, load `lma-hf-gguf-ollama` instead (it depends on this skill). For MLX-format models on Apple Silicon, load `lma-mlx-lm` instead (it also depends on this skill).
+Load when the user wants to assess a new model from the Ollama catalog, discover popular models, import a YAML assessment into the DB, or query/set provenance on model records. For HF GGUF models **not** in the Ollama library, load `lma-hf-gguf-ollama` instead (it depends on this skill). For HuggingFace MLX safetensors via **mlx-lm** (not Ollama), load `lma-mlx-lm` instead.
+
+Ollama library tags ending in `-mlx` stay in **this** skill. They are not mlx-lm. Load [references/ollama-mlx-tags.md](references/ollama-mlx-tags.md) before choosing a tag or comparing an Ollama candidate on Apple Silicon.
 
 > **Cloud models are excluded.** Never assess or import models that exist only as cloud/API proxies (e.g. Ollama `model:cloud` tags). If a model is cloud-only on Ollama, inform the user and suggest checking [Hugging Face](https://huggingface.co) for a local alternative (GGUF or MLX format).
 
@@ -44,6 +49,8 @@ Load when the user wants to assess a new model from the Ollama catalog, discover
 4. Assess each via the assessment prompt (step 2 below).
 
 ### 2. Assess a model
+
+On Apple Silicon, choose the Ollama tag per [references/ollama-mlx-tags.md](references/ollama-mlx-tags.md) **before** writing YAML. Prefer the same-size `-mlx` library tag over the GGUF default when it exists and keeps the intended hardware class.
 
 Read `LLM-prompts/model-assessment-prompt.yaml` for the full assessment rubric. Key outputs:
 - Model specs (VRAM, context, class, speed, capabilities).
@@ -135,3 +142,4 @@ Via direct SQL (if inserting manually): include `created_by`, `created_by_type`,
 - `assessed-models.md` is also gitignored — it's a generated artifact.
 - Discovery via `ollama-search.md` and assessment via `model-assessment-prompt.yaml` are LLM prompt files — reference them, don't duplicate their content.
 - End every add/import flow with `./scripts/py scripts/sweep-ide-config.py` once Ollama reflects the new inventory.
+- Apple Silicon Ollama `-mlx` tags: [references/ollama-mlx-tags.md](references/ollama-mlx-tags.md). HuggingFace mlx-lm remains a separate skill (`lma-mlx-lm`).
