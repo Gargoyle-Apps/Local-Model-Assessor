@@ -25,7 +25,7 @@ This repository uses **Path B** from the bundled skills harness: **portable skil
 ## Non-negotiables
 
 - **Python:** Always run scripts via `./scripts/py scripts/<name>.py …` from the repo root. See `lma-python-env` skill for venv details.
-- **DB path:** `LMA_DB` env var overrides the default `model-data/model-assessor.db` for Python scripts, `query-db.sh`, `init-db.sh`, and `migrate-schema.sh`.
+- **DB path:** `LMA_DB` env var overrides the DB path for every consumer. Without it, `LMA_ROOT` relocates the default `model-data/model-assessor.db` for Python scripts, `query-db.sh`, `init-db.sh`, and `migrate-schema.sh`.
 - **Optional LMO sidecar:** LMA works alone. When [Local Model Orchestrator](https://github.com/Gargoyle-Apps/local-model-orchestrator) is cloned locally, share **absolute paths** (env or gitignored `integrations/lmo/paths.yaml`). LMO may own hardware/software YAML; LMA always owns the model DB. Resolve with `./scripts/py scripts/lma_paths.py`. Contract: [integrations/lmo/lma-lmo-contract.md](integrations/lmo/lma-lmo-contract.md). Skill: `lma-lmo-sidecar`.
 - **Queries:** `./scripts/query-db.sh "SQL"` — always pass SQL as a quoted string argument.
 - **If DB missing:** `./scripts/init-db.sh`. **If columns/tables missing:** `./scripts/migrate-schema.sh`.
